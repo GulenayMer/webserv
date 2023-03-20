@@ -52,7 +52,7 @@ void	CGI::env_init()
 	_env["HTTP_FROM"]; // The email address of the user making the request. Most browsers do not support this variable.
 	_env["HTTP_ACCEPT"]; // A list of the MIME types that the client can accept.
 	_env["HTTP_USER_AGENT"]; // The browser the client is using to issue the request.
-	_env["HTTP_REFERER"]; // The URL of the document that the client points to before accessing the CGI program.
+	_env["HTTP_REFERER"]; // The URL of the document that the client points to before accessing the CGI program. */
 }
 
 int		CGI::handle_cgi()//std::ostringstream &response_stream)
@@ -109,19 +109,9 @@ int		CGI::handle_cgi()//std::ostringstream &response_stream)
 void	CGI::exec_script(int *pipe, std::string path, std::string program)
 {
     char *args[2];
-	size_t i = 0;
-	size_t j = 0;
 	close(pipe[0]);
-    args[0] = new char [_config.get_cgi().get_path().find(program.c_str())->second.length() + 1];
-    for (i = 0; i < _config.get_cgi().get_path().find(program.c_str())->second.length(); i++) {
-        args[0][i] = _config.get_cgi().get_path().find(program.c_str())->second[i];
-	}
-	args[0][i] = '\0';
-    args[1] = new char [path.length() + 1];
-    for (j = 0; j < path.length(); j++) {
-        args[1][j] = path[j];
-	}
-	args[1][j] = '\0';
+    args[0] = strdup(_config.get_cgi().get_path().find(program.c_str())->second.c_str());
+    args[1] = strdup(path.c_str());
     args[2] = NULL;
 	dup2(pipe[1], STDOUT_FILENO);
 	close(pipe[1]);
