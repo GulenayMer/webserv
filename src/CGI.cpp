@@ -49,7 +49,7 @@ void	CGI::env_init()
 	_env["REMOTE_IDENT"]; // The user making the request. This variable will only be set if NCSA IdentityCheck flag is enabled, and the client machine supports the RFC 931 identification scheme (ident daemon).
 	_env["CONTENT_TYPE"]; // The MIME type of the query data, such as "text/html".
 	_env["CONTENT_LENGTH"]; // The length of the data (in bytes or the number of characters) passed to the CGI program through standard input.
-	_env["HTTP_FROM"]; // The email address of the user making the request. Most browsers do not support this variable.
+	//_env["HTTP_FROM"]; // The email address of the user making the request. Most browsers do not support this variable.
 	_env["HTTP_ACCEPT"]; // A list of the MIME types that the client can accept.
 	_env["HTTP_USER_AGENT"]; // The browser the client is using to issue the request.
 	_env["HTTP_REFERER"]; // The URL of the document that the client points to before accessing the CGI program. */
