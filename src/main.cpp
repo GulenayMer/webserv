@@ -30,6 +30,6 @@ int main(int argc, char** argv)
 	signal(SIGINT, signal_callback_handler);
 	signal(SIGCHLD, grim_reaper);
 	ServerManager manager(configs.get_configs());
-
+	
     return EXIT_SUCCESS;
 }
