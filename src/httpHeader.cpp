@@ -69,7 +69,7 @@ const std::string &httpHeader::getVersion() const
 
 const std::string httpHeader::get_single_header(std::string entry)
 {
-	std::string empty;
+	std::string empty = "";
 	std::map<std::string, std::string>::iterator it = this->_header.find(entry);
 	if (it != this->_header.end())
 		return it->second;
