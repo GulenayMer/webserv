@@ -112,37 +112,39 @@ void	Response::responseToGET(std::ifstream &file, const std::string& path, std::
 	std::cout << std::endl << RED << path << RESET << std::endl;
 	std::stringstream	file_buffer;
 
-	if (_respond_path.compare(_respond_path.length() - 5, 5, ".html") == 0) {
-
-		std::cout << BLUE <<  "----HTML----" << RESET << std::endl;
-		file_buffer << file.rdbuf();
-		_response_body = file_buffer.str();
-		response_stream << HTTPS_OK << _types.get_content_type(".html") << _response_body;
-	}
-	else if (_respond_path.compare(_respond_path.length() - 4, 4, ".ico") == 0)
+	if (!_is_cgi)
 	{
-		std::cout << BLUE <<  "----ICO----" << RESET << std::endl;
 		file_buffer << file.rdbuf();
 		_response_body = file_buffer.str();
-		response_stream << HTTPS_OK << _types.get_content_type(".ico") << _response_body;
+		response_stream << HTTPS_OK << "Content-Length: " << _response_body.length() << "\nConnection: Keep-Alive\n";
+		if (_respond_path.compare(_respond_path.length() - 5, 5, ".html") == 0) {
+			std::cout << BLUE <<  "----HTML----" << RESET << std::endl;
+			response_stream << _types.get_content_type(".html") << _response_body;
+		}
+		else if (_respond_path.compare(_respond_path.length() - 4, 4, ".ico") == 0)
+		{
+			std::cout << BLUE <<  "----ICO----" << RESET << std::endl;
+			response_stream << _types.get_content_type(".ico") << _response_body;
+		}
+		else if (_respond_path.compare(_respond_path.length() - 4, 4, ".css") == 0) {
+			std::cout << BLUE <<  "----CSS----" << RESET << std::endl;
+			response_stream << _types.get_content_type(".css") << _response_body;
+		}
+		else if (_respond_path.compare(_respond_path.length() - 4, 4, ".png") == 0) {
+			std::cout << BLUE <<  "----PNG----" << RESET << std::endl;
+			response_stream << _types.get_content_type(".png") << _response_body;
+		}
+		else
+		{
+			response_stream.str("");
+			response_stream.clear();
+			send_404(this->_config.get_root(), response_stream);
+		}
 	}
-	else if (_respond_path.compare(_respond_path.length() - 4, 4, ".css") == 0) {
-		std::cout << BLUE <<  "----CSS----" << RESET << std::endl;
-		std::string css = readFile(_respond_path);
-		response_stream << HTTPS_OK << _types.get_content_type(".css") << css;
-	}
-	else if (_respond_path.compare(_respond_path.length() - 4, 4, ".png") == 0) {
-		std::cout << BLUE <<  "----PNG----" << RESET << std::endl;
-		file_buffer << file.rdbuf();
-		_response_body = file_buffer.str();
-		response_stream << HTTPS_OK << _types.get_content_type(".png") << _response_body;
-	}
-	else if (_is_cgi == true) {
+	else {
 		CGI handler(this->_config, _request, _response_body);
 		if (handler.handle_cgi() == EXIT_SUCCESS)
-			response_stream << HTTPS_OK << _types.get_content_type(".html") << handler.get_response_body();
-		else
-			send_404(this->_config.get_root(), response_stream);
+			response_stream << HTTPS_OK << "Content-Length: " << handler.get_response_body().length() << "\n" << "Connection: Keep-Alive\n" << _types.get_content_type(".html") << handler.get_response_body();
 	}
 }
 
@@ -151,7 +153,7 @@ void	Response::responseToPOST(const httpHeader request, std::ostringstream &resp
 	// TODO change CGI constructor to accept httpheader instead of only URI
 	CGI handler(this->_config, request, _response_body);
 		if (handler.handle_cgi() == EXIT_SUCCESS)
-			response_stream << HTTPS_OK << _types.get_content_type(".html") << handler.get_response_body();
+			response_stream << HTTPS_OK << "Content-Length: " << _response_body.length() << "\n" << "Connection: Keep-Alive\n" << _types.get_content_type(".html") << handler.get_response_body();
 		else
 			send_404(this->_config.get_root(), response_stream);
 }
