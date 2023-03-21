@@ -47,7 +47,7 @@ class Response
 
 		void	responseToGET(std::ifstream &file, const std::string& path, std::ostringstream &response_stream);
 		void	responseToPOST(const httpHeader request, std::ostringstream &response_stream);
-
+		void	responseToDELETE(std::ostringstream &response_stream);
 		bool	response_complete() const;
 };
 

@@ -85,7 +85,8 @@ int 	Response::send_response()
 		}
 		if (_request.getMethod() == DELETE)
 		{
-			response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A DELETE REQUEST";
+			responseToDELETE(response_stream);
+			// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A DELETE REQUEST";
 		}
 
     }
@@ -185,4 +186,39 @@ bool	Response::response_complete() const
 	if (_response.empty())
 		return true;
 	return false;
+}
+
+void	Response::responseToDELETE(std::ostringstream &response_stream)
+{
+	/* 
+		DELETE REQUEST
+		1. Get path to the requested resource path
+		2. Check if the resource exists
+		3. delete resource
+		4. send 204 status
+		or/else
+		5. send 404
+	*/
+	std::cout << RED << "PATH : " << _respond_path << RESET << std::endl;
+	std::ifstream	pathTest(_respond_path.c_str());
+	if (!pathTest.is_open())
+	{
+		std::cout << RED << "this 404" << RESET << std::endl;
+		send_404(this->_config.get_root(), response_stream);
+	}
+	else
+	{
+		// delete file
+		if (remove(_respond_path.c_str()) == -1)
+		{
+			std::cout << RED << "next 404" << RESET << std::endl;
+			send_404(this->_config.get_root(), response_stream);
+		}
+		else
+		{
+			std::cout << "[ CALLED ]" << std::endl;
+			response_stream << HTTPS_204 << _types.get_content_type(".txt");
+		}
+	}
+	pathTest.close();
 }
