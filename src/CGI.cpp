@@ -47,12 +47,33 @@ void	CGI::env_init()
 	_env["AUTH_TYPE"]; // The authentication method used to validate a user.
 	_env["REMOTE_USER"]; // The authenticated name of the user.
 	_env["REMOTE_IDENT"]; // The user making the request. This variable will only be set if NCSA IdentityCheck flag is enabled, and the client machine supports the RFC 931 identification scheme (ident daemon).
-	_env["CONTENT_TYPE"] = _request.get_single_header("content-type"); // The MIME type of the query data, such as "text/html".
+	if (_request.get_single_header("content-type").length() > 0)
+		_env["CONTENT_TYPE"] = _request.get_single_header("content-type"); // The MIME type of the query data, such as "text/html".
 	_env["CONTENT_LENGTH"]; // The length of the data (in bytes or the number of characters) passed to the CGI program through standard input.
 	//_env["HTTP_FROM"]; // The email address of the user making the request. Most browsers do not support this variable.
 	_env["HTTP_ACCEPT"]; // A list of the MIME types that the client can accept.
 	_env["HTTP_USER_AGENT"]; // The browser the client is using to issue the request.
 	_env["HTTP_REFERER"]; // The URL of the document that the client points to before accessing the CGI program. */
+	this->env_to_char();
+}
+
+void	CGI::env_to_char(void)
+{
+	int i = 0;
+	// TODO ALLOCATION!!!!! CAREFUL!!
+	std::string temp;
+	this->_exec_env = new char*[this->_env.size() + 1];
+	std::map<std::string, std::string>::iterator it = this->_env.begin();
+	while (it != this->_env.end()) {
+		temp = it->first + "=" + it->second;
+		this->_exec_env[i] = strdup(temp.c_str());
+		std::cout << this->_exec_env[i] << std::endl;
+	
+		it++;
+		i++;
+		
+	}
+	this->_exec_env[i] = NULL;
 }
 
 int		CGI::handle_cgi()//std::ostringstream &response_stream)
@@ -63,6 +84,7 @@ int		CGI::handle_cgi()//std::ostringstream &response_stream)
 	std::string shebang;
 	char buff[1000];
 	memset(buff, 0, 1000); // TODO we need to initialize buff (otherwise gives cond.jump etc. error) (std::fill)
+	this->env_init();
     if (pipe(fd) < 0)
     {
         std::cout << "Error opening pipe" << std::endl;
@@ -96,6 +118,7 @@ int		CGI::handle_cgi()//std::ostringstream &response_stream)
     else
     {
 		close(fd[1]);
+		// TODO does it need to be commented out
 		//waitpid(pid, NULL, 0);
 		while (read(fd[0], buff, sizeof(buff) - 1)) {
 			_response_body += buff;
@@ -115,7 +138,7 @@ void	CGI::exec_script(int *pipe, std::string path, std::string program)
     args[2] = NULL;
 	dup2(pipe[1], STDOUT_FILENO);
 	close(pipe[1]);
-    execve(args[0], args, NULL);
+    execve(args[0], args, _exec_env);
     perror("execve failed.");
 	exit(0);
 }

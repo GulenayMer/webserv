@@ -21,7 +21,8 @@ class CGI {
 		// getters
 		std::string	get_response_body();
 
-		void	env_init();
+		void	env_init(void);
+		void	env_to_char(void);
 		int		handle_cgi();//std::ostringstream &response_stream);
 		void	exec_script(int *pipe, std::string path, std::string program);
 };
