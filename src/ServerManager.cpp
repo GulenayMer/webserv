@@ -70,11 +70,6 @@ int ServerManager::run_servers()
 		{
 			if (this->_fds[i].revents == 0)
 				continue ;
-			// if (this->_fds[i].revents != (POLLIN | POLLOUT)) {
-			// 	std::cout << RED << "[ UNEXPECTED REVENTS VALUE ]" << RESET << std::endl;
-			// 	nbr_fd_ready--;
-			// 	continue ;
-			// }
 			if (i < (int)this->get_servers().size())
 			{
 				int	connection_fd;
@@ -92,6 +87,7 @@ int ServerManager::run_servers()
 					close(connection_fd);
 					continue ;
 				}
+				std::cout << GREEN << "New Connection" << RESET << std::endl;
 				this->_fds[this->_nfds].fd = connection_fd;
 				this->_fds[this->_nfds].events = POLLIN;
 				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_servers[i].get_sockfd(), this->_servers[i].get_config())));
@@ -100,8 +96,7 @@ int ServerManager::run_servers()
 			else if (this->_fds[i].revents & POLLIN)
 			{
 				close_connection = false;
-				bool	file_read = false;
-				while (true)
+				if (this->_responses.find(this->_fds[i].fd) != this->_responses.end())
 				{
 					//TODO implement client max body size
 					std::map<int, int>::iterator it = this->_map_server_fd.find(i);
@@ -109,44 +104,35 @@ int ServerManager::run_servers()
 					int		received;
 
 					std::cout << this->_fds[i].fd << std::endl;
-					if (file_read == false)
+					received = recv(this->_fds[i].fd, buffer, sizeof(buffer), MSG_CTRUNC | MSG_DONTWAIT);
+					if (received > this->_servers[it->second].get_config().get_client_max_body_size())
 					{
-
-						received = recv(this->_fds[i].fd, buffer, sizeof(buffer), MSG_CTRUNC | MSG_DONTWAIT);
-						if (received > this->_servers[it->second].get_config().get_client_max_body_size())
-						{
-							std::cout << "Client intended to send too large body." << std::endl;
-							break ;
-						}
-						if (received < 0)
-						{
-							// removed the errno if statement, needs to be tested
-							close_connection = true;
-							perror("recv");
-							break ;
-						}
-						if (received == 0)
-						{
-							printf("Connection closed\n");
-							close_connection = true;
-							break ;
-						}
-					}
-					else
-					{
+						std::cout << "Client intended to send too large body." << std::endl;
 						close_connection = true;
-						break ;
 					}
-					/* [ prepare response ] */
-					file_read = true;
-					httpHeader request(buffer);
-					request.printHeader();
-					memset(buffer, 0, this->_servers[it->second].get_config().get_client_max_body_size());
-					std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
-					response_it->second.new_request(request);
-					response_it->second.send_response();
-					if (!response_it->second.response_complete())
-						this->_fds[i].events = POLLIN | POLLOUT;
+					else if (received < 0)
+					{
+						// removed the errno if statement, needs to be tested
+						close_connection = true;
+						perror("recv");
+					}
+					else if (received == 0)
+					{
+						printf("Connection closed\n");
+						close_connection = true;
+					}
+					if (!close_connection)
+					{
+						/* [ prepare response ] */
+						httpHeader request(buffer);
+						request.printHeader();
+						memset(buffer, 0, this->_servers[it->second].get_config().get_client_max_body_size());
+						std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
+						response_it->second.new_request(request);
+						response_it->second.send_response();
+						if (!response_it->second.response_complete())
+							this->_fds[i].events = POLLIN | POLLOUT;
+					}
 				}
 				if (close_connection)
 				{
