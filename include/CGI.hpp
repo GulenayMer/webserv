@@ -24,7 +24,6 @@ class CGI {
 		CGI& operator=(const CGI& obj);
 		~CGI();
 
-<<<<<<< HEAD
 		// getters
 		std::string	get_response_body();
 
@@ -34,18 +33,12 @@ class CGI {
 		void		exec_script(int *pipe, std::string path, std::string program);
 		std::string get_path_from_map();
 		std::string get_query();
-=======
-		void	env_init(void);
-		void	env_to_char(void);
-		int		handle_cgi();
-		void	exec_script(int *pipe, std::string path, std::string program);
 		int		initPipe();
 		Response &getResponse();
 		void	sendResponse();
 		void	add_to_buffer(char *buff);
 		void	readComplete();
 		bool	doneReading();
->>>>>>> 0d400c917beae7161290cbc2f1054d86c68bbdd6
 };
 
 
