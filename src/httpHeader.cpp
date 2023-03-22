@@ -13,7 +13,7 @@ httpHeader::httpHeader(std::string header)
 	start = end + 1;
 	end = header.find(" ", start);
 	this->_uri = header.substr(start, end - start);
-	std::cout << _uri << std::endl;
+	//std::cout << _uri << std::endl;
 	start = end + 1;
 	end = header.find("\r\n", start);
 	this->_version = header.substr(start, end - start);

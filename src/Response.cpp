@@ -122,7 +122,7 @@ void	Response::responseToGET(std::ifstream &file, const std::string& path, std::
 	type = _types.get_content_type(&_respond_path[_respond_path.find_last_of(".")]);
 	if (type.empty())
 	{
-		send_404(this->_config.get_root(), response_stream);
+		send_404(this->_config.get_root(), response_stream); //TODO send -> 415 Unsupported media type
 		return ;
 	}
 	file_buffer << file.rdbuf();
