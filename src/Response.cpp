@@ -1,10 +1,12 @@
 #include "../include/Response.hpp"
 
-Response::Response(int conn_fd, int server_fd, Config& config): _config(config)
+Response::Response(int conn_fd, int server_fd, Config& config, struct pollfd* fds, int nfds): _config(config)
 {
     _conn_fd = conn_fd;
     _server_fd = server_fd;
 	_bytes_sent = 0;
+	_fds = fds;
+	_nfds = nfds;
 }
 
 Response::Response(const Response &src)
@@ -51,7 +53,11 @@ int 	Response::send_response()
 	if (_request.getUri() == "/")
 		_respond_path = _config.get_index();
 	else if (_request.getUri().find("cgi-bin") != std::string::npos)
+	{
 		_is_cgi = true;
+		//this->_cgi.setVars(_config, _request);
+		return 0;
+	}
     else
     	_respond_path = _request.getUri();
     _respond_path = _config.get_root() + clean_response_path(_respond_path);
@@ -78,11 +84,11 @@ int 	Response::send_response()
 		{
 			responseToGET(file, _request.getUri(), response_stream);
 		}
-		if (_request.getMethod() == POST)
-		{
-			responseToPOST(_request, response_stream);
-			//response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A POST REQUEST";
-		}
+		// if (_request.getMethod() == POST)
+		// {
+		// 	responseToPOST(_request, response_stream);
+		// 	//response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A POST REQUEST";
+		// }
 		if (_request.getMethod() == DELETE)
 		{
 			response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A DELETE REQUEST";
@@ -111,50 +117,53 @@ void	Response::responseToGET(std::ifstream &file, const std::string& path, std::
 {
 	std::cout << std::endl << RED << path << RESET << std::endl;
 	std::stringstream	file_buffer;
+	std::string	type;
 
-	if (_respond_path.compare(_respond_path.length() - 5, 5, ".html") == 0) {
-
-		std::cout << BLUE <<  "----HTML----" << RESET << std::endl;
-		file_buffer << file.rdbuf();
-		_response_body = file_buffer.str();
-		response_stream << HTTPS_OK << _types.get_content_type(".html") << _response_body;
-	}
-	else if (_respond_path.compare(_respond_path.length() - 4, 4, ".ico") == 0)
+	type = _types.get_content_type(&_respond_path[_respond_path.find_last_of(".")]);
+	if (type.empty())
 	{
-		std::cout << BLUE <<  "----ICO----" << RESET << std::endl;
-		file_buffer << file.rdbuf();
-		_response_body = file_buffer.str();
-		response_stream << HTTPS_OK << _types.get_content_type(".ico") << _response_body;
+		send_404(this->_config.get_root(), response_stream);
+		return ;
 	}
-	else if (_respond_path.compare(_respond_path.length() - 4, 4, ".css") == 0) {
-		std::cout << BLUE <<  "----CSS----" << RESET << std::endl;
-		std::string css = readFile(_respond_path);
-		response_stream << HTTPS_OK << _types.get_content_type(".css") << css;
-	}
-	else if (_respond_path.compare(_respond_path.length() - 4, 4, ".png") == 0) {
-		std::cout << BLUE <<  "----PNG----" << RESET << std::endl;
-		file_buffer << file.rdbuf();
-		_response_body = file_buffer.str();
-		response_stream << HTTPS_OK << _types.get_content_type(".png") << _response_body;
-	}
-	else if (_is_cgi == true) {
-		CGI handler(this->_config, _request, _response_body);
-		if (handler.handle_cgi() == EXIT_SUCCESS)
-			response_stream << HTTPS_OK << _types.get_content_type(".html") << handler.get_response_body();
-		else
-			send_404(this->_config.get_root(), response_stream);
-	}
+	file_buffer << file.rdbuf();
+	_response_body = file_buffer.str();
+	response_stream << HTTPS_OK << "Content-Length: " << _response_body.length() << "\nConnection: Keep-Alive\n";
+	response_stream << type << _response_body;
+	//std::cout << BLUE << type << RESET << std::endl;
+	// if (_respond_path.compare(_respond_path.length() - 5, 5, ".html") == 0) {
+	// 	std::cout << BLUE <<  "----HTML----" << RESET << std::endl;
+	// 	response_stream << _types.get_content_type(".html") << _response_body;				//TODO I don't think we need this anymore
+	// }
+	// else if (_respond_path.compare(_respond_path.length() - 4, 4, ".ico") == 0)
+	// {
+	// 	std::cout << BLUE <<  "----ICO----" << RESET << std::endl;
+	// 	response_stream << _types.get_content_type(".ico") << _response_body;
+	// }
+	// else if (_respond_path.compare(_respond_path.length() - 4, 4, ".css") == 0) {
+	// 	std::cout << BLUE <<  "----CSS----" << RESET << std::endl;
+	// 	response_stream << _types.get_content_type(".css") << _response_body;
+	// }
+	// else if (_respond_path.compare(_respond_path.length() - 4, 4, ".png") == 0) {
+	// 	std::cout << BLUE <<  "----PNG----" << RESET << std::endl;
+	// 	response_stream << _types.get_content_type(".png") << _response_body;
+	// }
+	// else
+	// {
+	// 	response_stream.str("");
+	// 	response_stream.clear();
+	// 	send_404(this->_config.get_root(), response_stream);
+	// }
 }
 
-void	Response::responseToPOST(const httpHeader request, std::ostringstream &response_stream)
-{
-	// TODO change CGI constructor to accept httpheader instead of only URI
-	CGI handler(this->_config, request, _response_body);
-		if (handler.handle_cgi() == EXIT_SUCCESS)
-			response_stream << HTTPS_OK << _types.get_content_type(".html") << handler.get_response_body();
-		else
-			send_404(this->_config.get_root(), response_stream);
-}
+// void	Response::responseToPOST(const httpHeader request, std::ostringstream &response_stream)
+// {
+// 	// TODO change CGI constructor to accept httpheader instead of only URI
+// 	// CGI handler(this->_config, request, _response_body, _fds, _nfds);
+// 	// 	if (handler.handle_cgi() == EXIT_SUCCESS)
+// 	// 		response_stream << HTTPS_OK << "Content-Length: " << _response_body.length() << "\n" << "Connection: Keep-Alive\n" << _types.get_content_type(".html") << handler.get_response_body();
+// 	// 	else
+// 	// 		send_404(this->_config.get_root(), response_stream);
+// }
 
 void 	Response::send_404(std::string root, std::ostringstream &response_stream)
 {
@@ -185,4 +194,39 @@ bool	Response::response_complete() const
 	if (_response.empty())
 		return true;
 	return false;
+}
+
+bool	Response::is_cgi()
+{
+	return _is_cgi;
+}
+
+Config &Response::getConfig()
+{
+	return this->_config;
+}
+
+httpHeader &Response::getRequest()
+{
+	return this->_request;
+}
+
+int	Response::getConnFd()
+{
+	return this->_conn_fd;
+}
+
+MIME	&Response::getTypes()
+{
+	return this->_types;
+}
+
+void	Response::setCGIFd(int fd)
+{
+	this->_cgi_fd = fd;
+}
+
+int	Response::getCGIFd()
+{
+	return this->_cgi_fd;
 }

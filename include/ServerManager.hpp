@@ -5,6 +5,7 @@
 # include "Server.hpp"
 # include "Config.hpp"
 # include "Response.hpp"
+# include "CGI.hpp"
 
 class ServerManager {
 	
@@ -12,6 +13,7 @@ class ServerManager {
 		std::vector<Server> _servers;
 		std::vector<Config> _configs;
 		std::map<int, Response> _responses;
+		std::map<int, CGI>		_cgis;
 		int					_nfds;
 		struct pollfd*		_fds;
 		int					_nbr_fd_ready;
