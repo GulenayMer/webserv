@@ -18,6 +18,8 @@ class CGI {
 		size_t								_bytes_sent;
 		std::map<std::string, std::string>	_env;
 		int									_pipe[2];
+		std::string							_boundary;
+		int									_errnum;
 		
 	public:
 		CGI(Response &response, std::string request_body);
@@ -34,12 +36,15 @@ class CGI {
 		void		exec_script(int *pipe, std::string path, std::string program);
 		std::string get_path_from_map();
 		std::string get_query();
+		std::string& get_boundary();
 		int		initPipe();
 		Response &getResponse();
 		void	sendResponse();
 		void	add_to_buffer(char *buff);
 		void	readComplete();
 		bool	doneReading();
+		void	fill_in_body();
+		void	set_boundary();
 };
 
 

@@ -4,9 +4,12 @@ import cgi, os
 
 form = cgi.FieldStorage()
 for item in form:
+	print("IM A PURPLE PART")
 	print(item)
-""" fileitem = form["filename"] """
-""" if fileitem.filename:
+
+
+fileitem = form["filename"]
+if fileitem.filename:
    open(os.getcwd() + '/cgi-bin/tmp/' + os.path.basename(fileitem.filename), 'wb').write(fileitem.file.read())
    message = 'The file "' + os.path.basename(fileitem.filename) + '" was uploaded to ' + os.getcwd() + '/cgi-bin/tmp'
 else:
@@ -15,4 +18,3 @@ else:
 print("Content-Type: text/html;charset=utf-8")
 print ("Content-type:text/html\r\n")
 print("<H1> " + message + " </H1>")
- """

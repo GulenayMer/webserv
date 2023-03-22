@@ -3,6 +3,8 @@
 CGI::CGI(Response &response, std::string request_body): _response(response), _request_body(request_body)
 {
 	this->_done_reading = false;
+	this->env_init();
+	this->set_boundary();
 	std::cout << "CGI" << std::endl;
 	std::cout << _request_body << std::endl;
 }
@@ -40,8 +42,8 @@ void	CGI::env_init()
 	//TODO find which location to do, using servers for now.
 	_env["DOCUMENT_ROOT"] = this->_response.getConfig().get_root(); // The directory from which Web documents are served.
 	_env["QUERY_STRING"] = this->get_query(); // The query information passed to the program. It is appended to the URL with a "?".
-	_env["REMOTE_HOST"]; // The remote hostname of the user making the request.
-	_env["REMOTE_ADDR"] = _response.getRequest().get_single_header("Host");; // The remote IP address of the user making the request.
+	_env["REMOTE_HOST"] = _response.getRequest().get_single_header("Host"); // The remote hostname of the user making the request.
+	_env["REMOTE_ADDR"] = std::string("127.0.0.1");//_response.getRequest().get_single_header("Host"); // The remote IP address of the user making the request.
 	_env["AUTH_TYPE"]; // The authentication method used to validate a user.
 	_env["REMOTE_USER"]; // The authenticated name of the user.
 	//_env["REMOTE_IDENT"]; // The user making the request. This variable will only be set if NCSA IdentityCheck flag is enabled, and the client machine supports the RFC 931 identification scheme (ident daemon).
@@ -84,9 +86,8 @@ int		CGI::handle_cgi()
     std::ifstream file;
 	std::string new_path = this->_response.getRequest().getUri();
 	std::string shebang;
-	char buff[1000];
-	memset(buff, 0, 1000);
-	this->env_init();
+	char buff[100000];
+	memset(buff, 0, 100000);
 	new_path = remove_end(this->_response.getRequest().getUri(), '?');
    	new_path = "." + new_path;
 	// TODO check if ext is allowed
@@ -124,9 +125,9 @@ void	CGI::exec_script(int *pipe, std::string path, std::string program)
 	std::cout << path << std::endl;
     char *args[2];
 	close(pipe[0]);
-    //args[0] = strdup(this->_response.getConfig().get_cgi().get_path().find(program.c_str())->second.c_str());
     args[0] = strdup(path.c_str());
 	args[1] = strdup(_request_body.c_str());
+	std::cout << YELLOW << args[1] << RESET << std::endl;
     args[2] = NULL;
 	dup2(pipe[1], STDOUT_FILENO);
 	close(pipe[1]);
@@ -217,6 +218,11 @@ Response &CGI::getResponse()
 	return this->_response;
 }
 
+std::string& CGI::get_boundary()
+{
+	return this->_boundary;
+}
+
 void	CGI::readComplete()
 {
 	this->_done_reading = true;
@@ -225,4 +231,19 @@ void	CGI::readComplete()
 bool	CGI::doneReading()
 {
 	return this->_done_reading;
+}
+
+void	CGI::set_boundary()
+{
+	if (_env["CONTENT_TYPE"].find("boundary") != std::string::npos) {
+		int pos = _env["CONTENT_TYPE"].find_last_of("=");
+		this->_boundary = &_env["CONTENT_TYPE"][pos + 1];
+	}
+}
+
+void	CGI::fill_in_body()
+{
+	std::cout << CYAN << _request_body << RESET << std::endl;
+	this->_request_body.find("---------------------------27636390218737535281058285872")
+	this->_request_body.find("-----------------------------27636390218737535281058285872--")
 }
