@@ -103,6 +103,7 @@ int ServerManager::run_servers()
 					//TODO implement client max body size
 					int		received;
 
+					memset(buffer, 0, sizeof(buffer));
 					std::cout << this->_fds[i].fd << std::endl;
 					memset(buffer, 0, this->_servers[it->second].get_config().get_client_max_body_size());
 					received = recv(this->_fds[i].fd, buffer, sizeof(buffer), MSG_CTRUNC | MSG_DONTWAIT);

@@ -25,6 +25,7 @@ class httpHeader
 		std::map<std::string, std::string> _header;
 		//TODO keep track of boundary number
 		// should it be number or a string
+		std::string	_boundary;
 	public:
 		httpHeader();
 		httpHeader(std::string header);
