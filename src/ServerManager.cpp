@@ -137,8 +137,10 @@ int ServerManager::run_servers()
 						response_it->second.send_response();
 						if (response_it->second.is_cgi())
 						{
-							
 							CGI cgi(response_it->second, request_body);
+							if (response_it->second.getRequest().getMethod() == POST) {
+								cgi.fill_in_body();
+							}
 							int fd = cgi.initPipe();
 							if (fd < 0)
 								std::cout << RED << "internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500
