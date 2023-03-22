@@ -105,8 +105,11 @@ int ServerManager::run_servers()
 
 					memset(buffer, 0, sizeof(buffer));
 					std::cout << this->_fds[i].fd << std::endl;
+					memset(buffer, 0, this->_servers[it->second].get_config().get_client_max_body_size());
 					received = recv(this->_fds[i].fd, buffer, sizeof(buffer), MSG_CTRUNC | MSG_DONTWAIT);
-					std::cout << RED << buffer << RESET << std::endl;
+					std::cout << "REAL BODY" << std::endl;
+					std::cout << buffer << std::endl;
+					std::string request_body = buffer;
 					if (received > this->_servers[it->second].get_config().get_client_max_body_size())
 					{
 						std::cout << "Client intended to send too large body." << std::endl;
@@ -134,7 +137,8 @@ int ServerManager::run_servers()
 						response_it->second.send_response();
 						if (response_it->second.is_cgi())
 						{
-							CGI cgi(response_it->second);
+							
+							CGI cgi(response_it->second, request_body);
 							int fd = cgi.initPipe();
 							if (fd < 0)
 								std::cout << RED << "internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500

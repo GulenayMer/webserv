@@ -1,8 +1,10 @@
 # include "../include/CGI.hpp"
 
-CGI::CGI(Response &response): _response(response)
+CGI::CGI(Response &response, std::string request_body): _response(response), _request_body(request_body)
 {
 	this->_done_reading = false;
+	std::cout << "CGI" << std::endl;
+	std::cout << _request_body << std::endl;
 }
 
 CGI::CGI(const CGI& obj): _response(obj._response)
@@ -43,10 +45,12 @@ void	CGI::env_init()
 	_env["AUTH_TYPE"]; // The authentication method used to validate a user.
 	_env["REMOTE_USER"]; // The authenticated name of the user.
 	//_env["REMOTE_IDENT"]; // The user making the request. This variable will only be set if NCSA IdentityCheck flag is enabled, and the client machine supports the RFC 931 identification scheme (ident daemon).
-	//test variable
 	
-	_env["CONTENT_TYPE"] = std::string("application/x-www-form-urlencoded");
-	//_env["CONTENT_TYPE"] = _request.get_single_header("Content-Type"); // The MIME type of the query data, such as "text/html".
+	//test variables
+	//_env["CONTENT_TYPE"] = std::string("application/x-www-form-urlencoded");
+	//_env["CONTENT_LENGTH"] = std::string("1000");
+	
+	_env["CONTENT_TYPE"] = _response.getRequest().get_single_header("Content-Type"); // The MIME type of the query data, such as "text/html".
 	_env["CONTENT_LENGTH"] = _response.getRequest().get_single_header("Content-Length"); // The length of the data (in bytes or the number of characters) passed to the CGI program through standard input.
 	//_env["HTTP_FROM"]; // The email address of the user making the request. Most browsers do not support this variable.
 	_env["HTTP_ACCEPT"]; // A list of the MIME types that the client can accept.
@@ -115,14 +119,18 @@ int		CGI::handle_cgi()
 
 void	CGI::exec_script(int *pipe, std::string path, std::string program)
 {
+	(void) program;
+	std::cout << "PATH HERE" << std::endl;
+	std::cout << path << std::endl;
     char *args[2];
 	close(pipe[0]);
-    args[0] = strdup(this->_response.getConfig().get_cgi().get_path().find(program.c_str())->second.c_str());
-    args[1] = strdup(path.c_str());
+    //args[0] = strdup(this->_response.getConfig().get_cgi().get_path().find(program.c_str())->second.c_str());
+    args[0] = strdup(path.c_str());
+	args[1] = strdup(_request_body.c_str());
     args[2] = NULL;
 	dup2(pipe[1], STDOUT_FILENO);
 	close(pipe[1]);
-    execve(args[0], args, _exec_env);
+    execve(args[0], args, NULL);
     perror("execve failed.");
 	exit(0);
 }

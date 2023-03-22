@@ -28,7 +28,7 @@
 				},
 				{
 					"description":  "follow child/parent",
-					"text": "-gdb-set follow-fork-mode parent",
+					"text": "-gdb-set follow-fork-mode child",
 					"ignoreFailures": true
 				}
 			]

@@ -11,6 +11,7 @@ class Response;
 class CGI {
 	private:
 		Response							_response;
+		std::string							_request_body;
 		bool								_done_reading;
 		char**								_exec_env;
 		std::string							_buffer;
@@ -19,7 +20,7 @@ class CGI {
 		int									_pipe[2];
 		
 	public:
-		CGI(Response &response);
+		CGI(Response &response, std::string request_body);
 		CGI(const CGI& obj);
 		CGI& operator=(const CGI& obj);
 		~CGI();
