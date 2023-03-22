@@ -23,6 +23,7 @@ class httpHeader
 		std::string _uri;
 		std::string _version;
 		std::map<std::string, std::string> _header;
+		std::string	_boundary;
 	public:
 		httpHeader();
 		httpHeader(std::string header);

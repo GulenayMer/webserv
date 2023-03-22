@@ -103,8 +103,10 @@ int ServerManager::run_servers()
 					//TODO implement client max body size
 					int		received;
 
+					memset(buffer, 0, sizeof(buffer));
 					std::cout << this->_fds[i].fd << std::endl;
 					received = recv(this->_fds[i].fd, buffer, sizeof(buffer), MSG_CTRUNC | MSG_DONTWAIT);
+					std::cout << RED << buffer << RESET << std::endl;
 					if (received > this->_servers[it->second].get_config().get_client_max_body_size())
 					{
 						std::cout << "Client intended to send too large body." << std::endl;
@@ -208,7 +210,7 @@ int ServerManager::run_servers()
 			}
 			if (this->_fds[i].revents & POLLOUT)
 			{
-				std::cout << RED << "POLLOUT EVENT" << RESET << std::endl;
+				//std::cout << RED << "POLLOUT EVENT" << RESET << std::endl;
 				std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
 				if (response_it->second.is_cgi())
 				{
