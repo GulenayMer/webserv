@@ -104,8 +104,11 @@ int ServerManager::run_servers()
 					int		received;
 
 					std::cout << this->_fds[i].fd << std::endl;
+					memset(buffer, 0, this->_servers[it->second].get_config().get_client_max_body_size());
 					received = recv(this->_fds[i].fd, buffer, sizeof(buffer), MSG_CTRUNC | MSG_DONTWAIT);
+					std::cout << "REAL BODY" << std::endl;
 					std::cout << buffer << std::endl;
+					std::string request_body = buffer;
 					if (received > this->_servers[it->second].get_config().get_client_max_body_size())
 					{
 						std::cout << "Client intended to send too large body." << std::endl;
@@ -133,7 +136,8 @@ int ServerManager::run_servers()
 						response_it->second.send_response();
 						if (response_it->second.is_cgi())
 						{
-							CGI cgi(response_it->second, buffer);
+							
+							CGI cgi(response_it->second, request_body);
 							int fd = cgi.initPipe();
 							if (fd < 0)
 								std::cout << RED << "internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500
@@ -209,7 +213,7 @@ int ServerManager::run_servers()
 			}
 			if (this->_fds[i].revents & POLLOUT)
 			{
-				std::cout << RED << "POLLOUT EVENT" << RESET << std::endl;
+				//std::cout << RED << "POLLOUT EVENT" << RESET << std::endl;
 				std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
 				if (response_it->second.is_cgi())
 				{

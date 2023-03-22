@@ -1,8 +1,10 @@
 # include "../include/CGI.hpp"
 
-CGI::CGI(Response &response, char* request_body): _response(response), _request_body(request_body)
+CGI::CGI(Response &response, std::string request_body): _response(response), _request_body(request_body)
 {
 	this->_done_reading = false;
+	std::cout << "CGI" << std::endl;
+	std::cout << _request_body << std::endl;
 }
 
 CGI::CGI(const CGI& obj): _response(obj._response)
@@ -117,15 +119,18 @@ int		CGI::handle_cgi()
 
 void	CGI::exec_script(int *pipe, std::string path, std::string program)
 {
-	(void) path;
+	(void) program;
+	std::cout << "PATH HERE" << std::endl;
+	std::cout << path << std::endl;
     char *args[2];
 	close(pipe[0]);
-    args[0] = strdup(this->_response.getConfig().get_cgi().get_path().find(program.c_str())->second.c_str());
-    args[1] = strdup(_request_body);
+    //args[0] = strdup(this->_response.getConfig().get_cgi().get_path().find(program.c_str())->second.c_str());
+    args[0] = strdup(path.c_str());
+	args[1] = strdup(_request_body.c_str());
     args[2] = NULL;
 	dup2(pipe[1], STDOUT_FILENO);
 	close(pipe[1]);
-    execve(args[0], args, _exec_env);
+    execve(args[0], args, NULL);
     perror("execve failed.");
 	exit(0);
 }
