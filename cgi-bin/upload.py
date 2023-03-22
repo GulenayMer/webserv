@@ -3,5 +3,5 @@
 import cgi, os
 
 form = cgi.FieldStorage()
-form["filename"]
-print(form)
+fileitem = form["filename"]
+print(fileitem.filename)

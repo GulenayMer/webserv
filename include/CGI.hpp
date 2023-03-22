@@ -21,10 +21,12 @@ class CGI {
 		// getters
 		std::string	get_response_body();
 
-		void	env_init(void);
-		void	env_to_char(void);
-		int		handle_cgi();//std::ostringstream &response_stream);
-		void	exec_script(int *pipe, std::string path, std::string program);
+		void		env_init(void);
+		void		env_to_char(void);
+		int			handle_cgi();//std::ostringstream &response_stream);
+		void		exec_script(int *pipe, std::string path, std::string program);
+		std::string get_path_from_map();
+		std::string get_query();
 };
 
 
