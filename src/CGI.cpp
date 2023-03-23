@@ -1,6 +1,6 @@
 # include "../include/CGI.hpp"
 
-CGI::CGI(Response &response, std::string request_body): _response(response), _request_body(request_body)
+CGI::CGI(Response &response): _response(response)
 {
 	this->_done_reading = false;
 	this->_body_complete = false;
@@ -10,8 +10,6 @@ CGI::CGI(Response &response, std::string request_body): _response(response), _re
 	this->env_init();
 	this->set_boundary();
 	std::cout << "boundary: " << this->_boundary << std::endl;
-	//std::cout << "CGI" << std::endl;
-	//std::cout << _request_body << std::endl;
 }
 
 CGI::CGI(const CGI& obj): _response(obj._response)
@@ -238,13 +236,28 @@ int	CGI::initInputPipe()
 void	CGI::sendResponse()
 {
 	size_t	sent;
+	size_t	content_index = 0;
 	std::ostringstream response_stream;
-
+	std::string content;
+	for (; this->_response_buff[content_index] != '\n'; content_index++)
+		content += this->_response_buff[content_index];
+	for (size_t i = content_index + 2; i > content_index; content_index++)
+		content += this->_response_buff[content_index];
+	std::cout << content << std::endl;
+	if (content.find("Content-Type") == std::string::npos && content.find("content-type") == std::string::npos)
+	{
+		//TODO send error content type unknown -> internal server error probably
+		std::cout << "ERROR" << std::endl;
+	}
 	std::cout << RED << "Sending response..." << RESET << std::endl;
-	std::cout << BLUE << _buffer << RESET << std::endl;
-	response_stream << HTTPS_OK << "Content-Length: " << _buffer.length() << "\n" << "Connection: Keep-Alive\n" << this->getResponse().getTypes().get_content_type(".html") << _buffer;
-	_buffer = response_stream.str();
-	sent = send(this->_response.getConnFd(), _buffer.c_str(), _buffer.length(), MSG_DONTWAIT);
+	response_stream << HTTPS_OK << "Content-Length: " << _response_buff.size() - content.size() << "\n" << "Connection: Keep-Alive\n";
+	std::string temp = response_stream.str();
+	for (ssize_t i = temp.size() - 1; i >= 0; i--)
+		this->_response_buff.insert(this->_response_buff.begin(), temp[i]);
+	for (size_t i = 0; i < _response_buff.size(); i++)
+		std::cout << BLUE << _response_buff[i];
+	std::cout << RESET << std::endl;
+	sent = send(this->_response.getConnFd(), &_response_buff[0], _response_buff.size(), MSG_DONTWAIT);
 	if (sent > 0)
 	{
 		// _bytes_sent += sent;
@@ -260,9 +273,10 @@ void	CGI::sendResponse()
 	}
 }
 
-void	CGI::add_to_buffer(char *buff)
+void	CGI::add_to_buffer(char *buff, size_t rec)
 {
-	_buffer += buff;
+	for (size_t i = 0; i < rec; i++)
+		this->_response_buff.push_back(buff[i]);
 }
 
 Response &CGI::getResponse()

@@ -18,13 +18,13 @@ enum CGIerrors
 class CGI {
 	private:
 		Response							_response;
-		std::string							_request_body;
 		bool								_done_reading;
 		bool								_body_complete;
 		bool								_header_removed;
 		char**								_exec_env;
 		std::string							_buffer;
 		std::vector<char>					_request_buff;
+		std::vector<char>					_response_buff;
 		size_t								_vector_pos;
 		size_t								_content_length;
 		size_t								_bytes_sent;
@@ -35,7 +35,7 @@ class CGI {
 		int									_errnum;
 		
 	public:
-		CGI(Response &response, std::string request_body);
+		CGI(Response &response);
 		CGI(const CGI& obj);
 		CGI& operator=(const CGI& obj);
 		~CGI();
@@ -54,7 +54,7 @@ class CGI {
 		int		initInputPipe();
 		Response &getResponse();
 		void	sendResponse();
-		void	add_to_buffer(char *buff);
+		void	add_to_buffer(char *buff, size_t rec);
 		void	setReadComplete();
 		bool	readComplete();
 		void	storeBuffer(char *buffer, size_t received);

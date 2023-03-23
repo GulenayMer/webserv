@@ -152,7 +152,7 @@ int ServerManager::run_servers()
 							response_it->second.send_response();
 							if (response_it->second.is_cgi())
 							{
-								CGI cgi(response_it->second, request_body);
+								CGI cgi(response_it->second);
 								int out_fd = cgi.initOutputPipe();
 								int in_fd = cgi.initInputPipe();
 								if (out_fd < 0 || in_fd < 0)
@@ -198,10 +198,10 @@ int ServerManager::run_servers()
 					char	buffer[2000];
 					memset(buffer, 0, 2000);
 					std::map<int, CGI>::iterator it = this->_cgis.find(this->_fds[i].fd);
-					ssize_t ret = read(this->_fds[i].fd, buffer, sizeof(buffer));
-					if (ret > 0)
-						it->second.add_to_buffer(buffer);
-					else if (ret < 0)
+					ssize_t rec = read(this->_fds[i].fd, buffer, sizeof(buffer));
+					if (rec > 0)
+						it->second.add_to_buffer(buffer, rec);
+					else if (rec < 0)
 						perror("read");
 				}
 			}
@@ -211,8 +211,8 @@ int ServerManager::run_servers()
 				std::cout << "POLLHUP" << std::endl;
 				char	buffer[2000];
 				memset(buffer, 0, 2000);
-				while (read(this->_fds[i].fd, buffer, sizeof(buffer)) > 0)
-					this->_cgis.find(this->_fds[i].fd)->second.add_to_buffer(buffer);
+				while (size_t rec = read(this->_fds[i].fd, buffer, sizeof(buffer)) > 0)
+					this->_cgis.find(this->_fds[i].fd)->second.add_to_buffer(buffer, rec);
 				this->_cgis.find(this->_fds[i].fd)->second.setReadComplete();
 				close(this->_fds[i].fd);
 				this->_fds[i].fd = -1;
