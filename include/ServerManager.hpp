@@ -14,6 +14,7 @@ class ServerManager {
 		std::vector<Config> _configs;
 		std::map<int, Response> _responses;
 		std::map<int, CGI>		_cgis;
+		std::map<int, int>		_cgi_fds;
 		int					_nfds;
 		struct pollfd*		_fds;
 		int					_nbr_fd_ready;

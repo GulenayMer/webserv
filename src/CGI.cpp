@@ -5,6 +5,7 @@ CGI::CGI(Response &response, std::string request_body): _response(response), _re
 	this->_done_reading = false;
 	this->_body_complete = false;
 	this->_header_removed = false;
+	this->_vector_pos = 0;
 	this->_bytes_sent = 0;
 	this->env_init();
 	this->set_boundary();
@@ -25,6 +26,7 @@ CGI& CGI::operator=(const CGI& obj)
 		this->_body_complete = obj._body_complete;
 		this->_header_removed = obj._header_removed;
 		this->_content_length = obj._content_length;
+		this->_vector_pos = obj._vector_pos;
 		this->_bytes_sent = obj._bytes_sent;
 		this->_env = obj._env;
 		this->_boundary = obj._boundary;
@@ -76,6 +78,7 @@ void	CGI::env_init()
 	
 	_env["CONTENT_TYPE"] = this->_response.getRequest().get_single_header("Content-Type"); // The MIME type of the query data, such as "text/html".
 	this->_content_length = atol(_response.getRequest().get_single_header("Content-Length").c_str());
+	this->_content_length += this->_response.getRequest().getHeaderLength();
 	_env["CONTENT_LENGTH"] = _response.getRequest().get_single_header("Content-Length"); // The length of the data (in bytes or the number of characters) passed to the CGI program through standard input.
 	//_env["HTTP_FROM"]; // The email address of the user making the request. Most browsers do not support this variable.
 	//_env["HTTP_ACCEPT"]; // A list of the MIME types that the client can accept.
@@ -191,7 +194,7 @@ std::string CGI::get_query()
 		query = "";
 	return query;
 }
-int	CGI::initPipe()
+int	CGI::initOutputPipe()
 {
     if (pipe(this->_output_pipe) < 0)
     {
@@ -205,6 +208,11 @@ int	CGI::initPipe()
 		close(this->_output_pipe[1]);
 		return -1;
 	}
+	return this->_output_pipe[0];
+}
+
+int	CGI::initInputPipe()
+{
 	if (!this->_boundary.empty())
 	{
 		if (pipe(this->_input_pipe) < 0)
@@ -224,7 +232,7 @@ int	CGI::initPipe()
 			return -1;
 		}
 	}
-	return this->_output_pipe[0];
+	return this->_input_pipe[1];
 }
 
 void	CGI::sendResponse()
@@ -292,22 +300,47 @@ void	CGI::set_boundary()
 	}
 }
 
-void	CGI::fill_in_body(char *buffer)
+void	CGI::storeBuffer(char *buffer, size_t received)
 {
-	std::string buff(buffer);
-	int temp;
-	temp = write(this->_input_pipe[1], buffer, 999);
-	if (temp > 0)
-		this->_bytes_sent += temp;
-	//std::cout << "AFTER WRITE" << std::endl;
-	std::cout << RED << "bytes sent: " << this->_bytes_sent << ", content_length: " << this->_content_length << RESET << std::endl;
-	perror("write");
-	//exit(0);
-	//std::cout << RED << "errno: " << errno << RESET << std::endl;
-	if (this->_bytes_sent == this->_content_length)
+	for (size_t i = 0; i < received; i++)
+		this->_request_buff.push_back(buffer[i]);
+}
+
+int		CGI::getOutFd()
+{
+	return this->_output_pipe[0];
+}
+
+int		CGI::getInFd()
+{
+	return this->_input_pipe[1];
+}
+
+void	CGI::writeToCGI()
+{
+	if (this->_request_buff.empty())
 	{
-		this->_body_complete = true;
-		std::cout << "close input pipe" << std::endl;
-		close(this->_input_pipe[1]);
+		this->_vector_pos = 0;
+		return;
+	}
+	size_t sent = write(this->_input_pipe[1], &this->_request_buff[this->_vector_pos], this->_request_buff.size());
+	if (sent > 0)
+	{
+		for (size_t i = this->_vector_pos; i < sent + this->_vector_pos; i++)
+			std::cout << this->_request_buff[i];
+		std::cout << std::endl;
+		this->_vector_pos += sent;
+		if (this->_vector_pos >= this->_request_buff.size())
+		{
+			this->_vector_pos = 0;
+			this->_request_buff.clear();
+		}
+		this->_bytes_sent += sent;
+		std::cout << "total bytes sent: " << this->_bytes_sent << ", content_length: " << this->_content_length << std::endl;
+		if (this->_bytes_sent >= this->_content_length && this->_request_buff.empty())
+		{
+			std::cout << "DONE" << std::endl;
+			this->_body_complete = true;
+		}
 	}
 }

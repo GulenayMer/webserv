@@ -23,6 +23,7 @@ class httpHeader
 		std::string _uri;
 		std::string _version;
 		std::map<std::string, std::string> _header;
+		size_t		_header_length;
 		
 	public:
 		httpHeader();
@@ -40,6 +41,7 @@ class httpHeader
 		void setHeader(std::string name, std::string value);
 		void setMethod(std::string tmp_method);
 		void setVersion(std::string version);
+		size_t getHeaderLength();
 
 		void printHeader();
 };

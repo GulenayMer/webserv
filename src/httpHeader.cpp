@@ -8,6 +8,7 @@ httpHeader::httpHeader()
 httpHeader::httpHeader(std::string header)
 {
 	size_t start = 0, end = 0;
+	this->_header_length = header.find("\r\n\r\n") + 4;
 	end = header.find(" ");
 	std::string tmp_method = header.substr(start, end - start);
 	start = end + 1;
@@ -47,6 +48,7 @@ httpHeader &httpHeader::operator=(const httpHeader& rhs)
 		this->_method = rhs._method;
 		this->_uri = rhs._uri;
 		this->_version = rhs._version;
+		this->_header_length = rhs._header_length;
 	}
 	return *this;
 }
@@ -177,4 +179,9 @@ void httpHeader::printHeader()
 	{
 		std::cout << GREEN << itr->first << RESET << ": " << YELLOW << itr->second.c_str() << RESET << std::endl;
 	}
+}
+
+size_t httpHeader::getHeaderLength()
+{
+	return this->_header_length;
 }

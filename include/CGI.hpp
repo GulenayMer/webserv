@@ -24,6 +24,8 @@ class CGI {
 		bool								_header_removed;
 		char**								_exec_env;
 		std::string							_buffer;
+		std::vector<char>					_request_buff;
+		size_t								_vector_pos;
 		size_t								_content_length;
 		size_t								_bytes_sent;
 		std::map<std::string, std::string>	_env;
@@ -48,15 +50,19 @@ class CGI {
 		std::string get_path_from_map();
 		std::string get_query();
 		std::string& get_boundary();
-		int		initPipe();
+		int		initOutputPipe();
+		int		initInputPipe();
 		Response &getResponse();
 		void	sendResponse();
 		void	add_to_buffer(char *buff);
 		void	setReadComplete();
 		bool	readComplete();
-		void	fill_in_body(char *buffer);
+		void	storeBuffer(char *buffer, size_t received);
 		void	set_boundary();
 		bool	bodyComplete();
+		int		getOutFd();
+		int		getInFd();
+		void	writeToCGI();
 };
 
 
