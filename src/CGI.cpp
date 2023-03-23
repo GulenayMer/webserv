@@ -5,8 +5,10 @@ CGI::CGI(Response &response, std::string request_body): _response(response), _re
 	this->_done_reading = false;
 	this->_body_complete = false;
 	this->_header_removed = false;
+	this->_bytes_sent = 0;
 	this->env_init();
 	this->set_boundary();
+	std::cout << "boundary: " << this->_boundary << std::endl;
 	//std::cout << "CGI" << std::endl;
 	//std::cout << _request_body << std::endl;
 }
@@ -22,6 +24,8 @@ CGI& CGI::operator=(const CGI& obj)
 		this->_done_reading = obj._done_reading;
 		this->_body_complete = obj._body_complete;
 		this->_header_removed = obj._header_removed;
+		this->_content_length = obj._content_length;
+		this->_bytes_sent = obj._bytes_sent;
 		this->_env = obj._env;
 		this->_boundary = obj._boundary;
 		this->_input_pipe[0] = obj._input_pipe[0];
@@ -71,6 +75,7 @@ void	CGI::env_init()
 	//_env["CONTENT_LENGTH"] = std::string("1000");
 	
 	_env["CONTENT_TYPE"] = this->_response.getRequest().get_single_header("Content-Type"); // The MIME type of the query data, such as "text/html".
+	this->_content_length = atol(_response.getRequest().get_single_header("Content-Length").c_str());
 	_env["CONTENT_LENGTH"] = _response.getRequest().get_single_header("Content-Length"); // The length of the data (in bytes or the number of characters) passed to the CGI program through standard input.
 	//_env["HTTP_FROM"]; // The email address of the user making the request. Most browsers do not support this variable.
 	//_env["HTTP_ACCEPT"]; // A list of the MIME types that the client can accept.
@@ -279,6 +284,7 @@ bool	CGI::bodyComplete()
 
 void	CGI::set_boundary()
 {
+	std::cout << _env["CONTENT_TYPE"] << std::endl;
 	size_t pos = _env["CONTENT_TYPE"].find("boundary=");
 	if (pos != std::string::npos) {
 		pos += 9;
@@ -289,33 +295,16 @@ void	CGI::set_boundary()
 void	CGI::fill_in_body(char *buffer)
 {
 	std::string buff(buffer);
-	// if (!this->_header_removed)
-	// {
-	// 	size_t start = buff.find(this->_boundary);
-	// 	buff.erase(0, start);
-	// 	this->_header_removed = true;
-	// }
-	std::cout << CYAN << buff << RESET << std::endl;
-	size_t end = buff.find(this->_boundary + "--");
-	// ssize_t len = buff.length();
-	// if (start == std::string::npos)
-	// 	_errnum = INVALID_REQUEST;
-	// else
-	// {
-	// 	if (end == std::string::npos)
-	// 		end = len;
-	// 	else
-	// 	{
-	// 		end = this->_request_body.find_first_of(" \t\n\r\f\v\0") - 1;
-	// 		this->_body_complete = true;
-	// 	}
-	// 	if (write(this->_input_pipe[1], buff.c_str(), len) != len)
-	// 		_errnum = INCOMPLETE_WRITE;
-	// }
-	//if (this->_body_complete)
-	//_buffer += buffer;
-	write(this->_input_pipe[1], buff.c_str(), buff.length());
-	if (end != std::string::npos)
+	int temp;
+	temp = write(this->_input_pipe[1], buffer, 999);
+	if (temp > 0)
+		this->_bytes_sent += temp;
+	//std::cout << "AFTER WRITE" << std::endl;
+	std::cout << RED << "bytes sent: " << this->_bytes_sent << ", content_length: " << this->_content_length << RESET << std::endl;
+	perror("write");
+	//exit(0);
+	//std::cout << RED << "errno: " << errno << RESET << std::endl;
+	if (this->_bytes_sent == this->_content_length)
 	{
 		this->_body_complete = true;
 		std::cout << "close input pipe" << std::endl;

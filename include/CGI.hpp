@@ -24,6 +24,7 @@ class CGI {
 		bool								_header_removed;
 		char**								_exec_env;
 		std::string							_buffer;
+		size_t								_content_length;
 		size_t								_bytes_sent;
 		std::map<std::string, std::string>	_env;
 		int									_input_pipe[2];

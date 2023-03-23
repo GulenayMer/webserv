@@ -3,12 +3,8 @@
 import cgi, os
 
 form = cgi.FieldStorage()
-for item in form:
-	print("IM A PURPLE PART")
-	print(item)
 
-
-fileitem = form["filename"]
+fileitem = form["data"]
 if fileitem.filename:
    open(os.getcwd() + '/cgi-bin/tmp/' + os.path.basename(fileitem.filename), 'wb').write(fileitem.file.read())
    message = 'The file "' + os.path.basename(fileitem.filename) + '" was uploaded to ' + os.getcwd() + '/cgi-bin/tmp'

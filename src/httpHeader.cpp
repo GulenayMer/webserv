@@ -13,7 +13,6 @@ httpHeader::httpHeader(std::string header)
 	start = end + 1;
 	end = header.find(" ", start);
 	this->_uri = header.substr(start, end - start);
-	//std::cout << _uri << std::endl;
 	start = end + 1;
 	end = header.find("\r\n", start);
 	this->_version = header.substr(start, end - start);
@@ -78,7 +77,8 @@ const std::string httpHeader::get_single_header(std::string entry)
 
 void httpHeader::setHeader(std::string name, std::string value)
 {
-	_header[ name ] = value;
+	this->_header.insert(std::map<std::string, std::string>::value_type(name, value));
+	//_header[ name ] = value;
 }
 
 void httpHeader::setMethod(std::string tmp_method)

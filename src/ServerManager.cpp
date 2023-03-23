@@ -56,6 +56,7 @@ int ServerManager::run_servers()
 	bool	close_connection = false;
 	bool	compress_array = false;
 	int		nbr_fd_ready;
+	int		total_rec = 0;
 	while (SWITCH)
     {
         nbr_fd_ready = poll(this->_fds, this->_nfds, -1);
@@ -72,7 +73,11 @@ int ServerManager::run_servers()
 			if (i < (int)this->get_servers().size())
 			{
 				int	connection_fd;
-				connection_fd = accept(this->_servers[i].get_sockfd(), NULL, NULL);
+				struct sockaddr temp;
+				socklen_t addr_len;
+				connection_fd = accept(this->_servers[i].get_sockfd(), &temp, &addr_len);
+				std::cout << temp.sa_family << std::endl;
+				std::cout << temp.sa_data << std::endl;
 				if (connection_fd < 0)
 				{
                     // TODO avoid killing the server, implement test how to deal with it (This fix might work, need to test it out)
@@ -94,24 +99,27 @@ int ServerManager::run_servers()
 			}
 			else if (this->_fds[i].revents & POLLIN)
 			{
+				std::cout << "POLLIN" << std::endl;
 				close_connection = false;
 				if (this->_responses.find(this->_fds[i].fd) != this->_responses.end())
 				{
 					// receive request ->
-					std::map<int, int>::iterator it = this->_map_server_fd.find(i);
-					char	buffer[this->_servers[it->second].get_config().get_client_max_body_size()];
+					//std::map<int, int>::iterator it = this->_map_server_fd.find(i);
+					//char	buffer[this->_servers[it->second].get_config().get_client_max_body_size()];
+					char	buffer[1000];
 					//TODO implement client max body size
 					int		received;
 
 					memset(buffer, 0, sizeof(buffer));
-					received = recv(this->_fds[i].fd, buffer, sizeof(buffer), MSG_CTRUNC | MSG_DONTWAIT);
+					received = recv(this->_fds[i].fd, buffer, sizeof(buffer) - 1, MSG_CTRUNC | MSG_DONTWAIT);
+					std::cout << GREEN << buffer << RESET << std::endl;
 					std::string request_body = buffer;
-					if (received > this->_servers[it->second].get_config().get_client_max_body_size())
-					{
-						std::cout << "Client intended to send too large body." << std::endl; //TODO -> send 413 - Content Too Large
-						close_connection = true;
-					}
-					else if (received < 0)
+					// if (received > this->_servers[it->second].get_config().get_client_max_body_size())
+					// {
+					// 	std::cout << "Client intended to send too large body." << std::endl; //TODO -> send 413 - Content Too Large
+					// 	close_connection = true;
+					// }
+					if (received < 0)
 					{
 						// removed the errno if statement, needs to be tested
 						close_connection = true;
@@ -124,11 +132,18 @@ int ServerManager::run_servers()
 					}
 					if (!close_connection)
 					{
+						total_rec += received;
+						std::cout << "TOTAL RECEIVED: " << total_rec << std::endl;
+						//std::cout << "NOT CLOSE CON" << std::endl;
 						/* [ prepare response ] */
 						std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
 						std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
 						if (cgi_it != this->_cgis.end())
+						{
+							std::cout << "HERE" << std::endl;
 							cgi_it->second.fill_in_body(buffer);
+							//std::cout << "AFTER FILL BODY" << std::endl;
+						}
 						else
 						{
 							httpHeader request(buffer);
@@ -154,15 +169,16 @@ int ServerManager::run_servers()
 									response_it->second.setCGIFd(fd);
 									//if (cgi_it->second.getResponse().getRequest().get_single_header("Content-Type").compare(0, 20, "multipart/form-data;"))
 									cgi_it->second.fill_in_body(buffer);
+									std::cout << "HERE INIT" << std::endl;
 								}
 							}
 							// if (!response_it->second.response_complete())
 							// 	this->_fds[i].events = POLLIN | POLLOUT;
 						}
-						memset(buffer, 0, sizeof(buffer));
 					}
 					else
 					{
+						std::cout << "closing connfd" << std::endl;
 						this->_responses.erase(this->_fds[i].fd);
 						close(this->_fds[i].fd);
 						this->_fds[i].fd = -1;
@@ -187,6 +203,7 @@ int ServerManager::run_servers()
 			if (this->_fds[i].revents & POLLHUP && this->_cgis.find(this->_fds[i].fd) != this->_cgis.end())
 			{
 				// cgi pipe remote end closed -> read the remaining and close local end
+				std::cout << "POLLHUP" << std::endl;
 				char	buffer[1000];
 				memset(buffer, 0, 1000);
 				while (read(this->_fds[i].fd, buffer, sizeof(buffer)) > 0)
@@ -203,18 +220,22 @@ int ServerManager::run_servers()
 			{
 				//std::cout << RED << "POLLOUT EVENT" << RESET << std::endl;
 				std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
+				std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
 				if (response_it->second.is_cgi())
 				{
-					std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
+					//std::cout << "POLLOUT EVENT CGI" << std::endl;
+					//std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
 					if (cgi_it->second.readComplete())
 					{
+						std::cout << "CGI COMPLETE SEND" << std::endl;
 						cgi_it->second.sendResponse();
 						this->_cgis.erase(cgi_it);
 						this->_fds[i].events = POLLIN;
 					}
 				}
-				else
+				else if (cgi_it == this->_cgis.end())
 				{
+					std::cout << "SEND RESPONSE" << std::endl;
 					response_it->second.send_response();
 					if (response_it->second.response_complete())
 						this->_fds[i].events = POLLIN;
@@ -226,6 +247,7 @@ int ServerManager::run_servers()
 		}
 		if (compress_array)
 		{
+			std::cout << "COMPRESS" << std::endl;
 			compress_array = false;
 			for (int i = 2; i < this->_nfds; i++)
 			{
@@ -254,6 +276,7 @@ int ServerManager::run_servers()
 	{
 		if (this->_fds[i].fd >= 0)
 		{
+			std::cout << "closing fd" << std::endl;
 			close(this->_fds[i].fd);
 			this->_fds[i].fd = -1;
 		}
