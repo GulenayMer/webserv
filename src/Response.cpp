@@ -67,7 +67,8 @@ int 	Response::send_response()
 	if (!file.is_open())
 	{
 		std::cout << std::endl << RED << "CANT OPEN" << RESET << std::endl << std::endl;
-    	send_404(_config.get_root(), response_stream);
+    	// send_404(_config.get_root(), response_stream);
+		response_stream = createError(404);
 	}
     else
     {
@@ -229,4 +230,86 @@ void	Response::setCGIFd(int fd)
 int	Response::getCGIFd()
 {
 	return this->_cgi_fd;
+}
+
+std::ostringstream	Response::createError(int errorNumber)
+{
+	std::string			response_body;
+	std::string			errorName;
+	std::ostringstream	response_stream;
+	std::ifstream error(getErrorPath(errorNumber, errorName));
+
+	if(!error.is_open())
+		std::cerr << RED << "error opening " << errorNumber << " file\n" << RESET << std::endl;
+	else
+	{
+		std::stringstream	file_buffer;
+		file_buffer << error.rdbuf();
+		response_body = file_buffer.str();
+		response_stream << "HTTP/1.1 " << errorNumber << " " << errorName << "\r\n\r\n";
+		response_stream << response_body;
+		error.close();
+	}
+	return (response_stream);
+}
+
+std::string Response::getErrorPath(int errorNumber, std::string& errorName)
+{
+	std::string			path;
+	std::string			errorDir = "error-codes/";
+
+	switch (errorNumber)
+	{
+		case 400:
+			path = errorDir + "400_BadRequest.html";
+			errorName = "Bad Request";
+			break;
+		case 401:
+			path = errorDir + "401_Unauthorized.html";
+			errorName = "Unauthorized";
+			break;
+		case 403:
+			path = errorDir + "403_Forbidden.html";
+			errorName = "Forbidden";
+			break;
+		case 404:
+			path = errorDir + "404_NotFound.html";
+			errorName = "Not Found";
+			break;
+		case 405:
+			path = errorDir + "405_MethodNotAllowed.html";
+			errorName = "Method Not Allowed";
+			break;
+		case 406:
+			path = errorDir + "406_NotAcceptable.html";
+			errorName = "Not Acceptable";
+			break;
+		case 407:
+			path = errorDir + "407_ProxyAuthenticationRequired.html";
+			errorName = "Proxy Authentication Required";
+			break;
+		case 408:
+			path = errorDir + "408_RequestTimeout.html";
+			errorName = "Request Timeout";
+			break;
+		case 500:
+			path = errorDir + "500_InternalServer.html";
+			errorName = "Internal Server";
+			break;
+		case 502:
+			path = errorDir + "502_BadGateaway.html";
+			errorName = "Bad Gateaway";
+			break;
+		case 503:
+			path = errorDir + "503_ServiceUnavailable.html";
+			errorName = "Service Unavailable";
+			break;
+		case 504:
+			path = errorDir + "504_GateawayTimeout.html";
+			errorName = "Gateaway Timeout";
+			break;
+		default:
+			break;
+	}
+	return (path);
 }

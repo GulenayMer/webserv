@@ -33,6 +33,7 @@ class Response
 		httpHeader	 				_request;
     
         Response();
+		static std::string getErrorPath(int errorNumber, std::string& errorName);
 
     public:
 		Response(int conn_fd, int server_fd, Config& config, struct pollfd* fds, int nfds);
@@ -41,7 +42,6 @@ class Response
         ~Response();
 
         int 	send_response();
-
         void 	send_404(std::string root, std::ostringstream &response_stream);
 
 		void	new_request(httpHeader &request);
@@ -58,6 +58,10 @@ class Response
 		MIME	&getTypes();
 		void	setCGIFd(int fd);
 		int		getCGIFd();
+
+		static std::ostringstream	createError(int errorNumber);
 };
+
+
 
 #endif
