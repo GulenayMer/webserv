@@ -7,9 +7,10 @@ CGI::CGI(Response &response): _response(response)
 	this->_header_removed = false;
 	this->_vector_pos = 0;
 	this->_bytes_sent = 0;
+	for (int i = 0; i < 18; i++)
+		this->_exec_env[i] = NULL;
 	this->env_init();
 	this->set_boundary();
-	std::cout << "boundary: " << this->_boundary << std::endl;
 }
 
 CGI::CGI(const CGI& obj): _response(obj._response)
@@ -26,6 +27,9 @@ CGI& CGI::operator=(const CGI& obj)
 		this->_content_length = obj._content_length;
 		this->_vector_pos = obj._vector_pos;
 		this->_bytes_sent = obj._bytes_sent;
+		for (int i = 0; i < 18; i++)
+			this->_exec_env[i] = obj._exec_env[i];
+		//this->_exec_env[0] = obj._exec_env[0];
 		this->_env = obj._env;
 		this->_boundary = obj._boundary;
 		this->_input_pipe[0] = obj._input_pipe[0];
@@ -36,7 +40,14 @@ CGI& CGI::operator=(const CGI& obj)
 	return *this;
 }
 
-CGI::~CGI() {}
+CGI::~CGI()
+{
+	for (int i = 0; this->_exec_env[i]; i++)
+	{
+		if (this->_exec_env[i])
+			free(this->_exec_env[i]);
+	}
+}
 
 void	CGI::env_init()
 {		
@@ -70,10 +81,6 @@ void	CGI::env_init()
 	//_env["REMOTE_USER"]; // The authenticated name of the user.
 	//_env["REMOTE_IDENT"]; // The user making the request. This variable will only be set if NCSA IdentityCheck flag is enabled, and the client machine supports the RFC 931 identification scheme (ident daemon).
 	
-	//test variables
-	//_env["CONTENT_TYPE"] = std::string("application/x-www-form-urlencoded");
-	//_env["CONTENT_LENGTH"] = std::string("1000");
-	
 	_env["CONTENT_TYPE"] = this->_response.getRequest().get_single_header("Content-Type"); // The MIME type of the query data, such as "text/html".
 	this->_content_length = atol(_response.getRequest().get_single_header("Content-Length").c_str());
 	this->_content_length += this->_response.getRequest().getHeaderLength();
@@ -87,19 +94,14 @@ void	CGI::env_init()
 
 void	CGI::env_to_char(void)
 {
-	int i = 0;
-	// TODO ALLOCATION!!!!! CAREFUL!!
 	std::string temp;
-	this->_exec_env = new char*[this->_env.size() + 1];
 	std::map<std::string, std::string>::iterator it = this->_env.begin();
+	int i = 0;
 	while (it != this->_env.end()) {
 		temp = it->first + "=" + it->second;
 		this->_exec_env[i] = strdup(temp.c_str());
-		//std::cout << this->_exec_env[i] << std::endl;
-	
 		it++;
-		i++;
-		
+		i++;	
 	}
 	this->_exec_env[i] = NULL;
 }
@@ -109,9 +111,7 @@ int		CGI::handle_cgi()
     std::ifstream file;
 	std::string new_path = this->_response.getRequest().getUri();
 	std::string shebang;
-	char buff[100000];
 
-	memset(buff, 0, 100000);
 	new_path = remove_end(this->_response.getRequest().getUri(), '?');
    	new_path = "." + new_path;
 	// TODO check if ext is allowed
@@ -139,7 +139,10 @@ int		CGI::handle_cgi()
     if (pid == 0)
         exec_script(this->_input_pipe, this->_output_pipe, new_path, shebang);
     else
+	{
+		close(this->_input_pipe[0]);
 		close(this->_output_pipe[1]);
+	}
 	return this->_output_pipe[0];
 }
 
@@ -151,8 +154,6 @@ void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path, std::
 	close(input_pipe[1]);
     args[0] = strdup(path.c_str());
 	args[1] = NULL;
-	//std::cout << YELLOW << args[1] << RESET << std::endl;
-    args[2] = NULL;
 	dup2(output_pipe[1], STDOUT_FILENO);
 	close(output_pipe[1]);
 	dup2(input_pipe[0], STDIN_FILENO);

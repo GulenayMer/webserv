@@ -36,7 +36,7 @@ class ServerManager {
 
 		std::vector<Server>	get_servers();
 		Server				get_server_at(int i);
-		bool	initCGI(std::map<int, Response>::iterator &response_it, char *buffer, ssize_t received);
+		bool	initCGI(Response &response, char *buffer, ssize_t received);
 };
 
 #endif

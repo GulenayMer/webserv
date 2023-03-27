@@ -21,7 +21,7 @@ class CGI {
 		bool								_done_reading;
 		bool								_body_complete;
 		bool								_header_removed;
-		char**								_exec_env;
+		char*								_exec_env[18];
 		std::string							_buffer;
 		std::vector<char>					_request_buff;
 		std::vector<char>					_response_buff;
