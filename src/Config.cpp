@@ -6,7 +6,7 @@ Config::Config(): _error_code(0)
 	this->set_port(80);
 	this->set_host(inet_addr("127.0.0.1"));
 	this->set_server_name("default");
-	this->set_client_max_body_size(1024);
+	this->set_client_max_body_size(1048576);
 	this->set_autoindex(false);
 	this->set_root("");
 	this->set_index("");

@@ -24,6 +24,7 @@ class httpHeader
 		std::string _version;
 		std::map<std::string, std::string> _header;
 		size_t		_header_length;
+		size_t		_content_length;
 		
 	public:
 		httpHeader();
@@ -42,6 +43,7 @@ class httpHeader
 		void setMethod(std::string tmp_method);
 		void setVersion(std::string version);
 		size_t getHeaderLength();
+		size_t getContentLength();
 
 		void printHeader();
 };

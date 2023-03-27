@@ -77,7 +77,7 @@ void	CGI::env_init()
 	_env["CONTENT_TYPE"] = this->_response.getRequest().get_single_header("Content-Type"); // The MIME type of the query data, such as "text/html".
 	this->_content_length = atol(_response.getRequest().get_single_header("Content-Length").c_str());
 	this->_content_length += this->_response.getRequest().getHeaderLength();
-	_env["CONTENT_LENGTH"] = _response.getRequest().get_single_header("Content-Length"); // The length of the data (in bytes or the number of characters) passed to the CGI program through standard input.
+	_env["CONTENT_LENGTH"] = to_string(this->_content_length); // The length of the data (in bytes or the number of characters) passed to the CGI program through standard input.
 	//_env["HTTP_FROM"]; // The email address of the user making the request. Most browsers do not support this variable.
 	//_env["HTTP_ACCEPT"]; // A list of the MIME types that the client can accept.
 	_env["HTTP_USER_AGENT"] = _response.getRequest().get_single_header("User-Agent");; // The browser the client is using to issue the request.

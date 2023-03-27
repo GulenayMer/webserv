@@ -30,6 +30,7 @@ httpHeader::httpHeader(std::string header)
 		}
 		start = end + 2;
 	}
+	this->_content_length = atol(this->get_single_header("Content-Length").c_str());
 }
 
 httpHeader::~httpHeader()
@@ -184,4 +185,9 @@ void httpHeader::printHeader()
 size_t httpHeader::getHeaderLength()
 {
 	return this->_header_length;
+}
+
+size_t httpHeader::getContentLength()
+{
+	return this->_content_length;
 }

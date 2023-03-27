@@ -64,7 +64,7 @@ int ServerManager::run_servers()
         {
             // TODO avoid killing the server, implement test how to deal with it 
 			perror("poll");
-            return 1;
+			continue ;
         }
 		for (int i = 0; i < this->_nfds; i++)
 		{
@@ -80,7 +80,6 @@ int ServerManager::run_servers()
 				std::cout << temp.sa_data << std::endl;
 				if (connection_fd < 0)
 				{
-                    // TODO avoid killing the server, implement test how to deal with it (This fix might work, need to test it out)
 					perror("accept");
 					nbr_fd_ready--;
 					continue ;
@@ -104,9 +103,8 @@ int ServerManager::run_servers()
 				if (this->_responses.find(this->_fds[i].fd) != this->_responses.end())
 				{
 					// receive request ->
-					//std::map<int, int>::iterator it = this->_map_server_fd.find(i);
-					//char	buffer[this->_servers[it->second].get_config().get_client_max_body_size()];
-					char	buffer[2000];
+					std::map<int, int>::iterator it = this->_map_server_fd.find(i);
+					char	buffer[this->_servers[it->second].get_config().get_client_max_body_size()];
 					//TODO implement client max body size
 					ssize_t		received;
 
@@ -147,6 +145,18 @@ int ServerManager::run_servers()
 						else
 						{
 							httpHeader request(buffer);
+							if (request.getContentLength() > this->_servers[it->second].get_config().get_client_max_body_size())
+							{
+								//TODO send 413 Content Too Large
+								// this->_responses.erase(this->_fds[i].fd);
+								// close(this->_fds[i].fd);
+								// this->_fds[i].fd = -1;
+								// compress_array = true;
+							}
+							if (received - request.getHeaderLength() > (size_t)atol(request.get_single_header("Content-Length").c_str()))
+							{
+								//TODO send 400 or 204
+							}
 							request.printHeader();
 							response_it->second.new_request(request);
 							response_it->second.send_response();
