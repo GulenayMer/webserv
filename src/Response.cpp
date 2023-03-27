@@ -68,7 +68,7 @@ int 	Response::send_response()
 	{
 		std::cout << std::endl << RED << "CANT OPEN" << RESET << std::endl << std::endl;
     	// send_404(_config.get_root(), response_stream);
-		response_stream = createError(404);
+		response_stream << createError(404);
 	}
     else
     {
@@ -232,12 +232,12 @@ int	Response::getCGIFd()
 	return this->_cgi_fd;
 }
 
-std::ostringstream	Response::createError(int errorNumber)
+std::string	Response::createError(int errorNumber)
 {
 	std::string			response_body;
 	std::string			errorName;
 	std::ostringstream	response_stream;
-	std::ifstream error(getErrorPath(errorNumber, errorName));
+	std::ifstream error(getErrorPath(errorNumber, errorName).c_str());
 
 	if(!error.is_open())
 		std::cerr << RED << "error opening " << errorNumber << " file\n" << RESET << std::endl;
@@ -250,7 +250,7 @@ std::ostringstream	Response::createError(int errorNumber)
 		response_stream << response_body;
 		error.close();
 	}
-	return (response_stream);
+	return (response_stream.str());
 }
 
 std::string Response::getErrorPath(int errorNumber, std::string& errorName)

@@ -59,7 +59,7 @@ class Response
 		void	setCGIFd(int fd);
 		int		getCGIFd();
 
-		static std::ostringstream	createError(int errorNumber);
+		static std::string	createError(int errorNumber);
 };
 
 
