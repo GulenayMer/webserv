@@ -55,7 +55,6 @@ int ServerManager::run_servers()
 {
 	// This whole thing probably has memory leaks
 	int		nbr_fd_ready;
-	std::string temp_buff;
 	while (SWITCH)
     {
         nbr_fd_ready = poll(this->_fds, this->_nfds, -1);
@@ -72,11 +71,7 @@ int ServerManager::run_servers()
 			if (i < (int)this->get_servers().size())
 			{
 				int	connection_fd;
-				struct sockaddr temp;
-				socklen_t addr_len;
-				connection_fd = accept(this->_servers[i].get_sockfd(), &temp, &addr_len);
-				std::cout << temp.sa_family << std::endl;
-				std::cout << temp.sa_data << std::endl;
+				connection_fd = accept(this->_servers[i].get_sockfd(), NULL, NULL);
 				if (connection_fd < 0)
 				{
 					perror("accept");
@@ -159,33 +154,8 @@ int ServerManager::run_servers()
 							response_it->second.send_response();
 							if (response_it->second.is_cgi()) // init cgi
 							{
-								// if (this->initCGI(response_it, buffer, received))
-								// 	this->_fds[i].events = POLLIN | POLLOUT;
-								CGI cgi(response_it->second);
-								int out_fd = cgi.initOutputPipe();
-								int in_fd = cgi.initInputPipe();
-								if (out_fd < 0 || in_fd < 0)
-								{
-									std::cout << RED << "internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500
-								}
-								else
-								{
-									this->_cgis.insert(std::map<int, CGI>::value_type(out_fd, cgi));
-									this->_cgi_fds.insert(std::map<int, int>::value_type(in_fd, out_fd));
-									cgi_it = this->_cgis.find(out_fd);
-									this->_fds[_nfds].fd = out_fd;
-									this->_fds[_nfds].events = POLLIN;
-									this->_fds[_nfds].revents = 0;
-									_nfds++;
-									this->_fds[_nfds].fd = in_fd;
-									this->_fds[_nfds].events = POLLOUT;
-									this->_fds[_nfds].revents = 0;
-									_nfds++;
-									cgi_it->second.handle_cgi();
-									response_it->second.setCGIFd(out_fd);
-									cgi_it->second.storeBuffer(buffer, received);
-									cgi_it->second.writeToCGI();
-								}
+								if (this->initCGI(response_it->second, buffer, received))
+									this->_fds[i].events = POLLIN | POLLOUT;
 							}
 						}
 					}
@@ -322,9 +292,9 @@ void	ServerManager::close_connection(int i)
 	this->_compress_array = true;
 }
 
-bool	ServerManager::initCGI(std::map<int, Response>::iterator &response_it, char *buffer, ssize_t received)
+bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received)
 {
-	CGI cgi(response_it->second);
+	CGI cgi(response);
 	int out_fd = cgi.initOutputPipe();
 	int in_fd = cgi.initInputPipe();
 	if (out_fd < 0 || in_fd < 0)
@@ -346,7 +316,7 @@ bool	ServerManager::initCGI(std::map<int, Response>::iterator &response_it, char
 		this->_fds[_nfds].revents = 0;
 		_nfds++;
 		cgi_it->second.handle_cgi();
-		response_it->second.setCGIFd(out_fd);
+		response.setCGIFd(out_fd);
 		cgi_it->second.storeBuffer(buffer, received);
 		cgi_it->second.writeToCGI();
 	}
