@@ -60,6 +60,7 @@ class Response
 		int		getCGIFd();
 
 		static std::string	createError(int errorNumber);
+		void getPath();
 };
 
 

@@ -40,11 +40,8 @@ Response::~Response()
 
 }
 
-int 	Response::send_response()
+void Response::getPath()
 {
-	int	sent;
-	std::ostringstream response_stream;
-/* --------------------------------------------------------------------------- */
     //TODO get path function
 	_respond_path.clear();
 	_response_body.clear();
@@ -56,31 +53,31 @@ int 	Response::send_response()
 	{
 		_is_cgi = true;
 		//this->_cgi.setVars(_config, _request);
-		return 0;
+		return;
 	}
     else
     	_respond_path = _request.getUri();
     _respond_path = _config.get_root() + clean_response_path(_respond_path);
-    std::ifstream file(_respond_path.c_str());
+}
+
+int 	Response::send_response()
+{
+	int	sent;
+	std::ostringstream response_stream;
 /* --------------------------------------------------------------------------- */
+	getPath();
+	if (_is_cgi)
+		return 0;
+/* --------------------------------------------------------------------------- */
+    std::ifstream file(_respond_path.c_str());
     std::cout << RED << _respond_path << RESET << std::endl;
 	if (!file.is_open())
 	{
 		std::cout << std::endl << RED << "CANT OPEN" << RESET << std::endl << std::endl;
-    	// send_404(_config.get_root(), response_stream);
 		response_stream << createError(404);
 	}
     else
     {
-        /* 
-			TODO
-				- which response
-				- resopose number
-				- response type
-				- response body
-				- send the response
-				- close the file
-		*/
 		if (_request.getMethod() == GET)
 		{
 			responseToGET(file, _request.getUri(), response_stream);
@@ -96,7 +93,7 @@ int 	Response::send_response()
 		}
 
     }
-	
+/* --------------------------------------------------------------------------- */	
 	// Send the response to the client
 	_response = response_stream.str();
 	//std::cout << _response << std::endl;
