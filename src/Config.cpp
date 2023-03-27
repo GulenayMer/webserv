@@ -68,7 +68,7 @@ std::string							&Config::get_error_path(int error)
 	return this->get_default_error().at(error);
 }
 
-int 						&Config::get_client_max_body_size()
+size_t 						&Config::get_client_max_body_size()
 {
 	return this->_client_max_body_size;
 }
