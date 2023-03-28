@@ -105,7 +105,7 @@ int 	Response::send_response()
 			}
 			if (_request.getMethod() == DELETE)
 			{
-				response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A DELETE REQUEST";
+				response_stream << HTTP_OK << _types.get_content_type(".html") << "THERE WAS A DELETE REQUEST";
 			}
 
 		}
@@ -142,7 +142,7 @@ void	Response::responseToGET(std::ifstream &file, const std::string& path, std::
 	}
 	file_buffer << file.rdbuf();
 	_response_body = file_buffer.str();
-	response_stream << HTTPS_OK << "Content-Length: " << _response_body.length() << "\nConnection: Keep-Alive\n";
+	response_stream << HTTP_OK << "Content-Length: " << _response_body.length() << "\nConnection: Keep-Alive\n";
 	response_stream << type << _response_body;
 	//std::cout << BLUE << type << RESET << std::endl;
 	// if (_respond_path.compare(_respond_path.length() - 5, 5, ".html") == 0) {
@@ -259,12 +259,12 @@ std::string	Response::createError(int errorNumber)
 	{
 		std::stringstream	file_buffer;
 		file_buffer << error.rdbuf();
-		std::cout << BLUE << file_buffer.str() << RESET << std::endl;
 		response_body = file_buffer.str();
-		response_stream << "HTTP/1.1 " << errorNumber << " " << errorName << "\r\n" << "Content-Length: " << response_body.length() <<"\r\n\r\n";
+		response_stream << "HTTP/1.1 " << errorNumber << " " << errorName << "\r\n" << "Content-Type: text/html; charset=utf-8\r\n" << "Content-Length: " << response_body.length() << "\r\n\r\n";
 		response_stream << response_body;
 		error.close();
 	}
+	//std::cout << BLUE << response_stream.str() << RESET << std::endl;
 	return (response_stream.str());
 }
 
@@ -329,7 +329,7 @@ std::string Response::getErrorPath(int &errorNumber, std::string& errorName)
 			break;
 		case 500:
 			path = errorDir + "500_InternalServer.html";
-			errorName = "Internal Server";
+			errorName = "Internal Server Error";
 			break;
 		case 501:
 			path = errorDir + "501_NotImplemented.html";

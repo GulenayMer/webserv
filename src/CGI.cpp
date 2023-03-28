@@ -1,5 +1,7 @@
 # include "../include/CGI.hpp"
 
+std::map<int, int> exit_status;
+
 CGI::CGI(Response &response): _response(response)
 {
 	this->_done_reading = false;
@@ -9,6 +11,7 @@ CGI::CGI(Response &response): _response(response)
 	this->_bytes_sent = 0;
 	for (int i = 0; i < 18; i++)
 		this->_exec_env[i] = NULL;
+	this->_pid = 0;
 	this->env_init();
 	this->set_boundary();
 }
@@ -29,7 +32,7 @@ CGI& CGI::operator=(const CGI& obj)
 		this->_bytes_sent = obj._bytes_sent;
 		for (int i = 0; i < 18; i++)
 			this->_exec_env[i] = obj._exec_env[i];
-		//this->_exec_env[0] = obj._exec_env[0];
+		this->_pid = obj._pid;
 		this->_env = obj._env;
 		this->_boundary = obj._boundary;
 		this->_input_pipe[0] = obj._input_pipe[0];
@@ -130,8 +133,8 @@ int		CGI::handle_cgi()
 	shebang = &shebang[pos] + 1;
 	file.close();
 	this->env_to_char();
-	pid_t pid = fork();
-    if (pid == 0)
+	this->_pid = fork();
+    if (this->_pid == 0)
         exec_script(this->_input_pipe, this->_output_pipe, new_path);
     else
 	{
@@ -230,28 +233,47 @@ void	CGI::sendResponse()
 	size_t	sent;
 	size_t	content_index = 0;
 	std::ostringstream response_stream;
+	std::string response_string;
 	std::string content;
-	for (; this->_response_buff[content_index] != '\n'; content_index++)
-		content += this->_response_buff[content_index];
-	for (size_t i = content_index + 2; i > content_index; content_index++)
-		content += this->_response_buff[content_index];
-	std::cout << content << std::endl;
-	if (content.find("Content-Type") == std::string::npos && content.find("content-type") == std::string::npos)
+	std::cout << "HERE" << std::endl;
+	if (exit_status.find(this->_pid)->second != 0)
 	{
-		//TODO send error content type unknown -> internal server error probably
+		//TODO send 500 -> Internal Server Error
+		response_string = this->getResponse().createError(500);
 		std::cout << "ERROR" << std::endl;
+		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
+		std::cout << response_string << std::endl;
 	}
-	std::cout << RED << "Sending response..." << RESET << std::endl;
-	response_stream << HTTPS_OK << "Content-Length: " << _response_buff.size() - content.size() << "\n" << "Connection: Keep-Alive\n";
-	std::string temp = response_stream.str();
-	for (ssize_t i = temp.size() - 1; i >= 0; i--)
-		this->_response_buff.insert(this->_response_buff.begin(), temp[i]);
-	for (size_t i = 0; i < _response_buff.size(); i++)
-		std::cout << BLUE << _response_buff[i];
-	std::cout << RESET << std::endl;
-	sent = send(this->_response.getConnFd(), &_response_buff[0], _response_buff.size(), MSG_DONTWAIT);
+	else
+	{
+		for (; this->_response_buff[content_index] != '\n'; content_index++)
+			content += this->_response_buff[content_index];
+		for (size_t i = content_index + 2; i > content_index; content_index++)
+			content += this->_response_buff[content_index];
+		std::cout << content << std::endl;
+		if (content.find("Content-Type") == std::string::npos && content.find("content-type") == std::string::npos)
+		{
+			//TODO send error content type unknown -> internal server error probably
+			response_string = this->getResponse().createError(500);
+			std::cout << "ERROR" << std::endl;
+			sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
+		}
+		else
+		{
+			std::cout << RED << "Sending response..." << RESET << std::endl;
+			response_stream << HTTP_404 << "Content-Length: " << _response_buff.size() - content.size() << "\n" << "Connection: Keep-Alive\n";
+			response_string = response_stream.str();
+			for (ssize_t i = response_string.size() - 1; i >= 0; i--)
+				this->_response_buff.insert(this->_response_buff.begin(), response_string[i]);
+			for (size_t i = 0; i < _response_buff.size(); i++)
+				std::cout << BLUE << _response_buff[i];
+			std::cout << RESET << std::endl;
+			sent = send(this->_response.getConnFd(), &_response_buff[0], _response_buff.size(), MSG_DONTWAIT);
+		}
+	}
 	if (sent > 0)
 	{
+		exit_status.erase(this->_pid);
 		// _bytes_sent += sent;
 		// _buffer.erase(0, sent);
 		// std::cout << RED << "\n\n\n\n" << _buffer << RESET << std::endl;
@@ -332,9 +354,9 @@ void	CGI::writeToCGI()
 	size_t sent = write(this->_input_pipe[1], &this->_request_buff[this->_vector_pos], this->_request_buff.size());
 	if (sent > 0)
 	{
-		for (size_t i = this->_vector_pos; i < sent + this->_vector_pos; i++)
-			std::cout << this->_request_buff[i];
-		std::cout << std::endl;
+		// for (size_t i = this->_vector_pos; i < sent + this->_vector_pos; i++)
+		// 	std::cout << this->_request_buff[i];
+		// std::cout << std::endl;
 		this->_vector_pos += sent;
 		if (this->_vector_pos >= this->_request_buff.size())
 		{
