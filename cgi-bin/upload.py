@@ -6,7 +6,7 @@ import sys
 # for line in sys.stdin:
 #     print(line)
 form = cgi.FieldStorage()
-sdawd
+
 fileitem = form["data"]
 if fileitem.filename:
    if os.path.exists(os.getcwd() + '/cgi-bin/tmp') == False:

@@ -173,6 +173,7 @@ extern int SWITCH;
 /* HTML response */
 
 #define HTTP_OK "HTTP/1.1 200 OK\r\n"
+#define HTTP_204 "HTTP/1.1 204 No Content\r\n"
 #define HTTP_404 "HTTP/1.1 404 Not Found\r\n"
 #define HTTP_500 "HTTP/1.1 500 Internal Server Error\r\n"
 

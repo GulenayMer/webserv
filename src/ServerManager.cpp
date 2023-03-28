@@ -103,9 +103,9 @@ int ServerManager::run_servers()
 
 					memset(buffer, 0, sizeof(buffer));
 					received = recv(this->_fds[i].fd, buffer, sizeof(buffer), MSG_DONTWAIT);
-					// for (ssize_t l = 0; l < received; l++)
-					// 	std::cout << GREEN << buffer[l];
-					// std::cout << RESET << std::endl;
+					for (ssize_t l = 0; l < received; l++)
+						std::cout << GREEN << buffer[l];
+					std::cout << RESET << std::endl;
 					std::string request_body = buffer;
 					// if (received > this->_servers[it->second].get_config().get_client_max_body_size())
 					// {
@@ -139,13 +139,15 @@ int ServerManager::run_servers()
 							httpHeader request(buffer);
 							if (request.getContentLength() > response_it->second.getConfig().get_client_max_body_size())
 							{
-								//TODO send 413 Content Too Large
+								std::string error = response_it->second.createError(413);
+								send(this->_fds[i].fd, &error[0], error.length(), MSG_DONTWAIT);
 								this->close_connection(i);
 								continue ;
 							}
 							else if (received - request.getHeaderLength() > request.getContentLength())
 							{
-								//TODO send 400 or 204
+								std::string error = response_it->second.createError(400);
+								send(this->_fds[i].fd, &error[0], error.length(), MSG_DONTWAIT);
 								this->close_connection(i);
 								continue ;
 							}
