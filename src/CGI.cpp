@@ -154,7 +154,7 @@ void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
 	close(input_pipe[0]);
     execve(args[0], args, this->_exec_env);
     perror("execve failed.");
-	exit(0);
+	exit(1);
 }
 
 std::string CGI::get_path_from_map()
@@ -206,24 +206,21 @@ int	CGI::initOutputPipe()
 
 int	CGI::initInputPipe()
 {
-	if (!this->_boundary.empty())
+	if (pipe(this->_input_pipe) < 0)
 	{
-		if (pipe(this->_input_pipe) < 0)
-		{
-			std::cout << "Error opening pipe" << std::endl;
-			close(this->_output_pipe[0]);
-			close(this->_output_pipe[1]);
-			return -1;
-		}
-		if (fcntl(this->_input_pipe[1], F_SETFL, O_NONBLOCK) == -1)
-		{
-			perror("fcntl set_flags");
-			close(this->_output_pipe[0]);
-			close(this->_output_pipe[1]);
-			close(this->_input_pipe[0]);
-			close(this->_input_pipe[1]);
-			return -1;
-		}
+		std::cout << "Error opening pipe" << std::endl;
+		close(this->_output_pipe[0]);
+		close(this->_output_pipe[1]);
+		return -1;
+	}
+	if (fcntl(this->_input_pipe[1], F_SETFL, O_NONBLOCK) == -1)
+	{
+		perror("fcntl set_flags");
+		close(this->_output_pipe[0]);
+		close(this->_output_pipe[1]);
+		close(this->_input_pipe[0]);
+		close(this->_input_pipe[1]);
+		return -1;
 	}
 	return this->_input_pipe[1];
 }
