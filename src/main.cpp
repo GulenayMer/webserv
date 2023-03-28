@@ -24,6 +24,7 @@ int main(int argc, char** argv)
 		//std::cout << configs.get_config(0) << std::endl;
 
 	signal(SIGINT, signal_callback_handler);
+	signal(SIGTSTP, signal_callback_handler);
 	signal(SIGCHLD, grim_reaper);
 	ServerManager manager(configs.get_configs());
 	

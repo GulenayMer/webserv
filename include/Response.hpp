@@ -33,7 +33,7 @@ class Response
 		httpHeader	 				_request;
     
         Response();
-		static std::string getErrorPath(int errorNumber, std::string& errorName);
+		static std::string getErrorPath(int &errorNumber, std::string& errorName);
 
     public:
 		Response(int conn_fd, int server_fd, Config& config, struct pollfd* fds, int nfds);
