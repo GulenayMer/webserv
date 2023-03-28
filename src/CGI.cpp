@@ -77,18 +77,13 @@ void	CGI::env_init()
 	_env["QUERY_STRING"] = this->get_query(); // The query information passed to the program. It is appended to the URL with a "?".
 	_env["REMOTE_HOST"] = _response.getRequest().get_single_header("Host"); // The remote hostname of the user making the request.
 	_env["REMOTE_ADDR"] = std::string("127.0.0.1");//_response.getRequest().get_single_header("Host"); // The remote IP address of the user making the request.
-	//_env["AUTH_TYPE"]; // The authentication method used to validate a user.
-	//_env["REMOTE_USER"]; // The authenticated name of the user.
-	//_env["REMOTE_IDENT"]; // The user making the request. This variable will only be set if NCSA IdentityCheck flag is enabled, and the client machine supports the RFC 931 identification scheme (ident daemon).
-	
 	_env["CONTENT_TYPE"] = this->_response.getRequest().get_single_header("Content-Type"); // The MIME type of the query data, such as "text/html".
 	this->_content_length = atol(_response.getRequest().get_single_header("Content-Length").c_str());
 	this->_content_length += this->_response.getRequest().getHeaderLength();
 	_env["CONTENT_LENGTH"] = to_string(this->_content_length); // The length of the data (in bytes or the number of characters) passed to the CGI program through standard input.
-	//_env["HTTP_FROM"]; // The email address of the user making the request. Most browsers do not support this variable.
 	//_env["HTTP_ACCEPT"]; // A list of the MIME types that the client can accept.
 	_env["HTTP_USER_AGENT"] = _response.getRequest().get_single_header("User-Agent");; // The browser the client is using to issue the request.
-	_env["HTTP_REFERER"] = _response.getRequest().get_single_header("Referer");; // The URL of the document that the client points to before accessing the CGI program. */
+	_env["HTTP_REFERER"] = _response.getRequest().get_single_header("Referer"); // The URL of the document that the client points to before accessing the CGI program. */
 }
 
 
@@ -146,9 +141,8 @@ int		CGI::handle_cgi()
 	return this->_output_pipe[0];
 }
 
-void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path, std::string program)
+void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
 {
-    (void)program;
 	char *args[2];
 	close(output_pipe[0]);
 	close(input_pipe[1]);

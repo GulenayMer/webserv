@@ -46,7 +46,7 @@ class CGI {
 		void		env_init(void);
 		void		env_to_char(void);
 		int			handle_cgi();//std::ostringstream &response_stream);
-		void		exec_script(int *input_pipe, int *output_pipe, std::string path, std::string program);
+		void		exec_script(int *input_pipe, int *output_pipe, std::string path);
 		std::string get_path_from_map();
 		std::string get_query();
 		std::string& get_boundary();
