@@ -76,6 +76,14 @@ int 	Response::send_response()
 	{
 		response_stream << createError(405);
 	}
+	else if (_request.getMethod() == POST && _request.getContentLength() == 0)
+	{
+		response_stream << createError(400);
+	}
+	else if (_request.getMethod() == POST && _request.getContentLength() > _config.get_client_max_body_size())
+	{
+		response_stream << createError(413);
+	}
 	else
 	{
 		getPath();
