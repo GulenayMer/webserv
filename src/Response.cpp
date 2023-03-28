@@ -64,41 +64,58 @@ int 	Response::send_response()
 {
 	int	sent;
 	std::ostringstream response_stream;
-/* --------------------------------------------------------------------------- */
-	getPath();
-	if (_is_cgi)
-		return 0;
-/* --------------------------------------------------------------------------- */
-    std::ifstream file(_respond_path.c_str());
-    std::cout << RED << _respond_path << RESET << std::endl;
-	if (!file.is_open())
+	_respond_path.clear();
+	_response_body.clear();
+	_response.clear();
+	_is_cgi = false;
+	if (_request.getMethod() > 2)
 	{
-		std::cout << std::endl << RED << "CANT OPEN" << RESET << std::endl << std::endl;
-		response_stream << createError(404);
+		response_stream << createError(501);
 	}
-    else
-    {
-		if (_request.getMethod() == GET)
+	else if(!getConfig().find_location("/")->check_method_at(_request.getMethod()))
+	{
+		response_stream << createError(405);
+	}
+	else
+	{
+		getPath();
+		if (_is_cgi)
+			return 0;
+		std::ifstream file(_respond_path.c_str());
+		std::cout << RED << _respond_path << RESET << std::endl;
+		if (!file.is_open())
 		{
-			responseToGET(file, _request.getUri(), response_stream);
+			std::cout << std::endl << RED << "CANT OPEN" << RESET << std::endl << std::endl;
+			response_stream << createError(404);
 		}
-		// if (_request.getMethod() == POST)
-		// {
-		// 	responseToPOST(_request, response_stream);
-		// 	//response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A POST REQUEST";
-		// }
-		if (_request.getMethod() == DELETE)
+		else
 		{
-			response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A DELETE REQUEST";
-		}
+			if (_request.getMethod() == GET)
+			{
+				if (_is_cgi)
+					return 0;
+				responseToGET(file, _request.getUri(), response_stream);
+			}
+			if (_request.getMethod() == POST)
+			{
+				if (_is_cgi)
+					return 0;
+				// responseToPOST(_request, response_stream);
+				// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A POST REQUEST";
+			}
+			if (_request.getMethod() == DELETE)
+			{
+				response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A DELETE REQUEST";
+			}
 
-    }
+		}
+    	file.close();
+	}
 /* --------------------------------------------------------------------------- */	
 	// Send the response to the client
 	_response = response_stream.str();
 	//std::cout << _response << std::endl;
 	sent = send(this->_conn_fd, _response.c_str(), _response.length(), MSG_DONTWAIT);
-    file.close();
 	if (sent > 0)
 	{
 		_bytes_sent += sent;
@@ -158,7 +175,7 @@ void	Response::responseToGET(std::ifstream &file, const std::string& path, std::
 // 	// TODO change CGI constructor to accept httpheader instead of only URI
 // 	// CGI handler(this->_config, request, _response_body, _fds, _nfds);
 // 	// 	if (handler.handle_cgi() == EXIT_SUCCESS)
-// 	// 		response_stream << HTTPS_OK << "Content-Length: " << _response_body.length() << "\n" << "Connection: Keep-Alive\n" << _types.get_content_type(".html") << handler.get_response_body();
+//	// 		response_stream << HTTPS_OK << "Content-Length: " << _response_body.length() << "\n" << "Connection: Keep-Alive\n" << _types.get_content_type(".html") << handler.get_response_body();
 // 	// 	else
 // 	// 		send_404(this->_config.get_root(), response_stream);
 // }
@@ -242,18 +259,19 @@ std::string	Response::createError(int errorNumber)
 	{
 		std::stringstream	file_buffer;
 		file_buffer << error.rdbuf();
+		std::cout << BLUE << file_buffer.str() << RESET << std::endl;
 		response_body = file_buffer.str();
-		response_stream << "HTTP/1.1 " << errorNumber << " " << errorName << "\r\n\r\n";
+		response_stream << "HTTP/1.1 " << errorNumber << " " << errorName << "\r\n" << "Content-Length: " << response_body.length() <<"\r\n\r\n";
 		response_stream << response_body;
 		error.close();
 	}
 	return (response_stream.str());
 }
 
-std::string Response::getErrorPath(int errorNumber, std::string& errorName)
+std::string Response::getErrorPath(int &errorNumber, std::string& errorName)
 {
 	std::string			path;
-	std::string			errorDir = "error-codes/";
+	std::string			errorDir = "docs/www/error/";
 
 	switch (errorNumber)
 	{
@@ -289,9 +307,33 @@ std::string Response::getErrorPath(int errorNumber, std::string& errorName)
 			path = errorDir + "408_RequestTimeout.html";
 			errorName = "Request Timeout";
 			break;
+		case 411:
+			path = errorDir + "411_LengthRequired.html";
+			errorName = "Length Required";
+			break;
+		case 413:
+			path = errorDir + "413_PayloadTooLarge.html";
+			errorName = "Payload Length";
+			break;
+		case 414:
+			path = errorDir + "414_URITooLarge.html";
+			errorName = "URI Length";
+			break;
+		case 415:
+			path = errorDir + "415_UnsupportedMediaType.html";
+			errorName = "Unsupported Media Type";
+			break;
+		case 429:
+			path = errorDir + "429_TooManyRequests.html";
+			errorName = "Many Requests";
+			break;
 		case 500:
 			path = errorDir + "500_InternalServer.html";
 			errorName = "Internal Server";
+			break;
+		case 501:
+			path = errorDir + "501_NotImplemented.html";
+			errorName = "Not Implemented";
 			break;
 		case 502:
 			path = errorDir + "502_BadGateaway.html";
@@ -305,7 +347,14 @@ std::string Response::getErrorPath(int errorNumber, std::string& errorName)
 			path = errorDir + "504_GateawayTimeout.html";
 			errorName = "Gateaway Timeout";
 			break;
+		case 505:
+			path = errorDir + "505_HTTPVersionNotSupported.html";
+			errorName = "Unsupported HTTP Version";
+			break;
 		default:
+			path = errorDir + "418_Imateapot.html";
+			errorName = "I'm a teapot";
+			errorNumber = 418;
 			break;
 	}
 	return (path);
