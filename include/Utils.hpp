@@ -174,5 +174,6 @@ extern int SWITCH;
 
 #define HTTPS_OK "HTTP/1.1 200 OK\r\n"
 #define HTTPS_404 "HTTP/1.1 200 OK\r\n"
+#define HTTPS_204 "HTTP/1.1 204 No Content\r\n"
 
 #endif
