@@ -235,10 +235,8 @@ void	CGI::sendResponse()
 	std::ostringstream response_stream;
 	std::string response_string;
 	std::string content;
-	std::cout << "HERE" << std::endl;
 	if (exit_status.find(this->_pid)->second != 0)
 	{
-		//TODO send 500 -> Internal Server Error
 		response_string = this->getResponse().createError(500);
 		std::cout << "ERROR" << std::endl;
 		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
@@ -253,7 +251,6 @@ void	CGI::sendResponse()
 		std::cout << content << std::endl;
 		if (content.find("Content-Type") == std::string::npos && content.find("content-type") == std::string::npos)
 		{
-			//TODO send error content type unknown -> internal server error probably
 			response_string = this->getResponse().createError(500);
 			std::cout << "ERROR" << std::endl;
 			sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);

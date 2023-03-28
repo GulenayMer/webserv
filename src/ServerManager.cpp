@@ -137,20 +137,6 @@ int ServerManager::run_servers()
 						else //not a cgi fd
 						{
 							httpHeader request(buffer);
-							if (request.getContentLength() > response_it->second.getConfig().get_client_max_body_size())
-							{
-								std::string error = response_it->second.createError(413);
-								send(this->_fds[i].fd, &error[0], error.length(), MSG_DONTWAIT);
-								this->close_connection(i);
-								continue ;
-							}
-							else if (received - request.getHeaderLength() > request.getContentLength())
-							{
-								std::string error = response_it->second.createError(400);
-								send(this->_fds[i].fd, &error[0], error.length(), MSG_DONTWAIT);
-								this->close_connection(i);
-								continue ;
-							}
 							request.printHeader();
 							response_it->second.new_request(request);
 							response_it->second.send_response();

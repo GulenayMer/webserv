@@ -7,6 +7,7 @@ Response::Response(int conn_fd, int server_fd, Config& config, struct pollfd* fd
 	_bytes_sent = 0;
 	_fds = fds;
 	_nfds = nfds;
+	_error = false;
 }
 
 Response::Response(const Response &src)
@@ -31,6 +32,7 @@ Response &Response::operator=(const Response &src)
 		_response = src._response;
 		_config = src._config;
 		_request = src._request;
+		_error = src._error;
 	}
 	return *this;
 }
@@ -68,7 +70,12 @@ int 	Response::send_response()
 	_response_body.clear();
 	_response.clear();
 	_is_cgi = false;
-	if (_request.getMethod() > 2)
+	if (this->getRequest().getContentLength() > this->getConfig().get_client_max_body_size())
+	{
+		std::cout << "content length too large" << std::endl;
+		response_stream << createError(413);
+	}
+	else if (_request.getMethod() > 2)
 	{
 		response_stream << createError(501);
 	}

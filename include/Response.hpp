@@ -31,6 +31,7 @@ class Response
 		std::string					_buffer;
 		Config      	   			_config;
 		httpHeader	 				_request;
+		bool						_error;
     
         Response();
 		static std::string getErrorPath(int &errorNumber, std::string& errorName);
