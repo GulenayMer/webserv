@@ -255,41 +255,6 @@ void	Response::responseToDELETE(std::ostringstream &response_stream)
 	pathTest.close();
 }
 
-void	Response::responseToDELETE(std::ostringstream &response_stream)
-{
-	/* 
-		DELETE REQUEST
-		1. Get path to the requested resource path
-		2. Check if the resource exists
-		3. delete resource
-		4. send 204 status
-		or/else
-		5. send 404
-	*/
-	std::cout << RED << "PATH : " << _respond_path << RESET << std::endl;
-	std::ifstream	pathTest(_respond_path.c_str());
-	if (!pathTest.is_open())
-	{
-		std::cout << RED << "this 404" << RESET << std::endl;
-		send_404(this->_config.get_root(), response_stream);
-	}
-	else
-	{
-		// delete file
-		if (remove(_respond_path.c_str()) == -1)
-		{
-			std::cout << RED << "next 404" << RESET << std::endl;
-			send_404(this->_config.get_root(), response_stream);
-		}
-		else
-		{
-			std::cout << "[ CALLED ]" << std::endl;
-			response_stream << HTTPS_204 << _types.get_content_type(".txt");
-		}
-	}
-	pathTest.close();
-}
-
 bool	Response::is_cgi()
 {
 	return _is_cgi;
