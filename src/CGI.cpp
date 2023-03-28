@@ -132,7 +132,7 @@ int		CGI::handle_cgi()
 	this->env_to_char();
 	pid_t pid = fork();
     if (pid == 0)
-        exec_script(this->_input_pipe, this->_output_pipe, new_path, shebang);
+        exec_script(this->_input_pipe, this->_output_pipe, new_path);
     else
 	{
 		close(this->_input_pipe[0]);

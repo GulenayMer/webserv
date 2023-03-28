@@ -1,13 +1,9 @@
-
-
-
 #include <stdio.h> // we will not need it probably
 #include "../include/Utils.hpp"
 #include "../include/httpHeader.hpp"
 #include "../include/ConfigParser.hpp"
 #include "../include/ServerManager.hpp"
 #include "../include/minilib.hpp"
-
 
 int main(int argc, char** argv)
 {
