@@ -323,6 +323,10 @@ std::string Response::getErrorPath(int &errorNumber, std::string& errorName)
 			path = errorDir + "415_UnsupportedMediaType.html";
 			errorName = "Unsupported Media Type";
 			break;
+		case 429:
+			path = errorDir + "429_TooManyRequests.html";
+			errorName = "Many Requests";
+			break;
 		case 500:
 			path = errorDir + "500_InternalServer.html";
 			errorName = "Internal Server";
@@ -342,6 +346,10 @@ std::string Response::getErrorPath(int &errorNumber, std::string& errorName)
 		case 504:
 			path = errorDir + "504_GateawayTimeout.html";
 			errorName = "Gateaway Timeout";
+			break;
+		case 505:
+			path = errorDir + "505_HTTPVersionNotSupported.html";
+			errorName = "Unsupported HTTP Version";
 			break;
 		default:
 			path = errorDir + "418_Imateapot.html";
