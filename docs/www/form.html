@@ -13,7 +13,7 @@
 
 		<h2>Register with us!</h2>
 
-		<form id="form" action="../cgi-bin/test.py" method="get">
+		<form id="form" action="../cgi-bin/test.py" method="post" enctype="multipart/form-data">
 			<div class="form-item">
 				<label for="Username">Username</label>
 				<input id="username" type="text" placeholder="Username" autocomplete="on"></input>
@@ -35,10 +35,10 @@
 
 		<form id="form" action="../cgi-bin/upload.py" method="post" enctype="multipart/form-data">
 			<div class="form-item">
-				<input type="file" id="myFile" name="filename">
+				<input type="file" id="myFile"  name="data">
 			</div>
 			<div>
-				<button id="button" class="button" type="submit" value="Upload">Upload</button>
+				<input id="button" class="button" type="submit" value="Upload">
 			</div>
 		</form>
 	</div>

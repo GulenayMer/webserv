@@ -5,6 +5,7 @@
 # include "Server.hpp"
 # include "Config.hpp"
 # include "Response.hpp"
+# include "CGI.hpp"
 
 class ServerManager {
 	
@@ -12,10 +13,13 @@ class ServerManager {
 		std::vector<Server> _servers;
 		std::vector<Config> _configs;
 		std::map<int, Response> _responses;
+		std::map<int, CGI>		_cgis;
+		std::map<int, int>		_cgi_fds;
 		int					_nfds;
 		struct pollfd*		_fds;
 		int					_nbr_fd_ready;
 		std::map<int, int>	_map_server_fd;
+		bool				_compress_array;
         // 	ServerManager(ServerManager const &copy);
         //  ServerManager &operator=(ServerManager const &rhs);
     
@@ -28,9 +32,11 @@ class ServerManager {
 		int		run_servers();
 		int		check_connection();
 		int		check_request_respond();
+		void	close_connection(int i);
 
 		std::vector<Server>	get_servers();
 		Server				get_server_at(int i);
+		bool	initCGI(Response &response, char *buffer, ssize_t received);
 };
 
 #endif

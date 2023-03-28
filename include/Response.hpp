@@ -3,7 +3,7 @@
 
 # include "Utils.hpp"
 # include "MIME.hpp"
-# include "CGI.hpp"
+//# include "CGI.hpp"
 # include <cstring>
 # include "Config.hpp"
 # include "httpHeader.hpp"
@@ -19,28 +19,29 @@ class Response
         int                         _conn_fd;
         int                         _server_fd;
 		size_t						_bytes_sent;
+		struct pollfd*				_fds;
+		int							_nfds;
 		std::string					_req_uri;
 		bool		                _is_cgi;
+		int							_cgi_fd;
         MIME                        _types;
 		std::string			        _response_body;
 		std::string			        _respond_path;
 		std::string			        _response;
+		std::string					_buffer;
 		Config      	   			_config;
 		httpHeader	 				_request;
     
         Response();
+		static std::string getErrorPath(int &errorNumber, std::string& errorName);
 
     public:
-		Response(int conn_fd, int server_fd, Config& config);
+		Response(int conn_fd, int server_fd, Config& config, struct pollfd* fds, int nfds);
         Response(Response const &cpy);
         Response &operator=(Response const &rhs);
         ~Response();
 
         int 	send_response();
-
-        int		handle_cgi(const std::string& path, std::string& response_body, std::ostringstream &response_stream);
-        void	exec_script(int *pipe, std::string path, std::string program);
-
         void 	send_404(std::string root, std::ostringstream &response_stream);
 
 		void	new_request(httpHeader &request);
@@ -49,6 +50,19 @@ class Response
 		void	responseToPOST(const httpHeader request, std::ostringstream &response_stream);
 		void	responseToDELETE(std::ostringstream &response_stream);
 		bool	response_complete() const;
+
+		bool	is_cgi();
+		int		getConnFd();
+		Config &getConfig();
+		httpHeader &getRequest();
+		MIME	&getTypes();
+		void	setCGIFd(int fd);
+		int		getCGIFd();
+
+		static std::string	createError(int errorNumber);
+		void getPath();
 };
+
+
 
 #endif

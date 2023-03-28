@@ -6,7 +6,7 @@ Config::Config(): _error_code(0)
 	this->set_port(80);
 	this->set_host(inet_addr("127.0.0.1"));
 	this->set_server_name("default");
-	this->set_client_max_body_size(1024);
+	this->set_client_max_body_size(1048576);
 	this->set_autoindex(false);
 	this->set_root("");
 	this->set_index("");
@@ -68,7 +68,7 @@ std::string							&Config::get_error_path(int error)
 	return this->get_default_error().at(error);
 }
 
-int 						&Config::get_client_max_body_size()
+size_t 						&Config::get_client_max_body_size()
 {
 	return this->_client_max_body_size;
 }
@@ -92,6 +92,15 @@ std::map<std::string, Location>		&Config::get_location()
 {
 	return this->_location;
 }
+
+Location							*Config::find_location(std::string location)
+{
+	std::map<std::string, Location>::iterator it = _location.find(location);
+	if (it != _location.end())
+		return (&it->second);
+	return (NULL);
+}
+
 
 configCGI									&Config::get_cgi()
 {

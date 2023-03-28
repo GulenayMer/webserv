@@ -23,13 +23,14 @@ ServerManager::ServerManager(std::vector<Config> configs): _configs(configs), _n
 		}
     }
 	if (this->get_servers().size() > 0) {
+		this->_compress_array = false;
 		this->_fds = new struct pollfd[MAX_CONN * this->get_servers().size()];
 		this->pollfd_init();
 		this->_nfds = this->get_servers().size();
 		this->run_servers();
 	}
 	else
-		std::cerr << RED << NO_VALID_SERVERS << RESET << std::endl; 
+		std::cerr << RED << NO_VALID_SERVERS << RESET << std::endl;
 }
 
 ServerManager::~ServerManager()
@@ -53,8 +54,6 @@ void ServerManager::pollfd_init()
 int ServerManager::run_servers()
 {
 	// This whole thing probably has memory leaks
-	bool	close_connection = false;
-	bool	compress_array = false;
 	int		nbr_fd_ready;
 	while (SWITCH)
     {
@@ -63,9 +62,8 @@ int ServerManager::run_servers()
         {
             // TODO avoid killing the server, implement test how to deal with it 
 			perror("poll");
-            return 1;
+			continue ;
         }
-		std::cout << RED << (this->_fds[2].revents & POLLOUT) << RESET << std::endl;
 		for (int i = 0; i < this->_nfds; i++)
 		{
 			if (this->_fds[i].revents == 0)
@@ -76,7 +74,6 @@ int ServerManager::run_servers()
 				connection_fd = accept(this->_servers[i].get_sockfd(), NULL, NULL);
 				if (connection_fd < 0)
 				{
-                    // TODO avoid killing the server, implement test how to deal with it (This fix might work, need to test it out)
 					perror("accept");
 					nbr_fd_ready--;
 					continue ;
@@ -90,73 +87,158 @@ int ServerManager::run_servers()
 				std::cout << GREEN << "New Connection" << RESET << std::endl;
 				this->_fds[this->_nfds].fd = connection_fd;
 				this->_fds[this->_nfds].events = POLLIN;
-				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_servers[i].get_sockfd(), this->_servers[i].get_config())));
+				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_servers[i].get_sockfd(), this->_servers[i].get_config(), this->_fds, this->_nfds)));
 				this->_nfds++;
 			}
 			else if (this->_fds[i].revents & POLLIN)
 			{
-				close_connection = false;
+				std::cout << "POLLIN" << std::endl;
 				if (this->_responses.find(this->_fds[i].fd) != this->_responses.end())
 				{
+					// receive request ->
+					//std::map<int, int>::iterator it = this->_map_server_fd.find(i);
+					char	buffer[2048];
 					//TODO implement client max body size
-					std::map<int, int>::iterator it = this->_map_server_fd.find(i);
-					char	buffer[this->_servers[it->second].get_config().get_client_max_body_size()];
-					int		received;
+					ssize_t		received;
 
-					std::cout << this->_fds[i].fd << std::endl;
-					received = recv(this->_fds[i].fd, buffer, sizeof(buffer), MSG_CTRUNC | MSG_DONTWAIT);
-					if (received > this->_servers[it->second].get_config().get_client_max_body_size())
-					{
-						std::cout << "Client intended to send too large body." << std::endl;
-						close_connection = true;
-					}
-					else if (received < 0)
+					memset(buffer, 0, sizeof(buffer));
+					received = recv(this->_fds[i].fd, buffer, sizeof(buffer), MSG_DONTWAIT);
+					for (ssize_t l = 0; l < received; l++)
+						std::cout << GREEN << buffer[l];
+					std::cout << RESET << std::endl;
+					std::string request_body = buffer;
+					// if (received > this->_servers[it->second].get_config().get_client_max_body_size())
+					// {
+					// 	std::cout << "Client intended to send too large body." << std::endl; //TODO -> send 413 - Content Too Large
+					// 	close_connection = true;
+					// }
+					if (received < 0)
 					{
 						// removed the errno if statement, needs to be tested
-						close_connection = true;
+						this->close_connection(i);
 						perror("recv");
 					}
 					else if (received == 0)
 					{
+						this->close_connection(i);
 						printf("Connection closed\n");
-						close_connection = true;
 					}
-					if (!close_connection)
+					else
 					{
+						std::cout << "RECEIVED: " << received << std::endl;
 						/* [ prepare response ] */
-						httpHeader request(buffer);
-						request.printHeader();
-						memset(buffer, 0, this->_servers[it->second].get_config().get_client_max_body_size());
 						std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
-						response_it->second.new_request(request);
-						response_it->second.send_response();
-						if (!response_it->second.response_complete())
-							this->_fds[i].events = POLLIN | POLLOUT;
+						std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
+						if (cgi_it != this->_cgis.end()) // cgi fd
+						{
+							cgi_it->second.storeBuffer(buffer, received);
+							cgi_it->second.writeToCGI();
+						}
+						else //not a cgi fd
+						{
+							httpHeader request(buffer);
+							if (request.getContentLength() > response_it->second.getConfig().get_client_max_body_size())
+							{
+								//TODO send 413 Content Too Large
+								this->close_connection(i);
+								continue ;
+							}
+							else if (received - request.getHeaderLength() > request.getContentLength())
+							{
+								//TODO send 400 or 204
+								this->close_connection(i);
+								continue ;
+							}
+							request.printHeader();
+							response_it->second.new_request(request);
+							response_it->second.send_response();
+							if (response_it->second.is_cgi()) // init cgi
+							{
+								if (this->initCGI(response_it->second, buffer, received))
+									this->_fds[i].events = POLLIN | POLLOUT;
+							}
+						}
 					}
 				}
-				if (close_connection)
+				else
 				{
-					this->_responses.erase(this->_fds[i].fd);
-					close(this->_fds[i].fd);
-					this->_fds[i].fd = -1;
-					compress_array = true;
+					std::cout << "CGI PIPE END" << std::endl;
+					// cgi pipe end activity
+					char	buffer[2000];
+					memset(buffer, 0, 2000);
+					std::map<int, CGI>::iterator it = this->_cgis.find(this->_fds[i].fd);
+					ssize_t rec = read(this->_fds[i].fd, buffer, sizeof(buffer));
+					if (rec > 0)
+						it->second.add_to_buffer(buffer, rec);
+					else if (rec < 0)
+						perror("read");
 				}
+			}
+			if (this->_fds[i].revents & POLLHUP && this->_cgis.find(this->_fds[i].fd) != this->_cgis.end())
+			{
+				// cgi pipe remote end closed -> read the remaining and close local end
+				std::cout << "POLLHUP" << std::endl;
+				char	buffer[2000];
+				memset(buffer, 0, 2000);
+				while (size_t rec = read(this->_fds[i].fd, buffer, sizeof(buffer)) > 0)
+					this->_cgis.find(this->_fds[i].fd)->second.add_to_buffer(buffer, rec);
+				this->_cgis.find(this->_fds[i].fd)->second.setReadComplete();
+				close(this->_fds[i].fd);
+				this->_fds[i].fd = -1;
+				this->_compress_array = true;
 			}
 			if (this->_fds[i].revents & POLLOUT)
 			{
-				std::cout << RED << "POLLOUT EVENT" << RESET << std::endl;
+				//std::cout << RED << "POLLOUT EVENT" << RESET << std::endl;
 				std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
-				response_it->second.send_response();
-				if (response_it->second.response_complete())
-					this->_fds[i].events = POLLIN;
+				std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
+				std::map<int, int>::iterator cgi_fd_it = this->_cgi_fds.find(this->_fds[i].fd);
+				if (response_it != this->_responses.end() && !response_it->second.is_cgi())
+				{
+					std::cout << "SEND RESPONSE" << std::endl;
+					response_it->second.send_response();
+					if (response_it->second.response_complete())
+						this->_fds[i].events = POLLIN;
+				}
+				else if (cgi_it != this->_cgis.end())
+				{
+					//std::cout << "POLLOUT EVENT CGI" << std::endl;
+					//std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
+					if (cgi_it->second.readComplete())
+					{
+						std::cout << "CGI COMPLETE SEND" << std::endl;
+						cgi_it->second.sendResponse();
+						this->_cgis.erase(cgi_it);
+						this->_fds[i].events = POLLIN;
+					}
+					// else if (cgi_it->second.getInFd() == this->_fds[i].fd)
+					// 	cgi_it->second.writeToCGI();
+				}
+				else if (cgi_fd_it != this->_cgi_fds.end())
+				{
+					//std::cout << "CGI_IN POLLOUT EVENT" << std::endl;
+					cgi_it = this->_cgis.find(cgi_fd_it->second);
+					if (!cgi_it->second.bodyComplete())
+						cgi_it->second.writeToCGI();
+					else if (cgi_it->second.bodyComplete())
+					{
+						std::cout << "CGI BODY COMPLETE" << std::endl;
+						close(this->_fds[i].fd);
+						this->_fds[i].fd = -1;
+						this->_fds[i].events = 0;
+						this->_compress_array = true;
+						this->_cgi_fds.erase(cgi_fd_it);
+					}
+				}
 			}
 			nbr_fd_ready--;
 			if (nbr_fd_ready == 0)
 				break ;
 		}
-		if (compress_array)
+		if (this->_compress_array)
 		{
-			compress_array = false;
+			std::cout << "COMPRESS" << std::endl;
+			this->_compress_array = false;
 			for (int i = 2; i < this->_nfds; i++)
 			{
 				if (this->_fds[i].fd == -1)
@@ -199,4 +281,44 @@ std::vector<Server>	ServerManager::get_servers()
 Server	ServerManager::get_server_at(int i)
 {
 	return this->_servers[i];
+}
+
+void	ServerManager::close_connection(int i)
+{
+	std::cout << "closing conn fd" << std::endl;
+	this->_responses.erase(this->_fds[i].fd);
+	close(this->_fds[i].fd);
+	this->_fds[i].fd = -1;
+	this->_compress_array = true;
+}
+
+bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received)
+{
+	CGI cgi(response);
+	int out_fd = cgi.initOutputPipe();
+	int in_fd = cgi.initInputPipe();
+	if (out_fd < 0 || in_fd < 0)
+	{
+		std::cout << RED << "internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500
+		return false;
+	}
+	else
+	{
+		this->_cgis.insert(std::map<int, CGI>::value_type(out_fd, cgi));
+		this->_cgi_fds.insert(std::map<int, int>::value_type(in_fd, out_fd));
+		std::map<int, CGI>::iterator cgi_it = this->_cgis.find(out_fd);
+		this->_fds[_nfds].fd = out_fd;
+		this->_fds[_nfds].events = POLLIN;
+		this->_fds[_nfds].revents = 0;
+		_nfds++;
+		this->_fds[_nfds].fd = in_fd;
+		this->_fds[_nfds].events = POLLOUT;
+		this->_fds[_nfds].revents = 0;
+		_nfds++;
+		cgi_it->second.handle_cgi();
+		response.setCGIFd(out_fd);
+		cgi_it->second.storeBuffer(buffer, received);
+		cgi_it->second.writeToCGI();
+	}
+	return true;
 }

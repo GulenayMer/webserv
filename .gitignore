@@ -36,3 +36,4 @@ webserv
 vgcore.*
 
 .vscode/
+cgi-bin/tmp

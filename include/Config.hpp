@@ -14,7 +14,7 @@
 
 	class Config {
 		private:
-  			int 								_client_max_body_size;
+  			size_t 								_client_max_body_size;
 			bool								_autoindex;
 			uint16_t							_port;
   			in_addr								_host;                  
@@ -38,11 +38,12 @@
   			std::string							&get_server_name();
  			std::map<int, std::string>			&get_default_error();
 			std::string							&get_error_path(int error);
-  			int 								&get_client_max_body_size();
+  			size_t 								&get_client_max_body_size();
 			bool								&get_autoindex();
   			std::string							&get_root();
   			std::string							get_index();
 			std::map<std::string, Location>		&get_location();
+			Location							*find_location(std::string location);
 			configCGI							&get_cgi();
 			int									get_error_code();
 

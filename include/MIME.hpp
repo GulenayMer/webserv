@@ -3,7 +3,7 @@
 
 # include <map>
 # include <string>
-
+	// IF MIME type is not allowed it segfaults
 	class MIME {
 		private:
 			std::map<std::string, std::string> _mime_types;

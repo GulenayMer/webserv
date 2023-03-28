@@ -8,12 +8,12 @@ httpHeader::httpHeader()
 httpHeader::httpHeader(std::string header)
 {
 	size_t start = 0, end = 0;
+	this->_header_length = header.find("\r\n\r\n") + 4;
 	end = header.find(" ");
 	std::string tmp_method = header.substr(start, end - start);
 	start = end + 1;
 	end = header.find(" ", start);
 	this->_uri = header.substr(start, end - start);
-	std::cout << _uri << std::endl;
 	start = end + 1;
 	end = header.find("\r\n", start);
 	this->_version = header.substr(start, end - start);
@@ -30,6 +30,7 @@ httpHeader::httpHeader(std::string header)
 		}
 		start = end + 2;
 	}
+	this->_content_length = atol(this->get_single_header("Content-Length").c_str());
 }
 
 httpHeader::~httpHeader()
@@ -48,6 +49,8 @@ httpHeader &httpHeader::operator=(const httpHeader& rhs)
 		this->_method = rhs._method;
 		this->_uri = rhs._uri;
 		this->_version = rhs._version;
+		this->_header_length = rhs._header_length;
+		this->_content_length = rhs._content_length;
 	}
 	return *this;
 }
@@ -78,7 +81,8 @@ const std::string httpHeader::get_single_header(std::string entry)
 
 void httpHeader::setHeader(std::string name, std::string value)
 {
-	_header[ name ] = value;
+	this->_header.insert(std::map<std::string, std::string>::value_type(name, value));
+	//_header[ name ] = value;
 }
 
 void httpHeader::setMethod(std::string tmp_method)
@@ -118,11 +122,9 @@ void httpHeader::setMethod(std::string tmp_method)
 		case 7:
 			this->_method = CONNECT;
 			break;
-		case 8:
-			this->_method = NONE;
-			break;
 		default:
-			std::cerr << "Error method not compatible!" << std::endl; 
+			this->_method = NONE;
+			// std::cerr << "Error method not compatible!" << std::endl; 
 			break;
 	}
 	//_method = method;
@@ -177,4 +179,14 @@ void httpHeader::printHeader()
 	{
 		std::cout << GREEN << itr->first << RESET << ": " << YELLOW << itr->second.c_str() << RESET << std::endl;
 	}
+}
+
+size_t httpHeader::getHeaderLength()
+{
+	return this->_header_length;
+}
+
+size_t httpHeader::getContentLength()
+{
+	return this->_content_length;
 }
