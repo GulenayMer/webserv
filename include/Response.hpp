@@ -31,9 +31,10 @@ class Response
 		std::string					_buffer;
 		Config      	   			_config;
 		httpHeader	 				_request;
+		bool						_error;
     
         Response();
-		static std::string getErrorPath(int errorNumber, std::string& errorName);
+		static std::string getErrorPath(int &errorNumber, std::string& errorName);
 
     public:
 		Response(int conn_fd, int server_fd, Config& config, struct pollfd* fds, int nfds);
@@ -48,7 +49,7 @@ class Response
 
 		void	responseToGET(std::ifstream &file, const std::string& path, std::ostringstream &response_stream);
 		void	responseToPOST(const httpHeader request, std::ostringstream &response_stream);
-
+		void	responseToDELETE(std::ostringstream &response_stream);
 		bool	response_complete() const;
 
 		bool	is_cgi();

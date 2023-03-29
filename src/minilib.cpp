@@ -5,6 +5,7 @@
 #include <dirent.h>
 
 int	SWITCH = 1;
+extern std::map<int, int> exit_status;
 
 std::string readFile(std::string filename)
 {
@@ -171,7 +172,10 @@ void grim_reaper(int signum)
 	(void)signum;
 	pid = waitpid(-1, &status, WNOHANG);
 	if (pid > 0)
+	{
+		exit_status.insert(std::map<int, int>::value_type(pid, WEXITSTATUS(status)));
 		std::cout << GREEN << WEXITSTATUS(status) << RESET << std::endl;
+	}
 }
 
 std::string clean_response_path(std::string response_path)
