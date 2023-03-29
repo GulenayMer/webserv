@@ -79,6 +79,7 @@ int 	Response::send_response()
 	{
 		response_stream << createError(501);
 	}
+	// TODO find the current location, now its hardcoded
 	else if(!getConfig().find_location("/")->check_method_at(_request.getMethod()))
 	{
 		response_stream << createError(405);
