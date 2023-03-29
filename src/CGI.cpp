@@ -271,6 +271,7 @@ void	CGI::sendResponse()
 	if (sent > 0)
 	{
 		exit_status.erase(this->_pid);
+		this->getResponse().completeProg(true);
 		// _bytes_sent += sent;
 		// _buffer.erase(0, sent);
 		// std::cout << RED << "\n\n\n\n" << _buffer << RESET << std::endl;
@@ -348,12 +349,9 @@ void	CGI::writeToCGI()
 		this->_vector_pos = 0;
 		return;
 	}
-	size_t sent = write(this->_input_pipe[1], &this->_request_buff[this->_vector_pos], this->_request_buff.size());
+	ssize_t sent = write(this->_input_pipe[1], &this->_request_buff[this->_vector_pos], this->_request_buff.size());
 	if (sent > 0)
 	{
-		// for (size_t i = this->_vector_pos; i < sent + this->_vector_pos; i++)
-		// 	std::cout << this->_request_buff[i];
-		// std::cout << std::endl;
 		this->_vector_pos += sent;
 		if (this->_vector_pos >= this->_request_buff.size())
 		{

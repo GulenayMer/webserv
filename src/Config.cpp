@@ -164,7 +164,7 @@ void					Config::set_index(std::string index)
 void					Config::set_location(std::ifstream& config_file, std::string line)
 {
 	std::string key = get_value(line);
-	Location location = Location(config_file, line);
+	Location location(config_file, line);
 	this->set_error_code(location.get_error_code());
 	this->_location.insert(std::make_pair(key, location));
 }

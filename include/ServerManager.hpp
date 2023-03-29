@@ -15,6 +15,7 @@ class ServerManager {
 		std::map<int, Response> _responses;
 		std::map<int, CGI>		_cgis;
 		std::map<int, int>		_cgi_fds;
+		std::map<std::string, int>	_addr_fd;
 		int					_nfds;
 		struct pollfd*		_fds;
 		int					_nbr_fd_ready;
