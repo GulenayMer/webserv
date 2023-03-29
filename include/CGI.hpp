@@ -33,6 +33,7 @@ class CGI {
 		int									_output_pipe[2];
 		std::string							_boundary;
 		int									_errnum;
+		pid_t								_pid;
 		
 	public:
 		CGI(Response &response);

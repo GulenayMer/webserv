@@ -122,11 +122,9 @@ void httpHeader::setMethod(std::string tmp_method)
 		case 7:
 			this->_method = CONNECT;
 			break;
-		case 8:
-			this->_method = NONE;
-			break;
 		default:
-			std::cerr << "Error method not compatible!" << std::endl; 
+			this->_method = NONE;
+			// std::cerr << "Error method not compatible!" << std::endl; 
 			break;
 	}
 	//_method = method;

@@ -137,18 +137,6 @@ int ServerManager::run_servers()
 						else //not a cgi fd
 						{
 							httpHeader request(buffer);
-							if (request.getContentLength() > response_it->second.getConfig().get_client_max_body_size())
-							{
-								//TODO send 413 Content Too Large
-								this->close_connection(i);
-								continue ;
-							}
-							else if (received - request.getHeaderLength() > request.getContentLength())
-							{
-								//TODO send 400 or 204
-								this->close_connection(i);
-								continue ;
-							}
 							request.printHeader();
 							response_it->second.new_request(request);
 							response_it->second.send_response();
@@ -160,10 +148,9 @@ int ServerManager::run_servers()
 						}
 					}
 				}
-				else
+				else // CGI out ready for reading
 				{
 					std::cout << "CGI PIPE END" << std::endl;
-					// cgi pipe end activity
 					char	buffer[2000];
 					memset(buffer, 0, 2000);
 					std::map<int, CGI>::iterator it = this->_cgis.find(this->_fds[i].fd);
@@ -174,9 +161,8 @@ int ServerManager::run_servers()
 						perror("read");
 				}
 			}
-			if (this->_fds[i].revents & POLLHUP && this->_cgis.find(this->_fds[i].fd) != this->_cgis.end())
+			if (this->_fds[i].revents & POLLHUP && this->_cgis.find(this->_fds[i].fd) != this->_cgis.end()) // if CGI and CGI out remote end closed -> read remaining to internal buffer, close local end
 			{
-				// cgi pipe remote end closed -> read the remaining and close local end
 				std::cout << "POLLHUP" << std::endl;
 				char	buffer[2000];
 				memset(buffer, 0, 2000);
@@ -187,23 +173,20 @@ int ServerManager::run_servers()
 				this->_fds[i].fd = -1;
 				this->_compress_array = true;
 			}
-			if (this->_fds[i].revents & POLLOUT)
+			if (this->_fds[i].revents & POLLOUT) // if POLLOUT -> write to fd ready for writing
 			{
-				//std::cout << RED << "POLLOUT EVENT" << RESET << std::endl;
 				std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
 				std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
 				std::map<int, int>::iterator cgi_fd_it = this->_cgi_fds.find(this->_fds[i].fd);
-				if (response_it != this->_responses.end() && !response_it->second.is_cgi())
+				if (response_it != this->_responses.end() && !response_it->second.is_cgi()) // for sending non-CGI responses
 				{
 					std::cout << "SEND RESPONSE" << std::endl;
 					response_it->second.send_response();
 					if (response_it->second.response_complete())
 						this->_fds[i].events = POLLIN;
 				}
-				else if (cgi_it != this->_cgis.end())
+				else if (cgi_it != this->_cgis.end()) // if done reading from cgi out, send response to client
 				{
-					//std::cout << "POLLOUT EVENT CGI" << std::endl;
-					//std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
 					if (cgi_it->second.readComplete())
 					{
 						std::cout << "CGI COMPLETE SEND" << std::endl;
@@ -211,12 +194,9 @@ int ServerManager::run_servers()
 						this->_cgis.erase(cgi_it);
 						this->_fds[i].events = POLLIN;
 					}
-					// else if (cgi_it->second.getInFd() == this->_fds[i].fd)
-					// 	cgi_it->second.writeToCGI();
 				}
-				else if (cgi_fd_it != this->_cgi_fds.end())
+				else if (cgi_fd_it != this->_cgi_fds.end()) // write to cgi stdin
 				{
-					//std::cout << "CGI_IN POLLOUT EVENT" << std::endl;
 					cgi_it = this->_cgis.find(cgi_fd_it->second);
 					if (!cgi_it->second.bodyComplete())
 						cgi_it->second.writeToCGI();

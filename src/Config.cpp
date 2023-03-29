@@ -93,6 +93,15 @@ std::map<std::string, Location>		&Config::get_location()
 	return this->_location;
 }
 
+Location							*Config::find_location(std::string location)
+{
+	std::map<std::string, Location>::iterator it = _location.find(location);
+	if (it != _location.end())
+		return (&it->second);
+	return (NULL);
+}
+
+
 configCGI									&Config::get_cgi()
 {
 	return this->_cgi;
