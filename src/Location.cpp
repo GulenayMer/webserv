@@ -38,6 +38,26 @@ Location::Location(std::ifstream &config_file, std::string line)
 	this->set_error_code(0);
 }
 
+Location::Location(const Location &src)
+{
+	*this = src;
+}
+
+Location &Location::operator=(const Location &src)
+{
+	if (this != &src)
+	{
+		this->_root = src._root;          	
+      	this->_autoindex = src._autoindex;
+     	this->_methods = src._methods;
+      	this->_index = src._index;
+      	this->_redirection = src._redirection;
+     	this->_alias = src._alias;
+		this->_error_code = src._error_code;  
+	}
+	return *this;
+}
+
 std::string									Location::get_root()
 {
 	return this->_root;

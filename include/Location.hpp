@@ -20,6 +20,8 @@
 		public:
 
 			Location();
+			Location(const Location &src);
+			Location &operator=(const Location &src);
 			Location(std::ifstream &config_file, std::string line);
 			// Setters   
 			void set_root(std::string root);

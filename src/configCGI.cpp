@@ -43,33 +43,39 @@ void			configCGI::clean_ext(std::string line)
 		this->set_error_code(15);
 }
 
-configCGI& configCGI::operator=(const configCGI& obj)
+configCGI::configCGI(const configCGI &src)
 {
-	if (this != &obj) {
-		this->_root = obj._root;
-		this->_path = obj._path;
-		this->_ext = obj._ext;
+	*this = src;
+}
+
+configCGI &configCGI::operator=(const configCGI &src)
+{
+	if (this != &src) {
+		this->_root = src._root;
+		this->_path = src._path;
+		this->_ext = src._ext;
+		this->_error_code = src._error_code;
 	}
 	return *this;
 }
 
 
-std::string									configCGI::get_root() const
+const std::string									&configCGI::get_root() const
 {
 	return this->_root;
 }
 
-std::map<std::string, std::string>			configCGI::get_path() const
+const std::map<std::string, std::string>			&configCGI::get_path() const
 {
 	return this->_path;
 }
 
-std::vector<std::string>					configCGI::get_ext() const
+const std::vector<std::string>					&configCGI::get_ext() const
 {
 	return this->_ext;
 }
 
-int configCGI::get_error_code()
+const int &configCGI::get_error_code() const
 {
 	return this->_error_code;
 }
