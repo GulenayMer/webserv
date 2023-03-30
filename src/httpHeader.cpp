@@ -181,6 +181,15 @@ void httpHeader::printHeader()
 	}
 }
 
+/* check if header is http 1.1 protocol */
+bool httpHeader::isHttp11()
+{
+	if ((this->_version == "HTTP/1.1" || this->_version == "http/1.1" || this->_version == "Http/1.1") \
+		&& get_single_header("Host") != "")
+		return true;
+	return false;
+}
+
 size_t httpHeader::getHeaderLength()
 {
 	return this->_header_length;

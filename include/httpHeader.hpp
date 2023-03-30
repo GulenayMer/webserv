@@ -45,6 +45,7 @@ class httpHeader
 		void setVersion(std::string version);
 		size_t getHeaderLength();
 		size_t getContentLength();
+		bool isHttp11();
 
 		void printHeader();
 };

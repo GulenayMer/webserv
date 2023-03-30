@@ -76,7 +76,11 @@ int 	Response::send_response()
 	_response.clear();
 	_is_cgi = false;
 	//std::cout << this->getConfig().get_root() + &this->getRequest().getUri()[1] << std::endl;
-	if (this->getRequest().getContentLength() > this->getConfig().get_client_max_body_size())
+	if (!_request.isHttp11())
+	{
+		response_stream << createError(505);
+	}
+	else if (this->getRequest().getContentLength() > this->getConfig().get_client_max_body_size())
 	{
 		std::cout << "content length too large" << std::endl;
 		response_stream << createError(413);
