@@ -80,6 +80,7 @@ void	CGI::env_init()
 	_env["QUERY_STRING"] = this->get_query(); // The query information passed to the program. It is appended to the URL with a "?".
 	_env["REMOTE_HOST"] = _response.getRequest().get_single_header("Host"); // The remote hostname of the user making the request.
 	// TODO address is hardcoded
+	std::cout << BLUE << _response.getRequest().get_single_header("Host") << RESET << std::endl;
 	_env["REMOTE_ADDR"] = std::string("127.0.0.1");//_response.getRequest().get_single_header("Host"); // The remote IP address of the user making the request.
 	_env["CONTENT_TYPE"] = this->_response.getRequest().get_single_header("Content-Type"); // The MIME type of the query data, such as "text/html".
 	this->_content_length = atol(_response.getRequest().get_single_header("Content-Length").c_str());
