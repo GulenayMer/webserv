@@ -1,9 +1,16 @@
 #include <iostream>
 #include <fstream>
 #include <dirent.h>
-#include "../include/Response.hpp"
 #include <sys/stat.h>
+#include "../include/Response.hpp"
 
+/* 
+    directoryExists()
+        checks if a directory exists at the specified path
+        using the stat() system call.
+        If the path exists and is a directory,
+        return true; otherwise, return false.
+*/
 bool directoryExists(const char* path)
 {
     struct stat info;
@@ -15,6 +22,11 @@ bool directoryExists(const char* path)
         return false;
 }
 
+/* 
+    directoryListing()
+        returns a string containing an HTML directory listing
+        of the specified directory.
+*/
 std::string directoryLisiting(std::string uri)
 {
     DIR *dir;

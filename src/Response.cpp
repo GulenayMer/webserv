@@ -99,38 +99,44 @@ int 	Response::send_response()
 	else
 	{
 		getPath();
-		if (_is_cgi)
-			return 0;
-		std::ifstream file(_respond_path.c_str());
-		std::cout << RED << _respond_path << RESET << std::endl;
-		if (!file.is_open())
+		if(_config.get_autoindex() && _request.getMethod() == GET && *(_request.getUri().end() - 1) == '/')
 		{
-			std::cout << std::endl << RED << "CANT OPEN" << RESET << std::endl << std::endl;
-			response_stream << createError(404);
+			response_stream << directoryLisiting(_respond_path);
 		}
+		else if (_is_cgi)
+			return 0;
 		else
 		{
-			if (_request.getMethod() == GET)
+			std::ifstream file(_respond_path.c_str());
+			std::cout << RED << _respond_path << RESET << std::endl;
+			if (!file.is_open())
 			{
-				if (_is_cgi)
-					return 0;
-				responseToGET(file, _request.getUri(), response_stream);
+				std::cout << std::endl << RED << "CANT OPEN" << RESET << std::endl << std::endl;
+				response_stream << createError(404);
 			}
-			if (_request.getMethod() == POST)
+			else
 			{
-				if (_is_cgi)
-					return 0;
-				// responseToPOST(_request, response_stream);
-				// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A POST REQUEST";
+				if (_request.getMethod() == GET)
+				{
+					if (_is_cgi)
+						return 0;
+					responseToGET(file, _request.getUri(), response_stream);
+				}
+				if (_request.getMethod() == POST)
+				{
+					if (_is_cgi)
+						return 0;
+					// responseToPOST(_request, response_stream);
+					// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A POST REQUEST";
+				}
+				if (_request.getMethod() == DELETE)
+				{
+					responseToDELETE(response_stream);
+				// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A DELETE REQUEST";
+				}
 			}
-			if (_request.getMethod() == DELETE)
-			{
-				responseToDELETE(response_stream);
-			// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A DELETE REQUEST";
-			}
-
+			file.close();
 		}
-    	file.close();
 	}
 /* --------------------------------------------------------------------------- */	
 	// Send the response to the client
@@ -414,4 +420,62 @@ std::string Response::getErrorPath(int &errorNumber, std::string& errorName)
 			break;
 	}
 	return (path);
+}
+
+/* 
+    directoryExists()
+        checks if a directory exists at the specified path
+        using the stat() system call.
+        If the path exists and is a directory,
+        return true; otherwise, return false.
+*/
+bool Response::directoryExists(const char* path)
+{
+    struct stat info;
+    if (stat(path, &info) != 0)
+        return false;
+    else if (info.st_mode & S_IFDIR)
+        return true;
+    else
+        return false;
+}
+
+/* 
+    directoryListing()
+        returns a string containing an HTML directory listing
+        of the specified directory.
+*/
+std::string Response::directoryLisiting(std::string uri)
+{
+    DIR *dir;
+    struct dirent *ent;
+
+	if (!directoryExists(uri.c_str()))
+		return (Response::createError(400));
+	
+	std::ostringstream outfile;
+
+    outfile << "<!DOCTYPE html>\n";
+    outfile << "<html>\n";
+    outfile << "<head>\n";
+    outfile << "<title>Directory Listing</title>\n";
+    outfile << "</head>\n";
+    outfile << "<body>\n";
+    outfile << "<h1>Directory Listing</h1>\n";
+    outfile << "<ul>\n";
+
+    if ((dir = opendir(uri.c_str())) != NULL)
+	{
+        while ((ent = readdir(dir)) != NULL)
+		{
+            outfile << "<li><a href=\"" << uri << "/" << ent->d_name << "\" >" << ent->d_name << "</a></li>" << std::endl;
+        }
+        closedir(dir);
+    }
+
+    outfile << "</ul>\n";
+    outfile << "</body>\n";
+    outfile << "</html>\n";
+
+	return (outfile.str());
 }

@@ -7,12 +7,13 @@
 # include <cstring>
 # include "Config.hpp"
 # include "httpHeader.hpp"
+# include <dirent.h>
+# include <sys/stat.h>
 
 class httpHeader;
 
 class Response 
 {
-
     private:
 		std::string                 _httpVersion;
 		std::string                 _response_number;
@@ -62,6 +63,9 @@ class Response
 
 		static std::string	createError(int errorNumber);
 		void getPath();
+		bool directoryExists(const char* path);
+		std::string directoryLisiting(std::string uri);
+		Location *findLocation();
 };
 
 
