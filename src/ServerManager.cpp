@@ -70,8 +70,21 @@ int ServerManager::run_servers()
 				continue ;
 			if (i < (int)this->get_servers().size())
 			{
+				sockaddr addr;
+				socklen_t addr_len;
 				int	connection_fd;
-				connection_fd = accept(this->_servers[i].get_sockfd(), NULL, NULL);
+				connection_fd = accept(this->_servers[i].get_sockfd(), &addr, &addr_len);
+				struct sockaddr_in *s = (struct sockaddr_in *)&addr;
+				std::string address(inet_ntoa(s->sin_addr));
+				if (this->_addr_fd.find(address) != this->_addr_fd.end())
+				{
+					close(connection_fd);
+					continue;
+				}
+				std::cout << "address: " << address << std::endl;
+				// std::cout << "address data: " << addr.sa_data << std::endl;
+				std::cout << "address length: " << addr_len << std::endl;
+				this->_addr_fd.insert(std::map<std::string, int>::value_type(address, connection_fd));
 				if (connection_fd < 0)
 				{
 					perror("accept");
@@ -87,40 +100,34 @@ int ServerManager::run_servers()
 				std::cout << GREEN << "New Connection" << RESET << std::endl;
 				this->_fds[this->_nfds].fd = connection_fd;
 				this->_fds[this->_nfds].events = POLLIN;
-				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_servers[i].get_sockfd(), this->_servers[i].get_config(), this->_fds, this->_nfds)));
+				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_servers[i].get_sockfd(), this->_servers[i].get_config(), this->_fds, this->_nfds, address)));
 				this->_nfds++;
 			}
 			else if (this->_fds[i].revents & POLLIN)
 			{
 				std::cout << "POLLIN" << std::endl;
-				if (this->_responses.find(this->_fds[i].fd) != this->_responses.end())
+				std::map<int, Response>::iterator it = this->_responses.find(this->_fds[i].fd);
+				if (it != this->_responses.end())
 				{
 					// receive request ->
-					//std::map<int, int>::iterator it = this->_map_server_fd.find(i);
-					char	buffer[2048];
+					char	buffer[it->second.getConfig().get_client_max_body_size()];
 					//TODO implement client max body size
 					ssize_t		received;
-
 					memset(buffer, 0, sizeof(buffer));
 					received = recv(this->_fds[i].fd, buffer, sizeof(buffer), MSG_DONTWAIT);
 					for (ssize_t l = 0; l < received; l++)
 						std::cout << GREEN << buffer[l];
 					std::cout << RESET << std::endl;
 					std::string request_body = buffer;
-					// if (received > this->_servers[it->second].get_config().get_client_max_body_size())
-					// {
-					// 	std::cout << "Client intended to send too large body." << std::endl; //TODO -> send 413 - Content Too Large
-					// 	close_connection = true;
-					// }
 					if (received < 0)
 					{
 						// removed the errno if statement, needs to be tested
-						this->close_connection(i);
+						this->close_connection(it, i);
 						perror("recv");
 					}
 					else if (received == 0)
 					{
-						this->close_connection(i);
+						this->close_connection(it, i);
 						printf("Connection closed\n");
 					}
 					else
@@ -136,14 +143,22 @@ int ServerManager::run_servers()
 						}
 						else //not a cgi fd
 						{
-							httpHeader request(buffer);
-							request.printHeader();
-							response_it->second.new_request(request);
-							response_it->second.send_response();
-							if (response_it->second.is_cgi()) // init cgi
+							if (response_it->second.isComplete())
 							{
-								if (this->initCGI(response_it->second, buffer, received))
-									this->_fds[i].events = POLLIN | POLLOUT;
+								httpHeader request(buffer);
+								response_it->second.new_request(request);
+								request.printHeader();
+								response_it->second.send_response();
+								if (response_it->second.shouldClose())
+									close_connection(response_it, i);
+								else if (response_it->second.is_cgi()) // init cgi
+								{
+									if (this->initCGI(response_it->second, buffer, received))
+									{
+										this->_fds[i].events = POLLIN | POLLOUT;
+										response_it->second.completeProg(false);
+									}
+								}
 							}
 						}
 					}
@@ -153,10 +168,10 @@ int ServerManager::run_servers()
 					std::cout << "CGI PIPE END" << std::endl;
 					char	buffer[2000];
 					memset(buffer, 0, 2000);
-					std::map<int, CGI>::iterator it = this->_cgis.find(this->_fds[i].fd);
+					std::map<int, CGI>::iterator cgi_it = this->_cgis.find(this->_fds[i].fd);
 					ssize_t rec = read(this->_fds[i].fd, buffer, sizeof(buffer));
 					if (rec > 0)
-						it->second.add_to_buffer(buffer, rec);
+						cgi_it->second.add_to_buffer(buffer, rec);
 					else if (rec < 0)
 						perror("read");
 				}
@@ -166,9 +181,10 @@ int ServerManager::run_servers()
 				std::cout << "POLLHUP" << std::endl;
 				char	buffer[2000];
 				memset(buffer, 0, 2000);
+				std::map<int, CGI>::iterator cgi_it = this->_cgis.find(this->_fds[i].fd);
 				while (size_t rec = read(this->_fds[i].fd, buffer, sizeof(buffer)) > 0)
-					this->_cgis.find(this->_fds[i].fd)->second.add_to_buffer(buffer, rec);
-				this->_cgis.find(this->_fds[i].fd)->second.setReadComplete();
+					cgi_it->second.add_to_buffer(buffer, rec);
+				cgi_it->second.setReadComplete();
 				close(this->_fds[i].fd);
 				this->_fds[i].fd = -1;
 				this->_compress_array = true;
@@ -182,7 +198,9 @@ int ServerManager::run_servers()
 				{
 					std::cout << "SEND RESPONSE" << std::endl;
 					response_it->second.send_response();
-					if (response_it->second.response_complete())
+					if (response_it->second.shouldClose())
+						close_connection(response_it, i);
+					else if (response_it->second.response_complete())
 						this->_fds[i].events = POLLIN;
 				}
 				else if (cgi_it != this->_cgis.end()) // if done reading from cgi out, send response to client
@@ -205,7 +223,6 @@ int ServerManager::run_servers()
 						std::cout << "CGI BODY COMPLETE" << std::endl;
 						close(this->_fds[i].fd);
 						this->_fds[i].fd = -1;
-						this->_fds[i].events = 0;
 						this->_compress_array = true;
 						this->_cgi_fds.erase(cgi_fd_it);
 					}
@@ -263,10 +280,14 @@ Server	ServerManager::get_server_at(int i)
 	return this->_servers[i];
 }
 
-void	ServerManager::close_connection(int i)
+void	ServerManager::close_connection(std::map<int, Response>::iterator it, int i)
 {
 	std::cout << "closing conn fd" << std::endl;
-	this->_responses.erase(this->_fds[i].fd);
+	if (it != this->_responses.end())
+	{
+		this->_addr_fd.erase(it->second.getAddress());
+		this->_responses.erase(this->_fds[i].fd);
+	}
 	close(this->_fds[i].fd);
 	this->_fds[i].fd = -1;
 	this->_compress_array = true;

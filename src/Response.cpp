@@ -1,6 +1,6 @@
 #include "../include/Response.hpp"
 
-Response::Response(int conn_fd, int server_fd, Config& config, struct pollfd* fds, int nfds): _config(config)
+Response::Response(int conn_fd, int server_fd, Config& config, struct pollfd* fds, int nfds, std::string addr): _config(config)
 {
     _conn_fd = conn_fd;
     _server_fd = server_fd;
@@ -8,6 +8,9 @@ Response::Response(int conn_fd, int server_fd, Config& config, struct pollfd* fd
 	_fds = fds;
 	_nfds = nfds;
 	_error = false;
+	_is_complete = true;
+	_to_close = false;
+	_addr = addr;
 }
 
 Response::Response(const Response &src)
@@ -33,6 +36,9 @@ Response &Response::operator=(const Response &src)
 		_config = src._config;
 		_request = src._request;
 		_error = src._error;
+		_is_complete = src._is_complete;
+		_to_close = src._to_close;
+		_addr = src._addr;
 	}
 	return *this;
 }
@@ -51,7 +57,7 @@ void Response::getPath()
 	_is_cgi = false;
 	if (_request.getUri() == "/")
 		_respond_path = _config.get_index();
-	else if (_request.getUri().find("cgi-bin") != std::string::npos)
+	else if (this->checkCGI())
 	{
 		_is_cgi = true;
 		//this->_cgi.setVars(_config, _request);
@@ -70,17 +76,23 @@ int 	Response::send_response()
 	_response_body.clear();
 	_response.clear();
 	_is_cgi = false;
+	//std::cout << this->getConfig().get_root() + &this->getRequest().getUri()[1] << std::endl;
 	if (this->getRequest().getContentLength() > this->getConfig().get_client_max_body_size())
 	{
 		std::cout << "content length too large" << std::endl;
 		response_stream << createError(413);
+		_to_close = true;
 	}
 	else if (_request.getMethod() > 2)
 	{
 		response_stream << createError(501);
 	}
+	// else if (this->checkPermissions())
+	// {
+	// 	response_stream << createError(403);
+	// }
 	// TODO find the current location, now its hardcoded
-	else if(!getConfig().find_location("/")->check_method_at(_request.getMethod()))
+	else if(!getConfig().find_location(this->_location)->check_method_at(_request.getMethod()))
 	{
 		response_stream << createError(405);
 	}
@@ -223,6 +235,29 @@ void 	Response::send_404(std::string root, std::ostringstream &response_stream)
 void	Response::new_request(httpHeader &request)
 {
 	this->_request = request;
+	//this->_is_complete = false;
+	this->_to_close = false;
+	Location *loc;
+	this->_location = request.getUri();
+	size_t pos;
+	while (!this->_location.empty())
+	{
+		//std::cout << "location: " << this->_location << std::endl;
+		pos = this->_location.find_last_of("/");
+		if (pos != std::string::npos)
+		{
+			//std::cout << "found /" << std::endl;
+			this->_location.erase(pos + 1);
+			loc = this->getConfig().find_location(this->_location);
+			if (loc)
+			{
+				//std::cout << "FOUND LOC: " << this->_location << std::endl;
+				return ;
+			}
+			this->_location.erase(pos);
+			//std::cout << "location: " << this->_location << std::endl;
+		}
+	}
 }
 
 bool	Response::response_complete() const
@@ -414,4 +449,63 @@ std::string Response::getErrorPath(int &errorNumber, std::string& errorName)
 			break;
 	}
 	return (path);
+}
+
+bool Response::checkCGI()
+{
+	size_t pos = this->_request.getUri().find_last_of(".");
+	if (this->getConfig().get_cgi().get_ext().empty())
+	{
+		// std::cout << "empty ext map" << std::endl;
+		// exit(0);
+		return false;
+	}
+	std::cout << &this->_request.getUri()[pos] << std::endl;
+	if (pos != std::string::npos)
+	{
+		std::vector<std::string>::const_iterator it = this->getConfig().get_cgi().get_ext().begin();
+		std::vector<std::string>::const_iterator end = this->getConfig().get_cgi().get_ext().end();
+		for (; it != end; it++)
+		{
+			// std::cout << "stored ext: " << *it << std::endl;
+			if (*it == &this->_request.getUri()[pos])
+			{
+				return true;
+			}
+		}
+	}
+	// std::cout << "ext not found in map" << std::endl;
+	// exit(0);
+	return false;
+}
+
+bool	Response::checkPermissions()
+{
+	std::string path = this->getRequest().getUri();
+	if (path.size() == 1)
+		path = this->getConfig().find_location(this->getRequest().getUri())->get_root() + this->getConfig().find_location(this->getRequest().getUri())->get_index();
+	else
+		path = this->getConfig().find_location(this->getRequest().getUri())->get_root() + &path[1];
+	//std::cout << path << std::endl;
+	return dir_exists(path);
+}
+
+void	Response::completeProg(bool complete)
+{
+	this->_is_complete = complete;
+}
+
+bool	Response::isComplete()
+{
+	return this->_is_complete;
+}
+
+std::string &Response::getAddress()
+{
+	return this->_addr;
+}
+
+bool Response::shouldClose()
+{
+	return this->_to_close;
 }
