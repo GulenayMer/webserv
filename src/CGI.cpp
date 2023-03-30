@@ -80,6 +80,7 @@ void	CGI::env_init()
 	_env["QUERY_STRING"] = this->get_query(); // The query information passed to the program. It is appended to the URL with a "?".
 	_env["REMOTE_HOST"] = _response.getRequest().get_single_header("Host"); // The remote hostname of the user making the request.
 	// TODO address is hardcoded
+	std::cout << BLUE << _response.getRequest().get_single_header("Host") << RESET << std::endl;
 	_env["REMOTE_ADDR"] = std::string("127.0.0.1");//_response.getRequest().get_single_header("Host"); // The remote IP address of the user making the request.
 	_env["CONTENT_TYPE"] = this->_response.getRequest().get_single_header("Content-Type"); // The MIME type of the query data, such as "text/html".
 	this->_content_length = atol(_response.getRequest().get_single_header("Content-Length").c_str());
@@ -232,7 +233,7 @@ int	CGI::initInputPipe()
 void	CGI::sendResponse()
 {
 	size_t	sent;
-	size_t	content_index = 0;
+	//size_t	content_index = 0;
 	std::ostringstream response_stream;
 	std::string response_string;
 	std::string content;
@@ -245,19 +246,19 @@ void	CGI::sendResponse()
 	}
 	else
 	{
-		for (; this->_response_buff[content_index] != '\n'; content_index++)
-			content += this->_response_buff[content_index];
-		for (size_t i = content_index + 2; i > content_index; content_index++)
-			content += this->_response_buff[content_index];
-		std::cout << content << std::endl;
-		if (content.find("Content-Type") == std::string::npos && content.find("content-type") == std::string::npos)
-		{
-			response_string = this->getResponse().createError(500);
-			std::cout << "ERROR" << std::endl;
-			sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
-		}
-		else
-		{
+		// for (; this->_response_buff[content_index] != '\n'; content_index++)
+		// 	content += this->_response_buff[content_index];
+		// for (size_t i = content_index + 2; i > content_index; content_index++)
+		// 	content += this->_response_buff[content_index];
+		// std::cout << content << std::endl;
+		// if (content.find("Content-Type") == std::string::npos && content.find("content-type") == std::string::npos)
+		// {
+		// 	response_string = this->getResponse().createError(500);
+		// 	std::cout << "ERROR" << std::endl;
+		// 	sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
+		// }
+		// else
+		// {
 			std::cout << RED << "Sending response..." << RESET << std::endl;
 			response_stream << HTTP_404 << "Content-Length: " << _response_buff.size() - content.size() << "\n" << "Connection: Keep-Alive\n";
 			response_string = response_stream.str();
@@ -267,7 +268,7 @@ void	CGI::sendResponse()
 				std::cout << BLUE << _response_buff[i];
 			std::cout << RESET << std::endl;
 			sent = send(this->_response.getConnFd(), &_response_buff[0], _response_buff.size(), MSG_DONTWAIT);
-		}
+		// }
 	}
 	if (sent > 0)
 	{
