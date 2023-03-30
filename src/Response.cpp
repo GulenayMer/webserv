@@ -9,6 +9,7 @@ Response::Response(int conn_fd, int server_fd, Config& config, struct pollfd* fd
 	_nfds = nfds;
 	_error = false;
 	_is_complete = true;
+	_to_close = false;
 	_addr = addr;
 }
 
@@ -36,6 +37,7 @@ Response &Response::operator=(const Response &src)
 		_request = src._request;
 		_error = src._error;
 		_is_complete = src._is_complete;
+		_to_close = src._to_close;
 		_addr = src._addr;
 	}
 	return *this;
@@ -79,6 +81,7 @@ int 	Response::send_response()
 	{
 		std::cout << "content length too large" << std::endl;
 		response_stream << createError(413);
+		_to_close = true;
 	}
 	else if (_request.getMethod() > 2)
 	{
@@ -153,10 +156,6 @@ int 	Response::send_response()
 		{
 			_response.clear();
 			_bytes_sent = 0;
-			char temp_buff[1000];
-			while (read(this->_conn_fd, temp_buff, 1000) > 0)
-				std::cout << temp_buff;
-			std::cout << std::endl;
 		}
 	}
 	return sent; 
@@ -236,6 +235,8 @@ void 	Response::send_404(std::string root, std::ostringstream &response_stream)
 void	Response::new_request(httpHeader &request)
 {
 	this->_request = request;
+	//this->_is_complete = false;
+	this->_to_close = false;
 	Location *loc;
 	this->_location = request.getUri();
 	size_t pos;
@@ -502,4 +503,9 @@ bool	Response::isComplete()
 std::string &Response::getAddress()
 {
 	return this->_addr;
+}
+
+bool Response::shouldClose()
+{
+	return this->_to_close;
 }

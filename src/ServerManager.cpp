@@ -122,12 +122,12 @@ int ServerManager::run_servers()
 					if (received < 0)
 					{
 						// removed the errno if statement, needs to be tested
-						this->close_connection(i);
+						this->close_connection(it, i);
 						perror("recv");
 					}
 					else if (received == 0)
 					{
-						this->close_connection(i);
+						this->close_connection(it, i);
 						printf("Connection closed\n");
 					}
 					else
@@ -149,7 +149,9 @@ int ServerManager::run_servers()
 								response_it->second.new_request(request);
 								request.printHeader();
 								response_it->second.send_response();
-								if (response_it->second.is_cgi()) // init cgi
+								if (response_it->second.shouldClose())
+									close_connection(response_it, i);
+								else if (response_it->second.is_cgi()) // init cgi
 								{
 									if (this->initCGI(response_it->second, buffer, received))
 									{
@@ -179,9 +181,10 @@ int ServerManager::run_servers()
 				std::cout << "POLLHUP" << std::endl;
 				char	buffer[2000];
 				memset(buffer, 0, 2000);
+				std::map<int, CGI>::iterator cgi_it = this->_cgis.find(this->_fds[i].fd);
 				while (size_t rec = read(this->_fds[i].fd, buffer, sizeof(buffer)) > 0)
-					this->_cgis.find(this->_fds[i].fd)->second.add_to_buffer(buffer, rec);
-				this->_cgis.find(this->_fds[i].fd)->second.setReadComplete();
+					cgi_it->second.add_to_buffer(buffer, rec);
+				cgi_it->second.setReadComplete();
 				close(this->_fds[i].fd);
 				this->_fds[i].fd = -1;
 				this->_compress_array = true;
@@ -195,7 +198,9 @@ int ServerManager::run_servers()
 				{
 					std::cout << "SEND RESPONSE" << std::endl;
 					response_it->second.send_response();
-					if (response_it->second.response_complete())
+					if (response_it->second.shouldClose())
+						close_connection(response_it, i);
+					else if (response_it->second.response_complete())
 						this->_fds[i].events = POLLIN;
 				}
 				else if (cgi_it != this->_cgis.end()) // if done reading from cgi out, send response to client
@@ -218,7 +223,6 @@ int ServerManager::run_servers()
 						std::cout << "CGI BODY COMPLETE" << std::endl;
 						close(this->_fds[i].fd);
 						this->_fds[i].fd = -1;
-						this->_fds[i].events = 0;
 						this->_compress_array = true;
 						this->_cgi_fds.erase(cgi_fd_it);
 					}
@@ -276,10 +280,9 @@ Server	ServerManager::get_server_at(int i)
 	return this->_servers[i];
 }
 
-void	ServerManager::close_connection(int i)
+void	ServerManager::close_connection(std::map<int, Response>::iterator it, int i)
 {
 	std::cout << "closing conn fd" << std::endl;
-	std::map<int, Response>::iterator it = this->_responses.find(this->_fds[i].fd);
 	if (it != this->_responses.end())
 	{
 		this->_addr_fd.erase(it->second.getAddress());

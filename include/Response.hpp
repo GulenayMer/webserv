@@ -25,6 +25,7 @@ class Response
 		std::string					_req_uri;
 		bool		                _is_cgi;
 		bool						_is_complete;
+		bool						_to_close;
 		int							_cgi_fd;
         MIME                        _types;
 		std::string			        _response_body;
@@ -70,6 +71,7 @@ class Response
 		void completeProg(bool complete);
 		bool isComplete();
 		std::string &getAddress();
+		bool shouldClose();
 };
 
 
