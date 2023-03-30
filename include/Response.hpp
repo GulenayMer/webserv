@@ -72,6 +72,7 @@ class Response
 		bool isComplete();
 		std::string &getAddress();
 		bool shouldClose();
+		Location *findLocation();
 };
 
 

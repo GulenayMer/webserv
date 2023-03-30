@@ -260,6 +260,32 @@ void	Response::new_request(httpHeader &request)
 	}
 }
 
+Location *Response::findLocation()
+{
+	Location *loc;
+	this->_location = this->_request.getUri();
+	size_t pos;
+	while (!this->_location.empty())
+	{
+		//std::cout << "location: " << this->_location << std::endl;
+		pos = this->_location.find_last_of("/");
+		if (pos != std::string::npos)
+		{
+			//std::cout << "found /" << std::endl;
+			this->_location.erase(pos + 1);
+			loc = this->getConfig().find_location(this->_location);
+			if (loc)
+			{
+				//std::cout << "FOUND LOC: " << this->_location << std::endl;
+				return loc;
+			}
+			this->_location.erase(pos);
+			//std::cout << "location: " << this->_location << std::endl;
+		}
+	}
+	return NULL;
+}
+
 bool	Response::response_complete() const
 {
 	if (_response.empty())
