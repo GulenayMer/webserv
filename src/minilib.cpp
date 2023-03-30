@@ -3,6 +3,7 @@
 #include <sstream>
 #include <sys/types.h>
 #include <dirent.h>
+#include <iomanip>
 
 int	SWITCH = 1;
 extern std::map<int, int> exit_status;
@@ -183,4 +184,44 @@ std::string clean_response_path(std::string response_path)
 	if (response_path[0] == '/')
 		return &response_path[1];
 	return response_path;
+}
+
+
+
+std::string encodeURI(const std::string &uri)
+{
+  std::ostringstream decoded;
+  for (size_t i = 0; i < uri.length(); i++) {
+    char c = uri[i];
+    if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+      decoded << c;
+      continue;
+    }
+    decoded << std::uppercase << '%' << std::setw(2) << int((unsigned char) c);
+    decoded << std::nouppercase;
+  }
+  return decoded.str();
+}
+
+
+std::string decodeURI(const std::string& input) {
+    std::stringstream output;
+    for (std::size_t i = 0; i < input.size(); ++i) {
+        if (input[i] == '%') {
+            if (i + 2 < input.size() && isxdigit(input[i + 1]) && isxdigit(input[i + 2])) {
+                int value = 0;
+                std::istringstream hex_chars(input.substr(i + 1, 2));
+                hex_chars >> std::hex >> value;
+                output << static_cast<char>(value);
+                i += 2;
+            } else {
+                output << input[i];
+            }
+        } else if (input[i] == '+') {
+            output << ' ';
+        } else {
+            output << input[i];
+        }
+    }
+    return output.str();
 }
