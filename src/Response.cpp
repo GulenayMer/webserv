@@ -484,27 +484,24 @@ bool Response::checkCGI()
 {
 	size_t pos = this->_request.getUri().find_last_of(".");
 	if (this->getConfig().get_cgi().get_ext().empty())
-	{
-		// std::cout << "empty ext map" << std::endl;
-		// exit(0);
 		return false;
-	}
-	std::cout << &this->_request.getUri()[pos] << std::endl;
 	if (pos != std::string::npos)
 	{
+		std::string ext(this->_request.getUri().substr(pos));
+		pos = ext.find_first_of("?");
+		if (pos != std::string::npos)
+			ext.erase(pos);
+		std::cout << ext << std::endl;
 		std::vector<std::string>::const_iterator it = this->getConfig().get_cgi().get_ext().begin();
 		std::vector<std::string>::const_iterator end = this->getConfig().get_cgi().get_ext().end();
 		for (; it != end; it++)
 		{
-			// std::cout << "stored ext: " << *it << std::endl;
-			if (*it == &this->_request.getUri()[pos])
+			if (*it == ext)
 			{
 				return true;
 			}
 		}
 	}
-	// std::cout << "ext not found in map" << std::endl;
-	// exit(0);
 	return false;
 }
 
