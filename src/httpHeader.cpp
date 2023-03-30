@@ -25,10 +25,8 @@ httpHeader::httpHeader(std::string header)
 		size_t separator = line.find(": ");
 		if (separator != std::string::npos) {
 			std::string name;
-			if (line[0] == '\n'){
+			if (line[0] == '\n')
 				name = line.substr(1, separator - 1);
-				std::cout << BLUE << name << RESET << std::endl;	
-			}
 			else
 				name = line.substr(0, separator);
 			std::string value = line.substr(separator + 2);

@@ -79,8 +79,11 @@ void	CGI::env_init()
 	_env["DOCUMENT_ROOT"] = this->_response.getConfig().get_root(); // The directory from which Web documents are served.
 	_env["QUERY_STRING"] = this->get_query(); // The query information passed to the program. It is appended to the URL with a "?".
 	// TODO Host might need to be converted
-	_env["REMOTE_HOST"] = _response.getRequest().get_single_header("Referer"); // The remote hostname of the user making the request.
-	_env["REMOTE_ADDR"] = std::string(_response.getRequest().get_single_header("Host"));//_response.getRequest().get_single_header("Host"); // The remote IP address of the user making the request.
+	if (_response.getRequest().get_single_header("Referer").size() > 0)
+		_env["REMOTE_HOST"] = _response.getRequest().get_single_header("Referer"); // The remote hostname of the user making the request.
+	else
+		_env["REMOTE_HOST"] = _response.getRequest().get_single_header("Host");
+	_env["REMOTE_ADDR"] = _response.getRequest().get_single_header("Host");//_response.getRequest().get_single_header("Host"); // The remote IP address of the user making the request.
 	_env["CONTENT_TYPE"] = this->_response.getRequest().get_single_header("Content-Type"); // The MIME type of the query data, such as "text/html".
 	this->_content_length = atol(_response.getRequest().get_single_header("Content-Length").c_str());
 	this->_content_length += this->_response.getRequest().getHeaderLength();
