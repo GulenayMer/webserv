@@ -110,7 +110,7 @@ int ServerManager::run_servers()
 				if (it != this->_responses.end())
 				{
 					// receive request ->
-					char	buffer[it->second.getConfig().get_client_max_body_size()];
+					char	buffer[2048];
 					//TODO implement client max body size
 					ssize_t		received;
 					memset(buffer, 0, sizeof(buffer));
@@ -135,7 +135,7 @@ int ServerManager::run_servers()
 						/* [ prepare response ] */
 						std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
 						std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
-						if (cgi_it != this->_cgis.end()) // cgi fd
+						if (cgi_it != this->_cgis.end() && !cgi_it->second.completeContent()) // cgi fd
 						{
 							cgi_it->second.storeBuffer(buffer, received);
 							cgi_it->second.writeToCGI();
@@ -215,9 +215,9 @@ int ServerManager::run_servers()
 				else if (cgi_fd_it != this->_cgi_fds.end()) // write to cgi stdin
 				{
 					cgi_it = this->_cgis.find(cgi_fd_it->second);
-					if (!cgi_it->second.bodyComplete())
+					if (!cgi_it->second.bodySentCGI())
 						cgi_it->second.writeToCGI();
-					else if (cgi_it->second.bodyComplete())
+					else if (cgi_it->second.bodySentCGI())
 					{
 						std::cout << "CGI BODY COMPLETE" << std::endl;
 						close(this->_fds[i].fd);

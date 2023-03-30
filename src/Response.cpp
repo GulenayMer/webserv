@@ -59,7 +59,6 @@ void Response::getPath()
 	else if (this->checkCGI())
 	{
 		_is_cgi = true;
-		//this->_cgi.setVars(_config, _request);
 		return;
 	}
     else
@@ -122,10 +121,13 @@ int 	Response::send_response()
 			std::string ret;
 			response_stream << HTTP_OK;
 			ret = directoryLisiting(_respond_path);
-			response_stream << "Content-Length: " << ret.length() << "\n" << _types.get_content_type(".html") <<"\r\n\r\n" << ret;
+			response_stream << "Content-Length: " << ret.length() << "\n" << _types.get_content_type(".html") << "\r\n\r\n" << ret;
 		}
 		else if (_is_cgi)
+		{
+			// TODO check if ext is in config->config_cgi -> if not, error 501; else:
 			return 0;
+		}
 		else
 		{
 			std::ifstream file(_respond_path.c_str());
@@ -190,8 +192,8 @@ void	Response::responseToGET(std::ifstream &file, const std::string& path, std::
 		type = _types.get_content_type(&_respond_path[pos]);
 		if (type.empty())
 		{
-			std::cout << RED <<"Unsupported media type" << RESET << std::endl;
-			send_404(this->_config.get_root(), response_stream); //TODO send -> 415 Unsupported media type
+			std::cout << RED << "Unsupported media type" << RESET << std::endl;
+			response_stream << createError(415); //TODO send -> 415 Unsupported media type
 			return ;
 		}
 	}

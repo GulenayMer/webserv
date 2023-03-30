@@ -15,5 +15,6 @@ if fileitem.filename:
    message = 'The file "' + os.path.basename(fileitem.filename) + '" was uploaded to ' + os.getcwd() + '/cgi-bin/tmp'
 else:
    message = 'Uploading Failed'
-print ("Content-Type:text/html\r\n")
-print("<H1> " + message + " </H1>")
+message = "<H1> " + message + " </H1>"
+message = f"HTTP/1.1 200 OK\nContent-Length:{len(message)}\nContent-Type:text/html\r\n\r\n" + message
+print(message)

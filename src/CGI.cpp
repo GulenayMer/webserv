@@ -233,7 +233,6 @@ int	CGI::initInputPipe()
 void	CGI::sendResponse()
 {
 	size_t	sent;
-	//size_t	content_index = 0;
 	std::ostringstream response_stream;
 	std::string response_string;
 	std::string content;
@@ -246,44 +245,16 @@ void	CGI::sendResponse()
 	}
 	else
 	{
-		// for (; this->_response_buff[content_index] != '\n'; content_index++)
-		// 	content += this->_response_buff[content_index];
-		// for (size_t i = content_index + 2; i > content_index; content_index++)
-		// 	content += this->_response_buff[content_index];
-		// std::cout << content << std::endl;
-		// if (content.find("Content-Type") == std::string::npos && content.find("content-type") == std::string::npos)
-		// {
-		// 	response_string = this->getResponse().createError(500);
-		// 	std::cout << "ERROR" << std::endl;
-		// 	sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
-		// }
-		// else
-		// {
-			std::cout << RED << "Sending response..." << RESET << std::endl;
-			response_stream << HTTP_404 << "Content-Length: " << _response_buff.size() - content.size() << "\n" << "Connection: Keep-Alive\n";
-			response_string = response_stream.str();
-			for (ssize_t i = response_string.size() - 1; i >= 0; i--)
-				this->_response_buff.insert(this->_response_buff.begin(), response_string[i]);
-			for (size_t i = 0; i < _response_buff.size(); i++)
-				std::cout << BLUE << _response_buff[i];
-			std::cout << RESET << std::endl;
-			sent = send(this->_response.getConnFd(), &_response_buff[0], _response_buff.size(), MSG_DONTWAIT);
-		// }
+		std::cout << RED << "Sending response..." << RESET << std::endl;
+		for (size_t i = 0; i < _response_buff.size(); i++)
+			std::cout << BLUE << _response_buff[i];
+		std::cout << RESET << std::endl;
+		sent = send(this->_response.getConnFd(), &_response_buff[0], _response_buff.size(), MSG_DONTWAIT);
 	}
 	if (sent > 0)
 	{
 		exit_status.erase(this->_pid);
 		this->getResponse().completeProg(true);
-		// _bytes_sent += sent;
-		// _buffer.erase(0, sent);
-		// std::cout << RED << "\n\n\n\n" << _buffer << RESET << std::endl;
-		// std::cout << RED << "-- BUFFER END --" << RESET << std::endl;
-		// if (_bytes_sent == _buffer.length())
-		// {
-		// 	std::cout << "NOT HERE!!!!" << std::endl;
-		// 	_buffer.clear();
-		// 	_bytes_sent = 0;
-		// }
 	}
 }
 
@@ -313,7 +284,7 @@ bool	CGI::readComplete()
 	return this->_done_reading;
 }
 
-bool	CGI::bodyComplete()
+bool	CGI::bodySentCGI()
 {
 	return this->_body_complete;
 }
@@ -351,7 +322,7 @@ void	CGI::writeToCGI()
 		this->_vector_pos = 0;
 		return;
 	}
-	ssize_t sent = write(this->_input_pipe[1], &this->_request_buff[this->_vector_pos], this->_request_buff.size());
+	ssize_t sent = write(this->_input_pipe[1], &this->_request_buff[this->_vector_pos], this->_request_buff.size() - this->_vector_pos);
 	if (sent > 0)
 	{
 		this->_vector_pos += sent;
@@ -362,10 +333,17 @@ void	CGI::writeToCGI()
 		}
 		this->_bytes_sent += sent;
 		std::cout << "total bytes sent: " << this->_bytes_sent << ", content_length: " << this->_content_length << std::endl;
-		if (this->_bytes_sent >= this->_content_length && this->_request_buff.empty())
+		if (this->_bytes_sent >= this->_content_length)
 		{
 			std::cout << "DONE" << std::endl;
 			this->_body_complete = true;
 		}
 	}
+}
+
+bool CGI::completeContent()
+{
+	if (this->_request_buff.size() - this->_content_length == 0)
+		return true;
+	return false;
 }

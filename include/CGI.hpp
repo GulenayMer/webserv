@@ -60,10 +60,11 @@ class CGI {
 		bool	readComplete();
 		void	storeBuffer(char *buffer, size_t received);
 		void	set_boundary();
-		bool	bodyComplete();
+		bool	bodySentCGI();
 		int		getOutFd();
 		int		getInFd();
 		void	writeToCGI();
+		bool	completeContent();
 };
 
 
