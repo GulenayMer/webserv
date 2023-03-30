@@ -76,11 +76,11 @@ int ServerManager::run_servers()
 				connection_fd = accept(this->_servers[i].get_sockfd(), &addr, &addr_len);
 				struct sockaddr_in *s = (struct sockaddr_in *)&addr;
 				std::string address(inet_ntoa(s->sin_addr));
-				if (this->_addr_fd.find(address) != this->_addr_fd.end())
-				{
-					close(connection_fd);
-					continue;
-				}
+				// if (this->_addr_fd.find(address) != this->_addr_fd.end())
+				// {
+				// 	close(connection_fd);
+				// 	continue;
+				// }
 				std::cout << "address: " << address << std::endl;
 				// std::cout << "address data: " << addr.sa_data << std::endl;
 				std::cout << "address length: " << addr_len << std::endl;
@@ -121,7 +121,6 @@ int ServerManager::run_servers()
 					std::string request_body = buffer;
 					if (received < 0)
 					{
-						// removed the errno if statement, needs to be tested
 						this->close_connection(it, i);
 						perror("recv");
 					}

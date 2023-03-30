@@ -2,6 +2,7 @@
 # define HTTPHEADER_HPP
 
 # include "Utils.hpp"
+# include "minilib.hpp"
 
 enum httpMethods 
 {

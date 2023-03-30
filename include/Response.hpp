@@ -75,7 +75,8 @@ class Response
 		bool isComplete();
 		std::string &getAddress();
 		bool shouldClose();
-		Location *findLocation();
+		Location *findLocation(int &status);
+		bool dir_exists(const std::string& dirName_in);
 };
 
 

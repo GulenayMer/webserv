@@ -50,7 +50,6 @@ Response::~Response()
 
 void Response::getPath()
 {
-    //TODO get path function
 	_respond_path.clear();
 	_response_body.clear();
 	_response.clear();
@@ -91,7 +90,6 @@ int 	Response::send_response()
 	// {
 	// 	response_stream << createError(403);
 	// }
-	// TODO find the current location, now its hardcoded
 	else if(!getConfig().find_location(this->_location)->check_method_at(_request.getMethod()))
 	{
 		response_stream << createError(405);
@@ -111,9 +109,20 @@ int 	Response::send_response()
 	else
 	{
 		getPath();
-		if(_config.get_autoindex() && _request.getMethod() == GET && *(_request.getUri().end() - 1) == '/')
+		
+		bool autoindex = false;
+		int status = 0;
+		Location* location = findLocation(status);
+		if (location)
 		{
-			response_stream << directoryLisiting(_respond_path);
+			autoindex = location->get_autoindex();
+		}
+		if(autoindex && _request.getMethod() == GET && *(_request.getUri().end() - 1) == '/' && status != 1)
+		{
+			std::string ret;
+			response_stream << HTTP_OK;
+			ret = directoryLisiting(_respond_path);
+			response_stream << "Content-Length: " << ret.length() << "\n" << _types.get_content_type(".html") <<"\r\n\r\n" << ret;
 		}
 		else if (_is_cgi)
 			return 0;
@@ -173,40 +182,27 @@ void	Response::responseToGET(std::ifstream &file, const std::string& path, std::
 	std::stringstream	file_buffer;
 	std::string	type;
 
-	type = _types.get_content_type(&_respond_path[_respond_path.find_last_of(".")]);
-	if (type.empty())
+	size_t pos;
+
+	pos = _respond_path.find_last_of(".");
+	if (pos != std::string::npos)
 	{
-		send_404(this->_config.get_root(), response_stream); //TODO send -> 415 Unsupported media type
-		return ;
+		type = _types.get_content_type(&_respond_path[pos]);
+		if (type.empty())
+		{
+			std::cout << RED <<"Unsupported media type" << RESET << std::endl;
+			send_404(this->_config.get_root(), response_stream); //TODO send -> 415 Unsupported media type
+			return ;
+		}
+	}
+	else
+	{
+		type = "Content-Type: text/plain\r\n\r\n";
 	}
 	file_buffer << file.rdbuf();
 	_response_body = file_buffer.str();
 	response_stream << HTTP_OK << "Content-Length: " << _response_body.length() << "\nConnection: Keep-Alive\n";
 	response_stream << type << _response_body;
-	//std::cout << BLUE << type << RESET << std::endl;
-	// if (_respond_path.compare(_respond_path.length() - 5, 5, ".html") == 0) {
-	// 	std::cout << BLUE <<  "----HTML----" << RESET << std::endl;
-	// 	response_stream << _types.get_content_type(".html") << _response_body;				//TODO I don't think we need this anymore
-	// }
-	// else if (_respond_path.compare(_respond_path.length() - 4, 4, ".ico") == 0)
-	// {
-	// 	std::cout << BLUE <<  "----ICO----" << RESET << std::endl;
-	// 	response_stream << _types.get_content_type(".ico") << _response_body;
-	// }
-	// else if (_respond_path.compare(_respond_path.length() - 4, 4, ".css") == 0) {
-	// 	std::cout << BLUE <<  "----CSS----" << RESET << std::endl;
-	// 	response_stream << _types.get_content_type(".css") << _response_body;
-	// }
-	// else if (_respond_path.compare(_respond_path.length() - 4, 4, ".png") == 0) {
-	// 	std::cout << BLUE <<  "----PNG----" << RESET << std::endl;
-	// 	response_stream << _types.get_content_type(".png") << _response_body;
-	// }
-	// else
-	// {
-	// 	response_stream.str("");
-	// 	response_stream.clear();
-	// 	send_404(this->_config.get_root(), response_stream);
-	// }
 }
 
 // void	Response::responseToPOST(const httpHeader request, std::ostringstream &response_stream)
@@ -266,13 +262,14 @@ void	Response::new_request(httpHeader &request)
 	}
 }
 
-Location *Response::findLocation()
+Location *Response::findLocation(int &status)
 {
 	Location *loc;
 	this->_location = this->_request.getUri();
 	size_t pos;
 	while (!this->_location.empty())
 	{
+		status++;
 		//std::cout << "location: " << this->_location << std::endl;
 		pos = this->_location.find_last_of("/");
 		if (pos != std::string::npos)
@@ -589,7 +586,11 @@ std::string Response::directoryLisiting(std::string uri)
 	{
         while ((ent = readdir(dir)) != NULL)
 		{
-            outfile << "<li><a href=\"" << uri << "/" << ent->d_name << "\" >" << ent->d_name << "</a></li>" << std::endl;
+            std::cout << ent->d_type << std::endl;
+			if (dir_exists(uri + ent->d_name))
+				outfile << "<li><a href=\"" << _request.getUri() << ent->d_name <<"/\" >" << ent->d_name << "</a></li>" << std::endl;
+			else
+				outfile << "<li><a href=\"" << _request.getUri() << ent->d_name <<"\" >" << ent->d_name << "</a></li>" << std::endl;
         }
         closedir(dir);
     }
@@ -600,3 +601,34 @@ std::string Response::directoryLisiting(std::string uri)
 
 	return (outfile.str());
 }
+
+
+bool Response::dir_exists(const std::string& dirName_in)
+{
+	int ret = 0;
+	struct stat info;
+
+	ret = stat(dirName_in.c_str(), &info);
+	if( ret != 0 )
+	{
+		return false;  // something went wrong
+	}
+	else if( info.st_mode & S_IFDIR )
+	{
+		return true;   // this is a directory
+	}
+	else
+	{
+		return false;  // this is not a directory
+	}
+}
+
+// const char* dir_path = "/path/to/directory";
+
+//     // check if the directory exists
+//     struct stat st;
+//     if (stat(dir_path, &st) == 0 && S_ISDIR(st.st_mode)) {
+//         std::cout << dir_path << " is a directory" << std::endl;
+//     } else {
+//         std::cout << dir_path << " is not a directory" << std::endl;
+//     }
