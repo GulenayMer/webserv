@@ -157,6 +157,9 @@ int ServerManager::run_servers()
 										this->_fds[i].events = POLLIN | POLLOUT;
 										response_it->second.completeProg(false);
 									}
+									else {
+										// TODO initCGI failed
+									}
 								}
 							}
 						}
@@ -315,10 +318,14 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received)
 		this->_fds[_nfds].events = POLLOUT;
 		this->_fds[_nfds].revents = 0;
 		_nfds++;
-		cgi_it->second.handle_cgi();
-		response.setCGIFd(out_fd);
-		cgi_it->second.storeBuffer(buffer, received);
-		cgi_it->second.writeToCGI();
+		// TODO shebang controll ends here and return -1
+		if (cgi_it->second.handle_cgi() != -1) {
+			response.setCGIFd(out_fd);
+			cgi_it->second.storeBuffer(buffer, received);
+			cgi_it->second.writeToCGI();
+		}
+		else
+			return false;
 	}
 	return true;
 }

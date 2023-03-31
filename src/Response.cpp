@@ -405,6 +405,7 @@ std::string	Response::createError(int errorNumber, Config* config)
 std::string Response::getErrorPath(int &errorNumber, std::string& errorName, Config* config)
 {
 	std::string			path;
+	// TODO should it be Location root? or config root?
 	std::string			root = config->get_root();
 	std::string			error_path;
 
