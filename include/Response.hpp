@@ -40,7 +40,7 @@ class Response
 		size_t						_received_bytes;
     
         Response();
-		static std::string getErrorPath(int &errorNumber, std::string& errorName);
+		static std::string getErrorPath(int &errorNumber, std::string& errorName, Config* config);
 
     public:
 		Response(int conn_fd, int server_fd, Config& config, struct pollfd* fds, int nfds, std::string addr);
@@ -66,7 +66,7 @@ class Response
 		void	setCGIFd(int fd);
 		int		getCGIFd();
 
-		static std::string	createError(int errorNumber);
+		static std::string	createError(int errorNumber, Config* config);
 		void getPath();
 		bool directoryExists(const char* path);
 		std::string directoryLisiting(std::string uri);
@@ -80,7 +80,5 @@ class Response
 		bool dir_exists(const std::string& dirName_in);
 		ssize_t receivedBytes(ssize_t received);
 };
-
-
 
 #endif

@@ -246,7 +246,7 @@ void	CGI::sendResponse()
 	std::string content;
 	if (exit_status.find(this->_pid)->second != 0)
 	{
-		response_string = this->getResponse().createError(500);
+		response_string = this->getResponse().createError(500, &this->getResponse().getConfig());
 		std::cout << "ERROR" << std::endl;
 		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
 		std::cout << response_string << std::endl;

@@ -79,17 +79,17 @@ int 	Response::send_response()
 	//std::cout << this->getConfig().get_root() + &this->getRequest().getUri()[1] << std::endl;
 	if (!_request.isHttp11())
 	{
-		response_stream << createError(505);
+		response_stream << createError(505, &this->getConfig());
 	}
 	else if (this->getRequest().getContentLength() > this->getConfig().get_client_max_body_size())
 	{
 		std::cout << "content length too large" << std::endl;
-		response_stream << createError(413);
+		response_stream << createError(413, &this->getConfig());
 		_to_close = true;
 	}
 	else if (_request.getMethod() > 2)
 	{
-		response_stream << createError(501);
+		response_stream << createError(501, &this->getConfig());
 	}
 	// else if (this->checkPermissions())
 	// {
@@ -97,19 +97,19 @@ int 	Response::send_response()
 	// }
 	else if(!getConfig().find_location(this->_location)->check_method_at(_request.getMethod()))
 	{
-		response_stream << createError(405);
+		response_stream << createError(405, &this->getConfig());
 	}
 	else if (_request.getMethod() == POST && this->_request.get_single_header("Content-Length").empty())
 	{
-		response_stream << createError(411);
+		response_stream << createError(411, &this->getConfig());
 	}
 	else if (_request.getMethod() == POST && _request.getContentLength() == 0)
 	{
-		response_stream << createError(400);
+		response_stream << createError(400, &this->getConfig());
 	}
 	else if (_request.getMethod() == POST && _request.getContentLength() > _config.get_client_max_body_size())
 	{
-		response_stream << createError(413);
+		response_stream << createError(413, &this->getConfig());
 	}
 	else
 	{
@@ -141,7 +141,7 @@ int 	Response::send_response()
 			if (!file.is_open())
 			{
 				std::cout << std::endl << RED << "CANT OPEN" << RESET << std::endl << std::endl;
-				response_stream << createError(404);
+				response_stream << createError(404, &this->getConfig());
 			}
 			else
 			{
@@ -199,7 +199,7 @@ void	Response::responseToGET(std::ifstream &file, const std::string& path, std::
 		if (type.empty())
 		{
 			std::cout << RED << "Unsupported media type" << RESET << std::endl;
-			response_stream << createError(415); //TODO send -> 415 Unsupported media type
+			response_stream << createError(415, &this->getConfig()); //TODO send -> 415 Unsupported media type
 			return ;
 		}
 	}
@@ -375,12 +375,20 @@ int	Response::getCGIFd()
 	return this->_cgi_fd;
 }
 
-std::string	Response::createError(int errorNumber)
+/**
+ * @brief 
+ * 
+ * @param errorNumber Standard error code
+ * @param config Needs a config to access paths, should be NULL if error is pre-config creation
+ * @return std::string 
+ */
+std::string	Response::createError(int errorNumber, Config* config)
 {
 	std::string			response_body;
 	std::string			errorName;
 	std::ostringstream	response_stream;
-	std::ifstream error(getErrorPath(errorNumber, errorName).c_str());
+	std::string			error_body = getErrorPath(errorNumber, errorName, config);
+	std::ifstream error(error_body.c_str());
 
 	if(!error.is_open())
 		std::cerr << RED << "error opening " << errorNumber << " file\n" << RESET << std::endl;
@@ -397,95 +405,79 @@ std::string	Response::createError(int errorNumber)
 	return (response_stream.str());
 }
 
-std::string Response::getErrorPath(int &errorNumber, std::string& errorName)
+std::string Response::getErrorPath(int &errorNumber, std::string& errorName, Config* config)
 {
 	std::string			path;
-	std::string			errorDir = "docs/www/error/";
+	std::string			root = config->get_root();
+	std::string			error_path;
 
+	
 	switch (errorNumber)
 	{
 		case 400:
-			path = errorDir + "400_BadRequest.html";
 			errorName = "Bad Request";
 			break;
 		case 401:
-			path = errorDir + "401_Unauthorized.html";
 			errorName = "Unauthorized";
 			break;
 		case 403:
-			path = errorDir + "403_Forbidden.html";
 			errorName = "Forbidden";
 			break;
 		case 404:
-			path = errorDir + "404_NotFound.html";
 			errorName = "Not Found";
 			break;
 		case 405:
-			path = errorDir + "405_MethodNotAllowed.html";
 			errorName = "Method Not Allowed";
 			break;
 		case 406:
-			path = errorDir + "406_NotAcceptable.html";
 			errorName = "Not Acceptable";
 			break;
 		case 407:
-			path = errorDir + "407_ProxyAuthenticationRequired.html";
 			errorName = "Proxy Authentication Required";
 			break;
 		case 408:
-			path = errorDir + "408_RequestTimeout.html";
 			errorName = "Request Timeout";
 			break;
 		case 411:
-			path = errorDir + "411_LengthRequired.html";
 			errorName = "Length Required";
 			break;
 		case 413:
-			path = errorDir + "413_PayloadTooLarge.html";
 			errorName = "Payload Length";
 			break;
 		case 414:
-			path = errorDir + "414_URITooLarge.html";
 			errorName = "URI Length";
 			break;
 		case 415:
-			path = errorDir + "415_UnsupportedMediaType.html";
 			errorName = "Unsupported Media Type";
 			break;
 		case 429:
-			path = errorDir + "429_TooManyRequests.html";
 			errorName = "Many Requests";
 			break;
 		case 500:
-			path = errorDir + "500_InternalServer.html";
 			errorName = "Internal Server Error";
 			break;
 		case 501:
-			path = errorDir + "501_NotImplemented.html";
 			errorName = "Not Implemented";
 			break;
 		case 502:
-			path = errorDir + "502_BadGateaway.html";
 			errorName = "Bad Gateaway";
 			break;
 		case 503:
-			path = errorDir + "503_ServiceUnavailable.html";
 			errorName = "Service Unavailable";
 			break;
 		case 504:
-			path = errorDir + "504_GateawayTimeout.html";
 			errorName = "Gateaway Timeout";
 			break;
 		case 505:
-			path = errorDir + "505_HTTPVersionNotSupported.html";
 			errorName = "Unsupported HTTP Version";
 			break;
 		default:
-			path = errorDir + "418_Imateapot.html";
 			errorName = "I'm a teapot";
 			errorNumber = 418;
 			break;
 	}
+	error_path = config->get_error_path(errorNumber);
+	path = root + error_path;
 	return (path);
 }
 
@@ -575,7 +567,7 @@ std::string Response::directoryLisiting(std::string uri)
     struct dirent *ent;
 
 	if (!directoryExists(uri.c_str()))
-		return (Response::createError(400));
+		return (Response::createError(400, &this->getConfig()));
 	
 	std::ostringstream outfile;
 
