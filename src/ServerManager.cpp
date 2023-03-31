@@ -173,7 +173,7 @@ int ServerManager::run_servers()
 							cgi_it->second.storeBuffer(buffer, received);
 							cgi_it->second.writeToCGI();
 						}
-						else if (response_it->second.isComplete()) //not a cgi fd
+						else //not a cgi fd
 						{
 							std::cout << "creating new response?" << std::endl;
 							if (cgi_it != this->_cgis.end())
