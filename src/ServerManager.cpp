@@ -106,8 +106,8 @@ int ServerManager::run_servers()
 			else if (this->_fds[i].revents & POLLIN)
 			{
 				std::cout << "POLLIN" << std::endl;
-				std::map<int, Response>::iterator it = this->_responses.find(this->_fds[i].fd);
-				if (it != this->_responses.end())
+				std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
+				if (response_it != this->_responses.end())
 				{
 					// receive request ->
 					char	buffer[2048];
@@ -121,20 +121,30 @@ int ServerManager::run_servers()
 					std::string request_body = buffer;
 					if (received < 0)
 					{
-						this->close_connection(it, i);
+						this->close_connection(response_it, i);
 						perror("recv");
 					}
 					else if (received == 0)
 					{
-						this->close_connection(it, i);
+						this->close_connection(response_it, i);
 						printf("Connection closed\n");
 					}
 					else
 					{
 						std::cout << "RECEIVED: " << received << std::endl;
 						/* [ prepare response ] */
-						std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
 						std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
+						// ssize_t remaining = response_it->second.receivedBytes(received);
+						// if (remaining < 0)
+						// {
+						// 	//TODO kill CGI process, reset and process new request
+						// 	if (cgi_it != this->_cgis.end())
+						// 	{
+						// 		kill(cgi_it->second.PID(), SIGTERM);
+						// 		cgi_it->second.closePipes();
+						// 		this->_cgis.erase(cgi_it);
+						// 	}
+						// }
 						if (cgi_it != this->_cgis.end() && !cgi_it->second.completeContent()) // cgi fd
 						{
 							cgi_it->second.storeBuffer(buffer, received);
@@ -315,7 +325,12 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received)
 		this->_fds[_nfds].events = POLLOUT;
 		this->_fds[_nfds].revents = 0;
 		_nfds++;
-		cgi_it->second.handle_cgi();
+		if (!cgi_it->second.handle_cgi())
+		{
+			cgi_it->second.closePipes();
+			std::cout << RED << "internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500
+			return false;			
+		}
 		response.setCGIFd(out_fd);
 		cgi_it->second.storeBuffer(buffer, received);
 		cgi_it->second.writeToCGI();
