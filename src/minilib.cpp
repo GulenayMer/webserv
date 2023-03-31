@@ -27,7 +27,6 @@ bool		dir_exists(std::string path)
 		return true;
 	}
 	else {
-		closedir(dir);
 		return false;
 	}
 	
