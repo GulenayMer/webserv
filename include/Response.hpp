@@ -3,7 +3,6 @@
 
 # include "Utils.hpp"
 # include "MIME.hpp"
-//# include "CGI.hpp"
 # include <cstring>
 # include "Config.hpp"
 # include "httpHeader.hpp"

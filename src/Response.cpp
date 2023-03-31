@@ -8,6 +8,7 @@ Response::Response(int conn_fd, int server_fd, Config& config, struct pollfd* fd
 	_received_bytes = 0;
 	_fds = fds;
 	_nfds = nfds;
+	_cgi_fd = -1;
 	_error = false;
 	_is_complete = true;
 	_to_close = false;
@@ -27,6 +28,7 @@ Response &Response::operator=(const Response &src)
 		_response_number = src._response_number;
         _conn_fd = src._conn_fd;
         _server_fd = src._server_fd;
+		_cgi_fd = src._cgi_fd;
 		_bytes_sent = src._bytes_sent;
 		_received_bytes = src._received_bytes;
 		_req_uri = src._req_uri;
@@ -624,6 +626,7 @@ bool Response::dir_exists(const std::string& dirName_in)
 ssize_t Response::receivedBytes(ssize_t received)
 {
 	this->_received_bytes += received;
+	std::cout << "total received: " << _received_bytes << " content: " << this->getRequest().getContentLength() << std::endl;
 	return (this->getRequest().getContentLength() - this->_received_bytes);
 }
 

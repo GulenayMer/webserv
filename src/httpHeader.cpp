@@ -2,7 +2,7 @@
 
 httpHeader::httpHeader()
 {
-	
+	this->_content_length = 0;
 }
 
 httpHeader::httpHeader(std::string header)

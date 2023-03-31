@@ -31,7 +31,12 @@ CGI& CGI::operator=(const CGI& obj)
 		this->_vector_pos = obj._vector_pos;
 		this->_bytes_sent = obj._bytes_sent;
 		for (int i = 0; i < 18; i++)
-			this->_exec_env[i] = obj._exec_env[i];
+		{
+			if (obj._exec_env[i])
+				this->_exec_env[i] = strdup(obj._exec_env[i]);
+			else
+				this->_exec_env[i] = NULL;
+		}
 		this->_pid = obj._pid;
 		this->_env = obj._env;
 		this->_boundary = obj._boundary;
@@ -46,14 +51,11 @@ CGI& CGI::operator=(const CGI& obj)
 CGI::~CGI()
 {
 	for (int i = 0; this->_exec_env[i]; i++)
-	{
-		if (this->_exec_env[i])
-			free(this->_exec_env[i]);
-	}
+		free(this->_exec_env[i]);
 }
 
 void	CGI::env_init()
-{		
+{
 	_env["GATEWAY_INTERFACE"] = std::string("CGI/1.1"); // The revision of the Common Gateway Interface that the server uses.
 	_env["SERVER_NAME"] = _response.getConfig().get_server_name(); //  The server's hostname or IP address.
 	_env["SERVER_SOFTWARE"] = std::string("webserv"); //  The name and version of the server software that is answering the client request.
@@ -103,7 +105,7 @@ void	CGI::env_to_char(void)
 		temp = it->first + "=" + it->second;
 		this->_exec_env[i] = strdup(temp.c_str());
 		it++;
-		i++;	
+		i++;
 	}
 	this->_exec_env[i] = NULL;
 }
@@ -132,15 +134,19 @@ bool	CGI::handle_cgi()
 	size_t pos = shebang.find_last_of("/");
 	shebang = &shebang[pos] + 1;
 	file.close();
-	this->env_to_char();
 	this->_pid = fork();
     if (this->_pid == 0)
+	{
+		this->env_to_char();
         exec_script(this->_input_pipe, this->_output_pipe, new_path);
+	}
     else
 	{
-		close(this->_input_pipe[0]);
+		if (this->_input_pipe[0] > 0)
+			close(this->_input_pipe[0]);
 		this->_input_pipe[0] = -1;
-		close(this->_output_pipe[1]);
+		if (this->_output_pipe[1] > 0)
+			close(this->_output_pipe[1]);
 		this->_output_pipe[1] = -1;
 	}
 	return true;
@@ -149,14 +155,18 @@ bool	CGI::handle_cgi()
 void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
 {
 	char *args[2];
-	close(output_pipe[0]);
-	close(input_pipe[1]);
+	if (output_pipe[0] > 0)
+		close(output_pipe[0]);
+	if (input_pipe[1] > 0)
+		close(input_pipe[1]);
     args[0] = strdup(path.c_str());
 	args[1] = NULL;
 	dup2(output_pipe[1], STDOUT_FILENO);
-	close(output_pipe[1]);
+	if (output_pipe[1] > 0)
+		close(output_pipe[1]);
 	dup2(input_pipe[0], STDIN_FILENO);
-	close(input_pipe[0]);
+	if (input_pipe[0] > 0)
+		close(input_pipe[0]);
     execve(args[0], args, this->_exec_env);
     perror("execve failed.");
 	exit(1);
@@ -202,9 +212,11 @@ int	CGI::initOutputPipe()
 	if (fcntl(this->_output_pipe[0], F_SETFL, O_NONBLOCK) == -1)
 	{
 		perror("fcntl set_flags");
-		close(this->_output_pipe[0]);
+		if (this->_output_pipe[0] > 0)
+			close(this->_output_pipe[0]);
 		this->_output_pipe[0] = -1;
-		close(this->_output_pipe[1]);
+		if (this->_output_pipe[1] > 0)
+			close(this->_output_pipe[1]);
 		this->_output_pipe[1] = -1;
 		return -1;
 	}
@@ -216,22 +228,28 @@ int	CGI::initInputPipe()
 	if (pipe(this->_input_pipe) < 0)
 	{
 		std::cout << "Error opening pipe" << std::endl;
-		close(this->_output_pipe[0]);
+		if (this->_output_pipe[0] > 0)
+			close(this->_output_pipe[0]);
 		this->_output_pipe[0] = -1;
-		close(this->_output_pipe[1]);
+		if (this->_output_pipe[1] > 0)
+			close(this->_output_pipe[1]);
 		this->_output_pipe[1] = -1;
 		return -1;
 	}
 	if (fcntl(this->_input_pipe[1], F_SETFL, O_NONBLOCK) == -1)
 	{
 		perror("fcntl set_flags");
-		close(this->_output_pipe[0]);
+		if (this->_output_pipe[0] > 0)
+			close(this->_output_pipe[0]);
 		this->_output_pipe[0] = -1;
-		close(this->_output_pipe[1]);
+		if (this->_output_pipe[1] > 0)
+			close(this->_output_pipe[1]);
 		this->_output_pipe[1] = -1;
-		close(this->_input_pipe[0]);
+		if (this->_input_pipe[0] > 0)
+			close(this->_input_pipe[0]);
 		this->_input_pipe[0] = -1;
-		close(this->_input_pipe[1]);
+		if (this->_input_pipe[1] > 0)
+			close(this->_input_pipe[1]);
 		this->_input_pipe[1] = -1;
 		return -1;
 	}
