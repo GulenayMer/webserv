@@ -37,6 +37,7 @@ class Response
 		httpHeader	 				_request;
 		bool						_error;
 		std::string					_location;
+		size_t						_received_bytes;
     
         Response();
 		static std::string getErrorPath(int &errorNumber, std::string& errorName, Config* config);
@@ -77,6 +78,7 @@ class Response
 		bool shouldClose();
 		Location *findLocation(int &status);
 		bool dir_exists(const std::string& dirName_in);
+		ssize_t receivedBytes(ssize_t received);
 };
 
 #endif

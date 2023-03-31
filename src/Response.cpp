@@ -5,6 +5,7 @@ Response::Response(int conn_fd, int server_fd, Config& config, struct pollfd* fd
     _conn_fd = conn_fd;
     _server_fd = server_fd;
 	_bytes_sent = 0;
+	_received_bytes = 0;
 	_fds = fds;
 	_nfds = nfds;
 	_error = false;
@@ -27,6 +28,7 @@ Response &Response::operator=(const Response &src)
         _conn_fd = src._conn_fd;
         _server_fd = src._server_fd;
 		_bytes_sent = src._bytes_sent;
+		_received_bytes = src._received_bytes;
 		_req_uri = src._req_uri;
 		_is_cgi = src._is_cgi;
         _types = src._types;
@@ -245,6 +247,7 @@ void	Response::new_request(httpHeader &request)
 	this->_request = request;
 	//this->_is_complete = false;
 	this->_to_close = false;
+	this->_received_bytes = 0;
 	Location *loc;
 	this->_location = request.getUri();
 	size_t pos;
@@ -617,6 +620,12 @@ bool Response::dir_exists(const std::string& dirName_in)
 	{
 		return false;  // this is not a directory
 	}
+}
+
+ssize_t Response::receivedBytes(ssize_t received)
+{
+	this->_received_bytes += received;
+	return (this->getRequest().getContentLength() - this->_received_bytes);
 }
 
 // const char* dir_path = "/path/to/directory";

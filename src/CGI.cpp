@@ -108,7 +108,7 @@ void	CGI::env_to_char(void)
 	this->_exec_env[i] = NULL;
 }
 
-int		CGI::handle_cgi()
+bool	CGI::handle_cgi()
 {
     std::ifstream file;
 	std::string new_path = this->_response.getRequest().getUri();
@@ -120,18 +120,14 @@ int		CGI::handle_cgi()
 	//std::cout << new_path << std::endl;
 	file.open(new_path.c_str(), std::ios::in);
 	if (file.fail() == true) {
-		close(this->_output_pipe[0]);
-		close(this->_output_pipe[1]);
-		return -1;
+		return false;
 	}
 	getline(file, shebang);
 	// TODO invalid file, no shebang
 	if (shebang.find("#!") == std::string::npos)
 	{
-		close(this->_output_pipe[0]);
-		close(this->_output_pipe[1]);
 		file.close();
-		return -1;
+		return false;
 	}
 	size_t pos = shebang.find_last_of("/");
 	shebang = &shebang[pos] + 1;
@@ -143,9 +139,11 @@ int		CGI::handle_cgi()
     else
 	{
 		close(this->_input_pipe[0]);
+		this->_input_pipe[0] = -1;
 		close(this->_output_pipe[1]);
+		this->_output_pipe[1] = -1;
 	}
-	return this->_output_pipe[0];
+	return true;
 }
 
 void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
@@ -205,7 +203,9 @@ int	CGI::initOutputPipe()
 	{
 		perror("fcntl set_flags");
 		close(this->_output_pipe[0]);
+		this->_output_pipe[0] = -1;
 		close(this->_output_pipe[1]);
+		this->_output_pipe[1] = -1;
 		return -1;
 	}
 	return this->_output_pipe[0];
@@ -217,16 +217,22 @@ int	CGI::initInputPipe()
 	{
 		std::cout << "Error opening pipe" << std::endl;
 		close(this->_output_pipe[0]);
+		this->_output_pipe[0] = -1;
 		close(this->_output_pipe[1]);
+		this->_output_pipe[1] = -1;
 		return -1;
 	}
 	if (fcntl(this->_input_pipe[1], F_SETFL, O_NONBLOCK) == -1)
 	{
 		perror("fcntl set_flags");
 		close(this->_output_pipe[0]);
+		this->_output_pipe[0] = -1;
 		close(this->_output_pipe[1]);
+		this->_output_pipe[1] = -1;
 		close(this->_input_pipe[0]);
+		this->_input_pipe[0] = -1;
 		close(this->_input_pipe[1]);
+		this->_input_pipe[1] = -1;
 		return -1;
 	}
 	return this->_input_pipe[1];
@@ -348,4 +354,21 @@ bool CGI::completeContent()
 	if (this->_request_buff.size() - this->_content_length == 0)
 		return true;
 	return false;
+}
+
+int	CGI::PID()
+{
+	return this->_pid;
+}
+
+void	CGI::closePipes()
+{
+	if (this->_input_pipe[0] > 0)
+		close(this->_input_pipe[0]);
+	if (this->_input_pipe[1] > 0)
+		close(this->_input_pipe[1]);
+	if (this->_output_pipe[0] > 0)
+		close(this->_output_pipe[0]);
+	if (this->_output_pipe[1] > 0)
+		close(this->_output_pipe[1]);
 }
