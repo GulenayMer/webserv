@@ -209,6 +209,9 @@ int ServerManager::run_servers()
 									this->_fds[i].events = POLLIN | POLLOUT;
 									response_it->second.completeProg(false);
 								}
+								else {
+									// FAILED initCGI comes out here after error 500
+								}
 							}
 						}
 					}
