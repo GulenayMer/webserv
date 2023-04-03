@@ -195,8 +195,8 @@ void						Config::check_config()
 	}
 	
 	// default error check - files provided by paths exist 
-	if (this->get_default_error().size() == 0)
-		this->get_default_error().insert(std::make_pair(404, "/error/404_NotFound.html"));
+	// if (this->get_default_error().size() == 0)
+	// 	this->get_default_error().insert(std::make_pair(404, "/error/404_NotFound.html"));
 	std::map<int, std::string> error = this->get_default_error();
 	for (std::map<int, std::string>::iterator it = error.begin(); it != error.end(); it++) {
 		if (file_exists(this->get_root() + it->second) == false) {
@@ -244,11 +244,12 @@ void	Config::create_default_errors()
 	this->set_default_error(406, "/error/406_NotAcceptable.html");
 	this->set_default_error(408, "/error/408_RequestTimeout.html");
 	this->set_default_error(411, "/error/411_LengthRequired.html");
-	this->set_default_error(413, "/error/413_RequestEntityTooLarge.html");
-	this->set_default_error(414, "/error/414_RequestURITooLong.html");
+	this->set_default_error(413, "/error/413_PayloadTooLarge.html");
+	this->set_default_error(414, "/error/414_URITooLarge.html");
 	this->set_default_error(415, "/error/415_UnsupportedMediaType.html");
+	this->set_default_error(418, "/error/418_Imateapot.html");
 	this->set_default_error(429, "/error/429_TooManyRequests.html");
-	this->set_default_error(500, "/error/500_InternalServerError.html");
+	this->set_default_error(500, "/error/500_InternalServer.html");
 	this->set_default_error(501, "/error/501_NotImplemented.html");
 	this->set_default_error(502, "/error/502_BadGateway.html");
 	this->set_default_error(503, "/error/503_ServiceUnavailable.html");
