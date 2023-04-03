@@ -64,14 +64,29 @@ int ServerManager::run_servers()
 			perror("poll");
 			continue ;
         }
+		//std::cout << RED << "NUMBER OF FDS: " << this->_nfds << RESET << std::endl;
 		for (int i = 0; i < this->_nfds; i++)
 		{
+			//std::cout << RED << "FD: " << this->_fds[i].fd << " FD NO: " << i << RESET << std::endl;
 			if (this->_fds[i].revents == 0)
 				continue ;
-			if (i < (int)this->get_servers().size())
+			if (i < (int)this->_servers.size())
 			{
+				sockaddr addr;
+				socklen_t addr_len = 0;
 				int	connection_fd;
-				connection_fd = accept(this->_servers[i].get_sockfd(), NULL, NULL);
+				connection_fd = accept(this->_servers[i].get_sockfd(), &addr, &addr_len);
+				struct sockaddr_in *s = (struct sockaddr_in *)&addr;
+				std::string address(inet_ntoa(s->sin_addr));
+				// if (this->_addr_fd.find(address) != this->_addr_fd.end())
+				// {
+				// 	close(connection_fd);
+				// 	continue;
+				// }
+				std::cout << "address: " << address << std::endl;
+				// std::cout << "address data: " << addr.sa_data << std::endl;
+				std::cout << "address length: " << addr_len << std::endl;
+				this->_addr_fd.insert(std::map<std::string, int>::value_type(address, connection_fd));
 				if (connection_fd < 0)
 				{
 					perror("accept");
@@ -87,63 +102,116 @@ int ServerManager::run_servers()
 				std::cout << GREEN << "New Connection" << RESET << std::endl;
 				this->_fds[this->_nfds].fd = connection_fd;
 				this->_fds[this->_nfds].events = POLLIN;
-				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_servers[i].get_sockfd(), this->_servers[i].get_config(), this->_fds, this->_nfds)));
+				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_servers[i].get_sockfd(), this->_servers[i].get_config(), this->_fds, this->_nfds, address)));
 				this->_nfds++;
 			}
 			else if (this->_fds[i].revents & POLLIN)
 			{
 				std::cout << "POLLIN" << std::endl;
-				if (this->_responses.find(this->_fds[i].fd) != this->_responses.end())
+				std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
+				if (response_it != this->_responses.end())
 				{
 					// receive request ->
-					//std::map<int, int>::iterator it = this->_map_server_fd.find(i);
 					char	buffer[2048];
 					//TODO implement client max body size
 					ssize_t		received;
-
 					memset(buffer, 0, sizeof(buffer));
 					received = recv(this->_fds[i].fd, buffer, sizeof(buffer), MSG_DONTWAIT);
 					for (ssize_t l = 0; l < received; l++)
 						std::cout << GREEN << buffer[l];
 					std::cout << RESET << std::endl;
-					std::string request_body = buffer;
-					// if (received > this->_servers[it->second].get_config().get_client_max_body_size())
-					// {
-					// 	std::cout << "Client intended to send too large body." << std::endl; //TODO -> send 413 - Content Too Large
-					// 	close_connection = true;
-					// }
+					std::cout << "REQUEST FD: " << this->_fds[i].fd << std::endl;
 					if (received < 0)
 					{
-						// removed the errno if statement, needs to be tested
-						this->close_connection(i);
+						this->close_connection(response_it, i);
 						perror("recv");
 					}
 					else if (received == 0)
 					{
-						this->close_connection(i);
+						this->close_connection(response_it, i);
 						printf("Connection closed\n");
 					}
 					else
 					{
 						std::cout << "RECEIVED: " << received << std::endl;
 						/* [ prepare response ] */
-						std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
 						std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
-						if (cgi_it != this->_cgis.end()) // cgi fd
+						//TODO kill CGI process, reset and process new request
+						if (cgi_it != this->_cgis.end())
+						{
+							ssize_t remaining = response_it->second.receivedBytes(received);
+							std::cout << "remaining: " << remaining << std::endl;
+							if (remaining < 0)
+							{
+								std::cout << "BUFFER:" << std::endl;
+								std::cout << buffer << std::endl;
+								kill(cgi_it->second.PID(), SIGTERM);
+								for (int j = _nfds - 1; j >= 0; j--)
+								{
+									if (this->_fds[j].fd == cgi_it->second.getInFd())
+									{
+										this->_fds[j].fd = -1;
+										_nfds -= 1;
+									}
+									else if (this->_fds[j].fd == cgi_it->second.getOutFd())
+									{
+										this->_fds[j].fd = -1;
+										_nfds -= 1;
+									}
+								}
+								cgi_it->second.closePipes();
+								this->_cgis.erase(cgi_it);
+								cgi_it = this->_cgis.end();
+								this->_compress_array = true;
+								remaining = abs(remaining);
+								memmove(buffer, &buffer[received - remaining], remaining);
+								memset(&buffer[remaining], 0, received - remaining);
+							}
+						}
+						if (cgi_it != this->_cgis.end() && !cgi_it->second.completeContent()) // cgi fd
 						{
 							cgi_it->second.storeBuffer(buffer, received);
 							cgi_it->second.writeToCGI();
 						}
 						else //not a cgi fd
 						{
+							std::cout << "creating new response?" << std::endl;
+							if (cgi_it != this->_cgis.end())
+							{
+								kill(cgi_it->second.PID(), SIGTERM);
+								for (int j = _nfds - 1; j >= 0; j--)
+								{
+									if (this->_fds[j].fd == cgi_it->second.getInFd())
+									{
+										this->_fds[j].fd = -1;
+										_nfds -= 1;
+									}
+									else if (this->_fds[j].fd == cgi_it->second.getOutFd())
+									{
+										this->_fds[j].fd = -1;
+										_nfds -= 1;
+									}
+								}
+								cgi_it->second.closePipes();
+								this->_cgis.erase(cgi_it);
+								this->_compress_array = true;
+							}
 							httpHeader request(buffer);
-							request.printHeader();
 							response_it->second.new_request(request);
+							request.printHeader();
 							response_it->second.send_response();
-							if (response_it->second.is_cgi()) // init cgi
+							if (response_it->second.shouldClose())
+								close_connection(response_it, i);
+							else if (response_it->second.is_cgi()) // init cgi
 							{
 								if (this->initCGI(response_it->second, buffer, received))
+								{
 									this->_fds[i].events = POLLIN | POLLOUT;
+									response_it->second.completeProg(false);
+								}
+								else {
+									// FAILED initCGI comes out here after error 500
+								}
 							}
 						}
 					}
@@ -151,12 +219,12 @@ int ServerManager::run_servers()
 				else // CGI out ready for reading
 				{
 					std::cout << "CGI PIPE END" << std::endl;
-					char	buffer[2000];
-					memset(buffer, 0, 2000);
-					std::map<int, CGI>::iterator it = this->_cgis.find(this->_fds[i].fd);
+					char	buffer[2048];
+					memset(buffer, 0, 2048);
+					std::map<int, CGI>::iterator cgi_it = this->_cgis.find(this->_fds[i].fd);
 					ssize_t rec = read(this->_fds[i].fd, buffer, sizeof(buffer));
 					if (rec > 0)
-						it->second.add_to_buffer(buffer, rec);
+						cgi_it->second.add_to_buffer(buffer, rec);
 					else if (rec < 0)
 						perror("read");
 				}
@@ -164,48 +232,61 @@ int ServerManager::run_servers()
 			if (this->_fds[i].revents & POLLHUP && this->_cgis.find(this->_fds[i].fd) != this->_cgis.end()) // if CGI and CGI out remote end closed -> read remaining to internal buffer, close local end
 			{
 				std::cout << "POLLHUP" << std::endl;
-				char	buffer[2000];
-				memset(buffer, 0, 2000);
+				char	buffer[2048];
+				memset(buffer, 0, 2048);
+				std::map<int, CGI>::iterator cgi_it = this->_cgis.find(this->_fds[i].fd);
 				while (size_t rec = read(this->_fds[i].fd, buffer, sizeof(buffer)) > 0)
-					this->_cgis.find(this->_fds[i].fd)->second.add_to_buffer(buffer, rec);
-				this->_cgis.find(this->_fds[i].fd)->second.setReadComplete();
-				close(this->_fds[i].fd);
-				this->_fds[i].fd = -1;
-				this->_compress_array = true;
+					cgi_it->second.add_to_buffer(buffer, rec);
+				cgi_it->second.setReadComplete();
 			}
-			if (this->_fds[i].revents & POLLOUT) // if POLLOUT -> write to fd ready for writing
+			if (this->_fds[i].revents & POLLOUT && this->_fds[i].fd > 0) // if POLLOUT -> write to fd ready for writing
 			{
 				std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
-				std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
+				std::map<int, CGI>::iterator cgi_it = this->_cgis.end();
+				if (response_it != this->_responses.end())
+					cgi_it = this->_cgis.find(response_it->second.getCGIFd());
 				std::map<int, int>::iterator cgi_fd_it = this->_cgi_fds.find(this->_fds[i].fd);
 				if (response_it != this->_responses.end() && !response_it->second.is_cgi()) // for sending non-CGI responses
 				{
 					std::cout << "SEND RESPONSE" << std::endl;
 					response_it->second.send_response();
-					if (response_it->second.response_complete())
+					if (response_it->second.shouldClose())
+						close_connection(response_it, i);
+					else if (response_it->second.response_complete())
 						this->_fds[i].events = POLLIN;
 				}
-				else if (cgi_it != this->_cgis.end()) // if done reading from cgi out, send response to client
+				else if (cgi_it != this->_cgis.end() && cgi_it->second.readComplete()) // if done reading from cgi out, send response to client
 				{
-					if (cgi_it->second.readComplete())
+					std::cout << "CGI COMPLETE SEND" << std::endl;
+					cgi_it->second.sendResponse();
+					for (int j = _nfds - 1; j >= 0; j--)
 					{
-						std::cout << "CGI COMPLETE SEND" << std::endl;
-						cgi_it->second.sendResponse();
-						this->_cgis.erase(cgi_it);
-						this->_fds[i].events = POLLIN;
+						if (this->_fds[j].fd == cgi_it->second.getInFd())
+						{
+							this->_fds[j].fd = -1;
+							_nfds -= 1;
+						}
+						else if (this->_fds[j].fd == cgi_it->second.getOutFd())
+						{
+							this->_fds[j].fd = -1;
+							_nfds -= 1;
+						}
 					}
+					cgi_it->second.closePipes();
+					this->_cgis.erase(cgi_it);
+					this->_compress_array = true;
+					this->_fds[i].events = POLLIN;
 				}
 				else if (cgi_fd_it != this->_cgi_fds.end()) // write to cgi stdin
 				{
 					cgi_it = this->_cgis.find(cgi_fd_it->second);
-					if (!cgi_it->second.bodyComplete())
+					if (!cgi_it->second.bodySentCGI())
 						cgi_it->second.writeToCGI();
-					else if (cgi_it->second.bodyComplete())
+					else if (cgi_it->second.bodySentCGI())
 					{
 						std::cout << "CGI BODY COMPLETE" << std::endl;
 						close(this->_fds[i].fd);
 						this->_fds[i].fd = -1;
-						this->_fds[i].events = 0;
 						this->_compress_array = true;
 						this->_cgi_fds.erase(cgi_fd_it);
 					}
@@ -219,7 +300,7 @@ int ServerManager::run_servers()
 		{
 			std::cout << "COMPRESS" << std::endl;
 			this->_compress_array = false;
-			for (int i = 2; i < this->_nfds; i++)
+			for (int i = this->_nfds - 1; i > (int)this->_servers.size() - 1; i--)
 			{
 				if (this->_fds[i].fd == -1)
 				{
@@ -234,17 +315,16 @@ int ServerManager::run_servers()
 							break ;
 						}
 					}
-					i--;
 					this->_nfds--;
 				}
 			}
 		}
-		for (int i = 0; i < this->_nfds; i++)
-			this->_fds[i].revents = 0;
+		// for (int i = 0; i < this->_nfds; i++)
+		// 	this->_fds[i].revents = 0;
     }
 	for (int i = 0; i < this->_nfds; i++)
 	{
-		if (this->_fds[i].fd >= 0)
+		if (this->_fds[i].fd > 0)
 		{
 			close(this->_fds[i].fd);
 			this->_fds[i].fd = -1;
@@ -263,13 +343,20 @@ Server	ServerManager::get_server_at(int i)
 	return this->_servers[i];
 }
 
-void	ServerManager::close_connection(int i)
+void	ServerManager::close_connection(std::map<int, Response>::iterator it, int i)
 {
 	std::cout << "closing conn fd" << std::endl;
-	this->_responses.erase(this->_fds[i].fd);
-	close(this->_fds[i].fd);
-	this->_fds[i].fd = -1;
-	this->_compress_array = true;
+	if (it != this->_responses.end())
+	{
+		this->_addr_fd.erase(it->second.getAddress());
+		this->_responses.erase(this->_fds[i].fd);
+	}
+	if (this->_fds[i].fd > 0)
+	{
+		close(this->_fds[i].fd);
+		this->_fds[i].fd = -1;
+		this->_compress_array = true;
+	}
 }
 
 bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received)
@@ -284,9 +371,11 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received)
 	}
 	else
 	{
-		this->_cgis.insert(std::map<int, CGI>::value_type(out_fd, cgi));
-		this->_cgi_fds.insert(std::map<int, int>::value_type(in_fd, out_fd));
-		std::map<int, CGI>::iterator cgi_it = this->_cgis.find(out_fd);
+		std::pair<std::map<int, CGI>::iterator, bool> ret_pair = this->_cgis.insert(std::map<int, CGI>::value_type(out_fd, cgi));
+		std::cout << RED << ret_pair.second << std::endl;
+		std::pair<std::map<int, int>::iterator, bool> cgi_ret_pair = this->_cgi_fds.insert(std::map<int, int>::value_type(in_fd, out_fd));
+		std::cout << cgi_ret_pair.second << RESET << std::endl;
+		std::map<int, CGI>::iterator cgi_it = ret_pair.first;
 		this->_fds[_nfds].fd = out_fd;
 		this->_fds[_nfds].events = POLLIN;
 		this->_fds[_nfds].revents = 0;
@@ -295,7 +384,17 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received)
 		this->_fds[_nfds].events = POLLOUT;
 		this->_fds[_nfds].revents = 0;
 		_nfds++;
-		cgi_it->second.handle_cgi();
+		if (!cgi_it->second.handle_cgi())
+		{
+			_nfds--;
+			this->_fds[_nfds].fd = -1;
+			_nfds--;
+			this->_fds[_nfds].fd = -1;
+			this->_compress_array = true;
+			cgi_it->second.closePipes();
+			std::cout << RED << "internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500
+			return false;			
+		}
 		response.setCGIFd(out_fd);
 		cgi_it->second.storeBuffer(buffer, received);
 		cgi_it->second.writeToCGI();

@@ -46,7 +46,7 @@ class CGI {
 
 		void		env_init(void);
 		void		env_to_char(void);
-		int			handle_cgi();//std::ostringstream &response_stream);
+		bool		handle_cgi();
 		void		exec_script(int *input_pipe, int *output_pipe, std::string path);
 		std::string get_path_from_map();
 		std::string get_query();
@@ -60,10 +60,13 @@ class CGI {
 		bool	readComplete();
 		void	storeBuffer(char *buffer, size_t received);
 		void	set_boundary();
-		bool	bodyComplete();
+		bool	bodySentCGI();
 		int		getOutFd();
 		int		getInFd();
 		void	writeToCGI();
+		bool	completeContent();
+		int		PID();
+		void	closePipes();
 };
 
 

@@ -8,7 +8,8 @@ Config::Config(): _error_code(0)
 	this->set_server_name("default");
 	this->set_client_max_body_size(1048576);
 	this->set_autoindex(false);
-	this->set_root("");
+	this->set_root("docs/www");
+	this->create_default_errors();
 	this->set_index("");
 }
 
@@ -137,8 +138,12 @@ void					Config::set_server_name(std::string server_name)
 
 void					Config::set_default_error(int i, std::string default_error)
 {
-	std::pair<int, std::string> p = std::make_pair(i, default_error);
-	this->_default_error.insert(p);
+	if (this->_default_error.find(i) != this->_default_error.end())
+		this->_default_error.find(i)->second = default_error;
+	else {
+		std::pair<int, std::string> p = std::make_pair(i, default_error);
+		this->_default_error.insert(p);
+	}
 }
 
 void 					Config::set_client_max_body_size(int clien_max_body_size)
@@ -164,7 +169,7 @@ void					Config::set_index(std::string index)
 void					Config::set_location(std::ifstream& config_file, std::string line)
 {
 	std::string key = get_value(line);
-	Location location = Location(config_file, line);
+	Location location(config_file, line);
 	this->set_error_code(location.get_error_code());
 	this->_location.insert(std::make_pair(key, location));
 }
@@ -228,6 +233,27 @@ void						Config::check_config()
 		case 28:
 			throw std::logic_error(INVALID_PROGRAM_PATH);
 	}
+}
+
+void	Config::create_default_errors()
+{
+	this->set_default_error(400, "/error/400_BadRequest.html");
+	this->set_default_error(403, "/error/403_Forbidden.html");
+	this->set_default_error(404, "/error/404_NotFound.html");
+	this->set_default_error(405, "/error/405_MethodNotAllowed.html");
+	this->set_default_error(406, "/error/406_NotAcceptable.html");
+	this->set_default_error(408, "/error/408_RequestTimeout.html");
+	this->set_default_error(411, "/error/411_LengthRequired.html");
+	this->set_default_error(413, "/error/413_RequestEntityTooLarge.html");
+	this->set_default_error(414, "/error/414_RequestURITooLong.html");
+	this->set_default_error(415, "/error/415_UnsupportedMediaType.html");
+	this->set_default_error(429, "/error/429_TooManyRequests.html");
+	this->set_default_error(500, "/error/500_InternalServerError.html");
+	this->set_default_error(501, "/error/501_NotImplemented.html");
+	this->set_default_error(502, "/error/502_BadGateway.html");
+	this->set_default_error(503, "/error/503_ServiceUnavailable.html");
+	this->set_default_error(504, "/error/504_GatewayTimeout.html");
+	this->set_default_error(505, "/error/505_HTTPVersionNotSupported.html");
 }
 
 std::ostream& operator<<(std::ostream& os, Config& config)

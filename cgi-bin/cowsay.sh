@@ -1,20 +1,28 @@
 #!/bin/bash
 
-echo '<html>'
-echo '<head>'
-echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">'
-echo '</head>'
-echo '<body>'
-echo '<pre>'
 if (( RANDOM % 2 ))
-then 
-	/usr/games/fortune | /usr/games/cowsay
+then
+	cow=`/usr/games/fortune | /usr/games/cowsay`
 else 
-	/usr/games/fortune | /usr/games/cowsay -f stegosaurus
+	cow=`/usr/games/fortune | /usr/games/cowsay -f stegosaurus`
 fi
-echo '<form METHOD=GET ACTION="/cgi-bin/cowsay.sh">'
-echo '<button type="submit">Get new fortune.</button>'
-echo '</form>'
+
+message="<html>
+<body>
+<pre>
+$cow
+<form METHOD=GET ACTION=\"/cgi-bin/cowsay.sh\">
+<button type=\"submit\">Get new fortune.</button>
+</form>
+</pre>
+</body>
+</html>
+"
+echo "HTTP/1.1 200 OK"
+echo "Content-Length: ${#message}"
+echo -e "Content-type: text/html\r\n\r"
+echo -en "$message"
+
 # echo 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc at consectetur justo, id suscipit enim. Cras iaculis efficitur leo, eget pulvinar ante varius eu. Donec quis arcu in sapien malesuada luctus. Phasellus commodo eget augue et sollicitudin. Aliquam dapibus tellus eu posuere accumsan. Nunc cursus luctus elit quis imperdiet. Nulla est quam, dapibus vel tristique vitae, semper sed nisi. Nulla non aliquet sem. Quisque mattis faucibus tellus ut convallis. Mauris efficitur tempus metus non elementum. Morbi porta lacinia nisi, at scelerisque felis semper a.
 
 # Proin a finibus metus, vitae tempor neque. Duis sed urna consectetur quam dapibus condimentum. Nunc nec purus leo. Curabitur porta nibh quis orci hendrerit, a ultricies velit malesuada. Ut quis mattis ante. Pellentesque tincidunt mi sed orci fringilla aliquet. Quisque non purus turpis. Cras vel arcu quis dolor laoreet congue sit amet eget quam. Donec tristique lacus dui, id suscipit metus egestas ut. Aliquam cursus, nunc non imperdiet fringilla, turpis odio tempor dolor, a pharetra lectus libero et libero.
@@ -108,8 +116,5 @@ echo '</form>'
 # Mauris ut neque tincidunt, porttitor augue non, pulvinar ligula. Integer blandit justo sit amet metus pharetra convallis. Mauris at placerat sem, a posuere turpis. Nam lorem sapien, efficitur at nisl sit amet, rhoncus pretium augue. Nunc ac enim pulvinar, semper neque et, consequat eros odio.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc at consectetur justo, id suscipit enim. Cras iaculis efficitur leo, eget pulvinar ante varius eu. Donec quis arcu in sapien malesuada luctus. Phasellus commodo eget augue et sollicitudin. Aliquam dapibus tellus eu posuere accumsan. Nunc cursus luctus elit quis imperdiet. Nulla est quam, dapibus vel tristique vitae, semper sed nisi. Nulla non aliquet sem. Quisque mattis faucibus tellus ut convallis. Mauris efficitur tempus metus non elementum. Morbi porta lacinia nisi, at scelerisque felis semper a.
 
 # Proin a finibus metus, vitae tempor neque. Duis sed urna consectetur quam dapibus condimentum. Nunc nec purus leo. Curabitur porta nibh quis orci hendrerit, a ultricies velit malesuada. Ut quis mattis ante. Pellentesque tincidunt mi sed orci fringilla aliquet. Quisque non purus turpis. Cras vel arcu quis dolor laoreet congue sit amet eget quam. Donec tristique lacus dui, id suscipit metus egestas ut. Aliquam cursus, nunc non imperdiet fringilla, turpis odio tempor dolor, a pharetra lectus libero et libero.'
-echo '</pre>'
-echo '</body>'
-echo '</html>'
 
 exit 0

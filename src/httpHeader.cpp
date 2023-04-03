@@ -2,7 +2,7 @@
 
 httpHeader::httpHeader()
 {
-	
+	this->_content_length = 0;
 }
 
 httpHeader::httpHeader(std::string header)
@@ -13,7 +13,7 @@ httpHeader::httpHeader(std::string header)
 	std::string tmp_method = header.substr(start, end - start);
 	start = end + 1;
 	end = header.find(" ", start);
-	this->_uri = header.substr(start, end - start);
+	this->_uri = decodeURI(header.substr(start, end - start));
 	start = end + 1;
 	end = header.find("\r\n", start);
 	this->_version = header.substr(start, end - start);
@@ -24,7 +24,11 @@ httpHeader::httpHeader(std::string header)
 		std::string line = header.substr(start, end - start);
 		size_t separator = line.find(": ");
 		if (separator != std::string::npos) {
-			std::string name = line.substr(0, separator);
+			std::string name;
+			if (line[0] == '\n')
+				name = line.substr(1, separator - 1);
+			else
+				name = line.substr(0, separator);
 			std::string value = line.substr(separator + 2);
 			this->setHeader(name, value);
 		}
@@ -74,8 +78,9 @@ const std::string httpHeader::get_single_header(std::string entry)
 {
 	std::string empty = "";
 	std::map<std::string, std::string>::iterator it = this->_header.find(entry);
-	if (it != this->_header.end())
+	if (it != this->_header.end()) {
 		return it->second;
+	}
 	return empty;
 }
 
@@ -179,6 +184,15 @@ void httpHeader::printHeader()
 	{
 		std::cout << GREEN << itr->first << RESET << ": " << YELLOW << itr->second.c_str() << RESET << std::endl;
 	}
+}
+
+/* check if header is http 1.1 protocol */
+bool httpHeader::isHttp11()
+{
+	if ((this->_version == "HTTP/1.1" || this->_version == "http/1.1" || this->_version == "Http/1.1") \
+		&& get_single_header("Host").size() > 0)
+		return true;
+	return false;
 }
 
 size_t httpHeader::getHeaderLength()

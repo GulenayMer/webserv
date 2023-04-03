@@ -17,7 +17,8 @@ class configCGI {
 	public:
 		configCGI();
 		configCGI(std::ifstream& config_file, std::string line);
-		configCGI& operator=(const configCGI& obj);
+		configCGI(const configCGI &src);
+		configCGI &operator=(const configCGI &src);
 		// Setters
 		void set_root(std::string root);
 		void set_path(std::string program, std::string path);
@@ -25,10 +26,10 @@ class configCGI {
 		void set_error_code(int error_code);
 		
 		// Getters
-		std::string								get_root() const;
-		std::map<std::string, std::string>		get_path() const;
-		std::vector<std::string>				get_ext() const; 
-		int 									get_error_code();
+		const std::string								&get_root() const;
+		const std::map<std::string, std::string>		&get_path() const;
+		const std::vector<std::string>				&get_ext() const; 
+		const int 									&get_error_code() const;
 
 		int										cgi_check();
 		void									clean_path(std::string line);

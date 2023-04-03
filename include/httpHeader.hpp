@@ -2,6 +2,7 @@
 # define HTTPHEADER_HPP
 
 # include "Utils.hpp"
+# include "minilib.hpp"
 
 enum httpMethods 
 {
@@ -44,6 +45,7 @@ class httpHeader
 		void setVersion(std::string version);
 		size_t getHeaderLength();
 		size_t getContentLength();
+		bool isHttp11();
 
 		void printHeader();
 };

@@ -4,9 +4,9 @@
 
 CC =		g++
 
-CFLAGS	=	-Wall -Wextra -Werror -Wshadow -std=c++98
+CFLAGS	=	-Wall -Wextra -Werror -Wshadow -std=c++98 -O3
 
-DEBUG =		-Wall -Wextra -Werror -g -std=c++98 
+DEBUG =		-Wall -Wextra -Werror -g -std=c++98 -O3
 
 VAL =		valgrind -s --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes
 
@@ -18,7 +18,9 @@ FT_INC	= 		-I ./include/
 				
 INCLUDES = 		$(FT_INC)
 
-SRCDIR =		./src/
+SRCDIR =		src/
+
+OBJDIR =		obj/
 
 ################################################################################
 ################################## SRCS & SRCS #################################
@@ -37,6 +39,8 @@ SRCS	=	$(SRCDIR)Config.cpp			\
 			$(SRCDIR)minilib.cpp		\
 			$(SRCDIR)main.cpp			\
 
+OBJS	=	$(SRCS:$(SRCDIR)%.cpp=$(OBJDIR)%.o)
+
 ################################################################################
 #################################### PROGRAM ###################################
 ################################################################################
@@ -51,28 +55,29 @@ RUN =		./webserv
 
 all:		$(EXEC)
 
-$(EXEC):	$(SRCS)
-		$(CC) $(SRCS) $(INCLUDES) -o $(EXEC) $(CFLAGS)
+$(EXEC):	$(OBJDIR) $(OBJS)
+	$(CC) $(OBJS) $(INCLUDES) -o $(EXEC) $(CFLAGS)
 
-debug:	$(SRCS)
-		$(CC) $(SRCS) $(INCLUDES) -o $(EXEC) $(DEBUG)
+debug:	$(OBJDIR) $(OBJS)
+	$(CC) $(OBJS) $(INCLUDES) -o $(EXEC) $(DEBUG)
 
-%.o: %.cpp
-	$(CC) $(CFLAGS) -c -g $(SRCS)
+$(OBJDIR):
+	mkdir -p $(@D)
+
+$(OBJDIR)%.o: $(SRCDIR)%.cpp
+	$(CC) $(CFLAGS) -c -g $< -o $@
 
 clean:
-		rm -f $(EXEC)
-
+	rm -fr $(OBJDIR)
 fclean:		clean
-		rm -f $(EXEC)
+	rm -f $(EXEC)
 
 re:			fclean all
 
-
-launch: re debug
+launch: fclean debug
 	$(RUN)
 
 test: debug
 	$(VAL) $(RUN)
 
-.PHONY: all debug clean fclean re test
+.PHONY: all debug clean fclean re launch test

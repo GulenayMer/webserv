@@ -19,12 +19,12 @@ MIME::MIME()
     this->_mime_types[".mp3"] = "Content-Type: audio/mp3\r\n\r\n";
     this->_mime_types[".pdf"] = "Content-Type: application/pdf\r\n\r\n";
     //this->_mime_types["default"] = "Content-Type: text/html\r\n\r\n";
-    this->_mime_types["default"] = "";
+    this->_mime_types["Unsupported media"] = "";
 }
 
 std::string MIME::get_content_type(std::string type)
 {
 	if (this->_mime_types.count(type))
 		return this->_mime_types[type];
-	return this->_mime_types["default"];
+	return this->_mime_types["Unsupported media"];
 }
