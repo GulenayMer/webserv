@@ -14,6 +14,12 @@ httpHeader::httpHeader(std::string header)
 	start = end + 1;
 	end = header.find(" ", start);
 	this->_uri = decodeURI(header.substr(start, end - start));
+	start = this->_uri.find_first_of("?");
+	if (start != std::string::npos)
+	{
+		this->_query = this->_uri.substr(start);
+		this->_uri.erase(start);
+	}
 	start = end + 1;
 	end = header.find("\r\n", start);
 	this->_version = header.substr(start, end - start);
@@ -203,4 +209,9 @@ size_t httpHeader::getHeaderLength()
 size_t httpHeader::getContentLength()
 {
 	return this->_content_length;
+}
+
+void	httpHeader::setURI(std::string str)
+{
+	this->_uri = str;
 }

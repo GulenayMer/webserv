@@ -35,7 +35,7 @@ class Response
 		Config      	   			_config;
 		httpHeader	 				_request;
 		bool						_error;
-		std::string					_location;
+		Location					_location;
 		size_t						_received_bytes;
     
         Response();
@@ -68,14 +68,14 @@ class Response
 		static std::string	createError(int errorNumber, Config* config);
 		void getPath();
 		bool directoryExists(const char* path);
-		std::string directoryLisiting(std::string uri);
+		std::string directoryListing(std::string uri);
 		bool checkCGI();
 		bool checkPermissions();
 		void completeProg(bool complete);
 		bool isComplete();
 		std::string &getAddress();
 		bool shouldClose();
-		Location *findLocation(int &status);
+		//Location *findLocation(int &status);
 		bool dir_exists(const std::string& dirName_in);
 		ssize_t receivedBytes(ssize_t received);
 };

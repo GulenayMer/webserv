@@ -32,7 +32,7 @@ class CGI {
 		int									_input_pipe[2];
 		int									_output_pipe[2];
 		std::string							_boundary;
-		int									_errnum;
+		int									_errno;
 		pid_t								_pid;
 		
 	public:

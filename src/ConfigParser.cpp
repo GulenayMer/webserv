@@ -18,6 +18,7 @@ ConfigParser::ConfigParser()
 	// Check if server context exists
 	if (this->check_server_context(in_file) == false)
 		this->exit_with_error(this->get_error_code(), in_file);
+	in_file.close();
 }
 
 ConfigParser::ConfigParser(std::string config_file)
@@ -38,6 +39,7 @@ ConfigParser::ConfigParser(std::string config_file)
 	// Check if server context exists
 	if (this->check_server_context(in_file) == false)
 		this->exit_with_error(this->get_error_code(), in_file);
+	in_file.close();
 }
 
 ConfigParser::~ConfigParser()

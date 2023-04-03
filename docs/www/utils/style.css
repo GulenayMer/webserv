@@ -178,6 +178,13 @@ body
 	cursor: pointer;
 }
 
+.project-item button{
+	border: none;
+	cursor: pointer;
+	appearance: none;
+	background-color: inherit;
+}
+
 /* ---------------- Footer Section  --------- */
 
 #footer{

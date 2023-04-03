@@ -9,6 +9,7 @@ CGI::CGI(Response &response): _response(response)
 	this->_header_removed = false;
 	this->_vector_pos = 0;
 	this->_bytes_sent = 0;
+	this->_errno = 0;
 	for (int i = 0; i < 18; i++)
 		this->_exec_env[i] = NULL;
 	this->_pid = 0;
@@ -30,6 +31,7 @@ CGI& CGI::operator=(const CGI& obj)
 		this->_content_length = obj._content_length;
 		this->_vector_pos = obj._vector_pos;
 		this->_bytes_sent = obj._bytes_sent;
+		this->_errno = obj._errno;
 		for (int i = 0; i < 18; i++)
 		{
 			if (obj._exec_env[i])
@@ -117,17 +119,19 @@ bool	CGI::handle_cgi()
 	std::string shebang;
 
 	new_path = remove_end(this->_response.getRequest().getUri(), '?');
-   	new_path = "." + new_path;
+   	//new_path = "." + new_path;
 	// TODO check if ext is allowed
-	//std::cout << new_path << std::endl;
+	std::cout << "CGI PATH: " << new_path << std::endl;
 	file.open(new_path.c_str(), std::ios::in);
 	if (file.fail() == true) {
+		this->_errno = 1;
 		return false;
 	}
 	getline(file, shebang);
 	// TODO invalid file, no shebang
 	if (shebang.find("#!") == std::string::npos)
 	{
+		this->_errno = 2;
 		file.close();
 		return false;
 	}
@@ -262,7 +266,7 @@ void	CGI::sendResponse()
 	std::ostringstream response_stream;
 	std::string response_string;
 	std::string content;
-	if (exit_status.find(this->_pid)->second != 0)
+	if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
 	{
 		response_string = this->getResponse().createError(500, &this->getResponse().getConfig());
 		std::cout << "ERROR" << std::endl;

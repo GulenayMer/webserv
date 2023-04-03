@@ -366,7 +366,7 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received)
 	int in_fd = cgi.initInputPipe();
 	if (out_fd < 0 || in_fd < 0)
 	{
-		std::cout << RED << "internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500
+		std::cout << RED << "pipe: internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500
 		return false;
 	}
 	else
@@ -392,7 +392,8 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received)
 			this->_fds[_nfds].fd = -1;
 			this->_compress_array = true;
 			cgi_it->second.closePipes();
-			std::cout << RED << "internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500
+			std::cout << RED << "handle_cgi: internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500
+			cgi_it->second.sendResponse();
 			return false;			
 		}
 		response.setCGIFd(out_fd);

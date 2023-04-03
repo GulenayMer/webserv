@@ -43,7 +43,7 @@
   			std::string							&get_root();
   			std::string							get_index();
 			std::map<std::string, Location>		&get_location();
-			Location							*find_location(std::string location);
+			// Location							&find_location(std::string location);
 			configCGI							&get_cgi();
 			int									get_error_code();
 

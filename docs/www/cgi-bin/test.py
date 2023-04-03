@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 
 print("HTTP/1.1 200 OK")
 print("Content-Length:81")
