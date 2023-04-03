@@ -60,7 +60,7 @@
   			void					set_index(std::string index);
   			void					set_location(std::ifstream& config_file, std::string line);
 			void					set_cgi(std::ifstream& config_file, std::string line);
-
+			void					create_default_errors();
 			void					check_config();
 
 			// Utils
