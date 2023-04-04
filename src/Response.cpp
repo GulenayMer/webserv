@@ -84,6 +84,7 @@ int 	Response::send_response()
 	if (!_request.isHttp11())
 	{
 		response_stream << createError(505, &this->getConfig());
+		_to_close = true;
 	}
 	else if (this->getRequest().getContentLength() > this->getConfig().get_client_max_body_size())
 	{
@@ -94,6 +95,7 @@ int 	Response::send_response()
 	else if (_request.getMethod() > 2)
 	{
 		response_stream << createError(501, &this->getConfig());
+		_to_close = true;
 	}
 	// else if (this->checkPermissions())
 	// {
@@ -102,26 +104,35 @@ int 	Response::send_response()
 	else if(!this->_location.check_method_at(_request.getMethod()))
 	{
 		response_stream << createError(405, &this->getConfig());
+		_to_close = true;
 	}
 	else if (_request.getMethod() == POST && this->_request.get_single_header("Content-Length").empty())
 	{
 		response_stream << createError(411, &this->getConfig());
+		_to_close = true;
 	}
 	else if (_request.getMethod() == POST && _request.getContentLength() == 0)
 	{
 		response_stream << createError(400, &this->getConfig());
+		_to_close = true;
 	}
 	else if (_request.getMethod() == POST && _request.getContentLength() > _config.get_client_max_body_size())
 	{
 		response_stream << createError(413, &this->getConfig());
+		_to_close = true;
 	}
 	else
 	{
 		getPath();
 
 		//Location* location = findLocation(status);
-		std::cout << "HERE" << std::endl;
-		if(this->_location.get_autoindex() && _request.getMethod() == GET && *(_request.getUri().end() - 1) == '/')
+		size_t pos = this->_request.getUri().find_last_of(".");
+		if (pos != std::string::npos && _types.get_content_type(&this->_request.getUri()[pos]).empty())
+		{
+			response_stream << createError(403, &this->getConfig());
+			_to_close = true;
+		}
+		else if(this->_location.get_autoindex() && _request.getMethod() == GET && *(_request.getUri().end() - 1) == '/')
 		{
 			std::string ret;
 			response_stream << HTTP_OK;
@@ -142,6 +153,7 @@ int 	Response::send_response()
 			{
 				std::cout << std::endl << RED << "CANT OPEN" << RESET << std::endl << std::endl;
 				response_stream << createError(404, &this->getConfig());
+				_to_close = true;
 			}
 			else
 			{
@@ -181,7 +193,7 @@ int 	Response::send_response()
 			_bytes_sent = 0;
 		}
 	}
-	return sent; 
+	return _error; 
 }
 
 void	Response::responseToGET(std::ifstream &file, const std::string& path, std::ostringstream &response_stream)
