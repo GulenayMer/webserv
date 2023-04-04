@@ -1,10 +1,7 @@
 #!/usr/bin/python3
 
 import cgi, os
-import sys
 
-# for line in sys.stdin:
-#     print(line)
 form = cgi.FieldStorage()
 
 fileitem = form["data"]

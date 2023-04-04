@@ -32,20 +32,20 @@
 
 		<h2>Register with us!</h2>
 
-		<form id="form" action="../cgi-bin/test.py" method="put" enctype="multipart/form-data">
+		<form id="form" action="../cgi-bin/test.py" method="post" enctype="multipart/form-data">
 			<div class="form-item">
-				<label for="Username">Username</label>
-				<input id="username" type="text" placeholder="Username" autocomplete="on" required></input>
+				<label for="username">Username</label>
+				<input id="username" type="username" name="username" placeholder="Username" autocomplete="on" required></input>
 			</div>
 
 			<div class="form-item">
-				<label for="Email">Email</label>
-				<input id="email" type="email" placeholder="Email" autocomplete="on" required></input>
+				<label for="email">Email</label>
+				<input id="email" type="email" name="email" placeholder="Email" autocomplete="on" required></input>
 			</div>
 
 			<div class="form-item">
-				<label for="Password">Password</label>
-				<input id="password" type="password" placeholder="Password" autocomplete="on" required></input>
+				<label for="password">Password</label>
+				<input id="password" type="password" name="password" placeholder="Password" autocomplete="on" required></input>
 			</div>
 			<div>
 				<button id="button" class="button" type="submit" value="Submit">Submit</button>
