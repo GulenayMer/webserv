@@ -123,12 +123,12 @@ int ServerManager::run_servers()
 					std::cout << "REQUEST FD: " << this->_fds[i].fd << std::endl;
 					if (received < 0)
 					{
-						this->close_connection(response_it, i);
+						this->close_connection(response_it->second, i);
 						perror("recv");
 					}
 					else if (received == 0)
 					{
-						this->close_connection(response_it, i);
+						this->close_connection(response_it->second, i);
 						printf("Connection closed\n");
 					}
 					else
@@ -201,10 +201,10 @@ int ServerManager::run_servers()
 							request.printHeader();
 							response_it->second.send_response();
 							if (response_it->second.shouldClose())
-								close_connection(response_it, i);
+								close_connection(response_it->second, i);
 							else if (response_it->second.is_cgi()) // init cgi
 							{
-								if (this->initCGI(response_it->second, buffer, received))
+								if (this->initCGI(response_it->second, buffer, received, i))
 								{
 									this->_fds[i].events = POLLIN | POLLOUT;
 									response_it->second.completeProg(false);
@@ -251,7 +251,7 @@ int ServerManager::run_servers()
 					std::cout << "SEND RESPONSE" << std::endl;
 					response_it->second.send_response();
 					if (response_it->second.shouldClose())
-						close_connection(response_it, i);
+						close_connection(response_it->second, i);
 					else if (response_it->second.response_complete())
 						this->_fds[i].events = POLLIN;
 				}
@@ -343,14 +343,11 @@ Server	ServerManager::get_server_at(int i)
 	return this->_servers[i];
 }
 
-void	ServerManager::close_connection(std::map<int, Response>::iterator it, int i)
+void	ServerManager::close_connection(Response &response, int i)
 {
 	std::cout << "closing conn fd" << std::endl;
-	if (it != this->_responses.end())
-	{
-		this->_addr_fd.erase(it->second.getAddress());
-		this->_responses.erase(this->_fds[i].fd);
-	}
+	this->_addr_fd.erase(response.getAddress());
+	this->_responses.erase(this->_fds[i].fd);
 	if (this->_fds[i].fd > 0)
 	{
 		close(this->_fds[i].fd);
@@ -359,7 +356,7 @@ void	ServerManager::close_connection(std::map<int, Response>::iterator it, int i
 	}
 }
 
-bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received)
+bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, int i)
 {
 	CGI cgi(response);
 	int out_fd = cgi.initOutputPipe();
@@ -394,6 +391,9 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received)
 			cgi_it->second.closePipes();
 			std::cout << RED << "handle_cgi: internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500
 			cgi_it->second.sendResponse();
+			close_connection(cgi_it->second.getResponse(), i);
+			this->_cgis.erase(ret_pair.first);
+			this->_cgi_fds.erase(cgi_ret_pair.first);
 			return false;			
 		}
 		response.setCGIFd(out_fd);

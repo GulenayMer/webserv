@@ -33,11 +33,11 @@ class ServerManager {
 		int		run_servers();
 		int		check_connection();
 		int		check_request_respond();
-		void	close_connection(std::map<int, Response>::iterator it, int i);
+		void	close_connection(Response &response, int i);
 
 		std::vector<Server>	get_servers();
 		Server				get_server_at(int i);
-		bool	initCGI(Response &response, char *buffer, ssize_t received);
+		bool	initCGI(Response &response, char *buffer, ssize_t received, int i);
 };
 
 #endif
