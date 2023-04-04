@@ -1,5 +1,3 @@
-
-
 import cgi, os
 
 form = cgi.FieldStorage()
