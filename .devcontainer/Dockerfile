@@ -10,7 +10,7 @@ RUN if [ "${REINSTALL_CMAKE_VERSION_FROM_SOURCE}" != "none" ]; then \
     fi \
     && rm -f /tmp/reinstall-cmake.sh \
 	&& apt-get update && apt-get install cowsay -y \
-	&& apt-get install fortune -y && apt install python3-pip && pip install requests
+	&& apt-get install fortune -y && apt install python3-pip -y && pip install requests
 
 # [Optional] Uncomment this section to install additional vcpkg ports.
 # RUN su vscode -c "${VCPKG_ROOT}/vcpkg install <your-port-name-here>"
