@@ -19,7 +19,7 @@ payload = {
 }
 headers = {
 	"content-type": "application/json",
-	"X-RapidAPI-Key": "3378e1aa8fmsh90dc8a4dd70e28ep1d1e72jsna57e5f59cee6",
+	"X-RapidAPI-Key": "",
 	"X-RapidAPI-Host": "openai80.p.rapidapi.com"
 }
 
