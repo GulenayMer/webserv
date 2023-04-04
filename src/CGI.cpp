@@ -124,6 +124,7 @@ bool	CGI::handle_cgi()
 	std::cout << "CGI PATH: " << new_path << std::endl;
 	file.open(new_path.c_str(), std::ios::in);
 	if (file.fail() == true) {
+		std::cout << "CGI FILE OPEN FAIL: " << new_path << std::endl;
 		this->_errno = 1;
 		return false;
 	}
@@ -131,6 +132,7 @@ bool	CGI::handle_cgi()
 	// TODO invalid file, no shebang
 	if (shebang.find("#!") == std::string::npos)
 	{
+		std::cout << "CGI NO SHEBANG FAIL: " << std::endl;
 		this->_errno = 2;
 		file.close();
 		return false;
