@@ -10,10 +10,11 @@ response = requests.get(f"https://pokeapi.co/api/v2/pokemon/{pokemon}/")
 
 body = "<!DOCTYPE html>\n<head>\n<link href=/pokemon/pstyle.css rel=stylesheet type=text/css>\n<title>Pokedex</title>\n</head>\n<body>\n"
 
-body += "<img src=/pokemon/images/pokeball.png alt=/images/pokeball>"
 
 if response.status_code == 200:
 	data = response.json()
+	sprite = data["sprites"]["front_default"]
+	body += f"<img src={sprite} alt=/images/pokeball>"
 	body += f"<div>{pokemon.title()}</div>"
 	body += f"<div>Abilities:<br/>"
 	for ability in data["abilities"]:
