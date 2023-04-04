@@ -23,9 +23,9 @@ if response.status_code == 200:
 else:
 	body += f"<div>{pokemon.title()} not found.</div>"
 body += f"<div>Search again:</div>"
-body += "<div><form id=form action=/pokedex.py method=post enctype=multipart/form-data>"
+body += "<div><form id=form action=/pokemon/pokedex.py method=post enctype=multipart/form-data>"
 body += "<label for=pokemon>Enter a Pokemon:</label>"
-body += "<input id=pokemon type=text name=pokemon></input>"
+body += "<input id=pokemon type=text name=pokemon required></input>"
 body += "<button id=button class=button type=submit value=Submit>Submit</button>"
 body += "</form></div>"
 body += "<form METHOD=GET ACTION=/>"
