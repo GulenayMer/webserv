@@ -32,6 +32,7 @@ Config &Config::operator=(const Config& obj)
 		this->_error_code = obj._error_code;
 		this->_cgi = obj._cgi;
 		this->_location = obj._location;
+		this->_redirection = obj._redirection;
 	}
 	return *this;
 }
@@ -173,7 +174,11 @@ void					Config::set_location(std::ifstream& config_file, std::string line)
 	std::string key = get_value(line);
 	Location location(config_file, line);
 	this->set_error_code(location.get_error_code());
-	this->_location.insert(std::make_pair(key, location));
+	std::map<std::string, Location>::iterator it = this->_location.find(location.get_redirection());
+	if (it != this->_location.end())
+		this->_redirection.insert(std::make_pair(key, it->first));
+	else
+		this->_location.insert(std::make_pair(key, location));
 }
 
 void					Config::set_cgi(std::ifstream& config_file, std::string line)
@@ -289,4 +294,9 @@ std::ostream& operator<<(std::ostream& os, Config& config)
 	os << "cgi config: " << std::endl;
 	os << config.get_cgi() << std::endl;
 	return (os);
+}
+
+std::map<std::string, std::string> &Config::getRedirection()
+{
+	return this->_redirection;
 }

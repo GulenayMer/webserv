@@ -103,6 +103,7 @@ int 	Response::send_response()
 	// }
 	else if(!this->_location.check_method_at(_request.getMethod()))
 	{
+		std::cout << "check method" << std::endl;
 		response_stream << createError(405, &this->getConfig());
 		_to_close = true;
 	}
@@ -127,17 +128,17 @@ int 	Response::send_response()
 
 		//Location* location = findLocation(status);
 		size_t pos = this->_request.getUri().find_last_of(".");
-		if (pos != std::string::npos && _types.get_content_type(&this->_request.getUri()[pos]).empty())
+		if (pos != std::string::npos && !_is_cgi && _types.get_content_type(&this->_request.getUri()[pos]).empty())
 		{
-			response_stream << createError(403, &this->getConfig());
+			response_stream << createError(415, &this->getConfig());
 			_to_close = true;
 		}
-		else if(this->_location.get_autoindex() && _request.getMethod() == GET && *(_request.getUri().end() - 1) == '/')
+		else if(_request.getUri().find_first_of(".") == std::string::npos && _request.getMethod() == GET && _request.getUri().length() > 1)
 		{
-			std::string ret;
-			response_stream << HTTP_OK;
-			ret = directoryListing(_respond_path);
-			response_stream << "Content-Length: " << ret.length() << "\n" << _types.get_content_type(".html") << "\r\n\r\n" << ret;
+			if (this->_location.get_autoindex() && _request.getUri().at(_request.getUri().length() - 1) == '/')
+				response_stream << directoryListing(_respond_path);
+			else
+				response_stream << createError(404, &this->getConfig());
 		}
 		else if (_is_cgi)
 		{
@@ -151,7 +152,7 @@ int 	Response::send_response()
 			std::cout << RED << _respond_path << RESET << std::endl;
 			if (!file.is_open())
 			{
-				std::cout << std::endl << RED << "CANT OPEN" << RESET << std::endl << std::endl;
+				std::cout << std::endl << RED << "Unable to open requested file." << RESET << std::endl << std::endl;
 				response_stream << createError(404, &this->getConfig());
 				_to_close = true;
 			}
@@ -254,43 +255,50 @@ void 	Response::send_404(std::string root, std::ostringstream &response_stream)
 	}
 }
 
-void	Response::new_request(httpHeader &request)
+bool	Response::new_request(httpHeader &request)
 {
 	this->_request = request;
-	//this->_is_complete = false;
 	this->_to_close = false;
 	this->_received_bytes = 0;
-	std::string loc = request.getUri();
-	// if (this->_location[0] == '/')
-	// {
-	// 	this->_location.insert(0, this->_config.get_root(), 0, this->_config.get_root().size() - 1);
-	// 	std::cout << this->_location << std::endl;
-	// }
+	std::map<std::string, Location>::iterator loc_it;
+	std::string uri = request.getUri();
 	size_t pos;
-	while (!loc.empty())
+	size_t size = this->_request.getUri().size();
+	pos = uri.length() - 1;
+	std::cout << "new request: " << uri << std::endl;
+	while (!uri.empty())
 	{
-		//std::cout << "location: " << this->_location << std::endl;
-		pos = loc.find_last_of("/");
-		if (pos != std::string::npos)
+		if (uri.length() > 1 && uri[uri.length() -1] == '/')
+			uri.erase(uri.length() - 1);
+		std::cout << uri << std::endl;
+		std::map<std::string, std::string>::iterator red_it = this->getConfig().getRedirection().find(uri);
+		if (red_it != this->getConfig().getRedirection().end())
 		{
-			//std::cout << "found /" << std::endl;
-			loc.erase(pos + 1);
-			std::map<std::string, Location>::iterator it = this->getConfig().get_location().find(loc);
-			if (it != this->getConfig().get_location().end())
-			{
-				this->_location = it->second;
-				std::cout << "OLD URI: " << this->_request.getUri() << std::endl;
-				if (this->_request.getUri() == "/")
-					this->_request.setURI(this->_location.get_root() + this->_location.get_index());
-				else
-					this->_request.setURI(this->_location.get_root() + &request.getUri()[1]);
-				std::cout << "NEW URI: " << this->_request.getUri() << std::endl;
-				return ;
-			}
-			loc.erase(pos);
-			//std::cout << "location: " << this->_location << std::endl;
+			size += red_it->second.size() - uri.size();
+			std::cout << "SIZE: " << size << std::endl;
+			uri = red_it->second;
+			loc_it = this->getConfig().get_location().find(red_it->second);
 		}
+		else
+			loc_it = this->getConfig().get_location().find(uri);
+		if (loc_it != this->getConfig().get_location().end())
+		{
+			this->_location = loc_it->second;
+			std::cout << "OLD URI: " << this->_request.getUri() << std::endl;
+			if (uri.size() == size && !this->_location.get_index().empty())
+				this->_request.setURI(this->_location.get_root() + this->_location.get_index());
+			else
+				this->_request.setURI(this->_location.get_root() + &request.getUri()[pos + 1]);
+			std::cout << "NEW URI: " << this->_request.getUri() << std::endl;
+			return true;
+		}
+		if (pos > 0)
+			pos = uri.find_last_of("/", pos - 1);
+		if (pos == std::string::npos)
+			break;
+		uri.erase(pos + 1);
 	}
+	return false;
 }
 
 // Location *Response::findLocation(int &status)
@@ -508,14 +516,16 @@ bool Response::checkCGI()
 	if (pos != std::string::npos)
 	{
 		std::string ext(this->_request.getUri().substr(pos));
-		pos = ext.find_first_of("?");
-		if (pos != std::string::npos)
-			ext.erase(pos);
+		std::cout << RED << "CGI CHECK URI: " << this->_request.getUri() << RESET << std::endl;
+		// pos = ext.find_first_of("?");
+		// if (pos != std::string::npos)
+		// 	ext.erase(pos);
 		std::cout << ext << std::endl;
 		std::vector<std::string>::const_iterator it = this->getConfig().get_cgi().get_ext().begin();
 		std::vector<std::string>::const_iterator end = this->getConfig().get_cgi().get_ext().end();
 		for (; it != end; it++)
 		{
+			std::cout << "inside cgi ext: " << *it << std::endl;
 			if (*it == ext)
 			{
 				return true;
@@ -586,7 +596,7 @@ std::string Response::directoryListing(std::string uri)
     struct dirent *ent;
 
 	if (!directoryExists(uri.c_str()))
-		return (Response::createError(400, &this->getConfig()));
+		return (Response::createError(404, &this->getConfig()));
 	
 	std::ostringstream outfile;
 
@@ -603,11 +613,16 @@ std::string Response::directoryListing(std::string uri)
 	{
         while ((ent = readdir(dir)) != NULL)
 		{
-            std::cout << ent->d_type << std::endl;
+			// size_t pos = 0;
+			// if (_request.getUri().find(this->getConfig().get_root()) == 0)
+			// 	pos = this->getConfig().get_root().length();
+            // std::cout << ent->d_type << std::endl;
+            // std::cout << "REQUESTED DIRECTORY URL: " << _request.getUri() << std::endl;
+            // std::cout << "end->d_name: " << ent->d_name << std::endl;
 			if (dir_exists(uri + ent->d_name))
-				outfile << "<li><a href=\"" << _request.getUri() << ent->d_name <<"/\" >" << ent->d_name << "</a></li>" << std::endl;
+				outfile << "<li><a href=\"" << ent->d_name <<"/\" >" << ent->d_name << "</a></li>" << std::endl;
 			else
-				outfile << "<li><a href=\"" << _request.getUri() << ent->d_name <<"\" >" << ent->d_name << "</a></li>" << std::endl;
+				outfile << "<li><a href=\"" << ent->d_name <<"\" >" << ent->d_name << "</a></li>" << std::endl;
         }
         closedir(dir);
     }
@@ -615,8 +630,10 @@ std::string Response::directoryListing(std::string uri)
     outfile << "</ul>\n";
     outfile << "</body>\n";
     outfile << "</html>\n";
-
-	return (outfile.str());
+	std::string body(outfile.str());
+	std::ostringstream message; 
+	message << HTTP_OK << "Content-Length: " << body.length() << "\n" << _types.get_content_type(".html") << "\r\n\r\n" << body;
+	return (message.str());
 }
 
 

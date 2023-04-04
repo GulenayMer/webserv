@@ -23,6 +23,7 @@
   			std::string							_index;
  			std::map<int, std::string>			_default_error;
   			std::map<std::string, Location>		_location;
+  			std::map<std::string, std::string>	_redirection;
 			configCGI							_cgi;
 			int									_error_code;
 
@@ -45,6 +46,7 @@
 			std::map<std::string, Location>		&get_location();
 			// Location							&find_location(std::string location);
 			configCGI							&get_cgi();
+			std::map<std::string, std::string>	&getRedirection();
 			int									get_error_code();
 
 		

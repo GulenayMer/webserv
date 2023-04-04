@@ -50,7 +50,7 @@ class Response
         int 	send_response();
         void 	send_404(std::string root, std::ostringstream &response_stream);
 
-		void	new_request(httpHeader &request);
+		bool	new_request(httpHeader &request);
 
 		void	responseToGET(std::ifstream &file, const std::string& path, std::ostringstream &response_stream);
 		void	responseToPOST(const httpHeader request, std::ostringstream &response_stream);
