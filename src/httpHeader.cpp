@@ -61,6 +61,7 @@ httpHeader &httpHeader::operator=(const httpHeader& rhs)
 		this->_version = rhs._version;
 		this->_header_length = rhs._header_length;
 		this->_content_length = rhs._content_length;
+		this->_cookie = rhs._cookie;
 	}
 	return *this;
 }
