@@ -34,7 +34,6 @@ Location::Location(std::ifstream &config_file, std::string line)
 	}	
 	if (exit_context != 1 || (this->get_index().empty() || this->get_root().empty()))
 		set_error_code(11);
-	// TODO fix zero
 	this->set_error_code(0);
 }
 
