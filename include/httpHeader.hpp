@@ -4,6 +4,8 @@
 # include "Utils.hpp"
 # include "minilib.hpp"
 
+// Set-Cookie: key=value; expires='formated date'; asdfaf=sadadd
+
 enum httpMethods 
 {
 	GET,
@@ -27,6 +29,7 @@ class httpHeader
 		std::map<std::string, std::string> _header;
 		size_t		_header_length;
 		size_t		_content_length;
+		std::string	_cookie;
 		
 	public:
 		httpHeader();
@@ -40,6 +43,7 @@ class httpHeader
 		const std::string& getVersion() const;
 		//const std::map<std::string, std::string>& get_complete_header() const;
 		const std::string get_single_header(std::string entry);
+		const std::string
 
 		void setHeader(std::string name, std::string value);
 		void setMethod(std::string tmp_method);
