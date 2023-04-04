@@ -417,9 +417,6 @@ std::string	Response::createError(int errorNumber, Config* config)
 
 std::string Response::getErrorPath(int &errorNumber, std::string& errorName, Config* config)
 {
-	std::string			path;
-	// TODO should it be Location root? or config root?
-	std::string			root = config->get_root();
 	std::string			error_path;
 
 	
@@ -488,8 +485,7 @@ std::string Response::getErrorPath(int &errorNumber, std::string& errorName, Con
 			break;
 	}
 	error_path = config->get_error_path(errorNumber);
-	path = root + error_path;
-	return (path);
+	return (error_path);
 }
 
 bool Response::checkCGI()

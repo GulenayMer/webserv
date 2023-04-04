@@ -6,7 +6,7 @@ CC =		g++
 
 CFLAGS	=	-Wall -Wextra -Werror -Wshadow -std=c++98 -O3
 
-DEBUG =		-Wall -Wextra -Werror -g -std=c++98 -O3
+DEBUG =		-Wall -Wextra -Werror -g -std=c++98
 
 VAL =		valgrind -s --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes
 

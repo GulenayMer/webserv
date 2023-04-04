@@ -14,7 +14,7 @@ body = "<!DOCTYPE html>\n<head>\n<link href=/pokemon/pstyle.css rel=stylesheet t
 if response.status_code == 200:
 	data = response.json()
 	sprite = data["sprites"]["front_default"]
-	body += f"<img src={sprite} alt=/images/pokeball>"
+	body += f"<img src={sprite} alt=/images/pokeball width=200 height=200>"
 	body += f"<div>{pokemon.title()}</div>"
 	body += f"<div>Abilities:<br/>"
 	for ability in data["abilities"]:
