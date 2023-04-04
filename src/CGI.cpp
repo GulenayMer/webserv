@@ -262,7 +262,7 @@ int	CGI::initInputPipe()
 	return this->_input_pipe[1];
 }
 
-void	CGI::sendResponse()
+bool	CGI::sendResponse()
 {
 	size_t	sent;
 	std::ostringstream response_stream;
@@ -281,13 +281,22 @@ void	CGI::sendResponse()
 		for (size_t i = 0; i < _response_buff.size(); i++)
 			std::cout << BLUE << _response_buff[i];
 		std::cout << RESET << std::endl;
-		sent = send(this->_response.getConnFd(), &_response_buff[0], _response_buff.size(), MSG_DONTWAIT);
+		sent = send(this->_response.getConnFd(), &_response_buff[this->_bytes_sent], _response_buff.size() - this->_bytes_sent, MSG_DONTWAIT);
 	}
+	std::cout << "sent: " << _bytes_sent << ", content length: " << _content_length << std::endl;
 	if (sent > 0)
 	{
-		exit_status.erase(this->_pid);
-		this->getResponse().completeProg(true);
+		this->_bytes_sent += sent;
+		if (this->_bytes_sent == this->_content_length)
+		{
+			std::cout << "SEND COMPLETE" << std::endl;
+			exit_status.erase(this->_pid);
+			_response_buff.clear();
+			this->_done_reading = false;
+			return true;
+		}
 	}
+	return false;
 }
 
 void	CGI::add_to_buffer(char *buff, size_t rec)
@@ -308,6 +317,7 @@ std::string& CGI::get_boundary()
 
 void	CGI::setReadComplete()
 {
+	this->_content_length = this->_response_buff.size();
 	this->_done_reading = true;
 }
 
@@ -369,6 +379,8 @@ void	CGI::writeToCGI()
 		{
 			std::cout << "DONE" << std::endl;
 			this->_body_complete = true;
+			this->_bytes_sent = 0;
+			this->_content_length = 0;
 		}
 	}
 }

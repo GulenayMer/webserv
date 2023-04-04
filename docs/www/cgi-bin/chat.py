@@ -25,7 +25,7 @@ headers = {
 
 response = requests.request("POST", url, json=payload, headers=headers)
 
-body = "<!DOCTYPE html>\n<head>\n<link href=/utils/cstyle.css rel=stylesheet type=text/css>\n<title>ChatBot</title>\n</head>\n<body>\n"
+body = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=UTF-8>\n<link href=/utils/cstyle.css rel=stylesheet type=text/css>\n<title>ChatBot</title>\n</head>\n<body>\n"
 body += "<h1>Ask ChatGPT a question</h1>"
 body += f"<div id=d1>{message}</div>"
 body += "<div id=d2>"

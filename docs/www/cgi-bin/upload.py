@@ -13,5 +13,8 @@ if fileitem.filename:
 else:
    message = 'Uploading Failed'
 message = "<H1> " + message + " </H1>"
+message += "<form METHOD=GET ACTION=\"/\">"
+message += "<button type=\"submit\">Homepage</button>"
+message += "</form>\n</body>\n</html>"
 message = f"HTTP/1.1 200 OK\nContent-Length:{len(message)}\nContent-Type:text/html\r\n\r\n" + message
 print(message)

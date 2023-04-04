@@ -71,7 +71,7 @@ class Response
 		std::string directoryListing(std::string uri);
 		bool checkCGI();
 		bool checkPermissions();
-		void completeProg(bool complete);
+		void setCompletion(bool complete);
 		bool isComplete();
 		std::string &getAddress();
 		bool shouldClose();

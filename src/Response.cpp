@@ -80,7 +80,6 @@ int 	Response::send_response()
 	_response_body.clear();
 	_response.clear();
 	_is_cgi = false;
-	//std::cout << this->getConfig().get_root() + &this->getRequest().getUri()[1] << std::endl;
 	if (!_request.isHttp11())
 	{
 		response_stream << createError(505, &this->getConfig());
@@ -103,7 +102,6 @@ int 	Response::send_response()
 	// }
 	else if(!this->_location.check_method_at(_request.getMethod()))
 	{
-		std::cout << "check method" << std::endl;
 		response_stream << createError(405, &this->getConfig());
 		_to_close = true;
 	}
@@ -147,7 +145,6 @@ int 	Response::send_response()
 		}
 		else
 		{
-			std::cout << "RESPOND PATH: " << _respond_path << std::endl;
 			std::ifstream file(_respond_path.c_str());
 			std::cout << RED << _respond_path << RESET << std::endl;
 			if (!file.is_open())
@@ -183,7 +180,6 @@ int 	Response::send_response()
 /* --------------------------------------------------------------------------- */	
 	// Send the response to the client
 	_response = response_stream.str();
-	//std::cout << _response << std::endl;
 	sent = send(this->_conn_fd, _response.c_str(), _response.length(), MSG_DONTWAIT);
 	if (sent > 0)
 	{
@@ -259,6 +255,7 @@ bool	Response::new_request(httpHeader &request)
 {
 	this->_request = request;
 	this->_to_close = false;
+	this->_is_complete = false;
 	this->_received_bytes = 0;
 	std::map<std::string, Location>::iterator loc_it;
 	std::string uri = request.getUri();
@@ -431,7 +428,6 @@ std::string	Response::createError(int errorNumber, Config* config)
 		response_stream << response_body;
 		error.close();
 	}
-	//std::cout << BLUE << response_stream.str() << RESET << std::endl;
 	return (response_stream.str());
 }
 
@@ -516,20 +512,12 @@ bool Response::checkCGI()
 	if (pos != std::string::npos)
 	{
 		std::string ext(this->_request.getUri().substr(pos));
-		std::cout << RED << "CGI CHECK URI: " << this->_request.getUri() << RESET << std::endl;
-		// pos = ext.find_first_of("?");
-		// if (pos != std::string::npos)
-		// 	ext.erase(pos);
-		std::cout << ext << std::endl;
 		std::vector<std::string>::const_iterator it = this->getConfig().get_cgi().get_ext().begin();
 		std::vector<std::string>::const_iterator end = this->getConfig().get_cgi().get_ext().end();
 		for (; it != end; it++)
 		{
-			std::cout << "inside cgi ext: " << *it << std::endl;
 			if (*it == ext)
-			{
 				return true;
-			}
 		}
 	}
 	return false;
@@ -542,11 +530,10 @@ bool	Response::checkPermissions()
 		path = this->_location.get_root() + this->_location.get_index();
 	else
 		path = this->_location.get_root() + &path[1];
-	//std::cout << path << std::endl;
 	return dir_exists(path);
 }
 
-void	Response::completeProg(bool complete)
+void	Response::setCompletion(bool complete)
 {
 	this->_is_complete = complete;
 }
@@ -613,12 +600,6 @@ std::string Response::directoryListing(std::string uri)
 	{
         while ((ent = readdir(dir)) != NULL)
 		{
-			// size_t pos = 0;
-			// if (_request.getUri().find(this->getConfig().get_root()) == 0)
-			// 	pos = this->getConfig().get_root().length();
-            // std::cout << ent->d_type << std::endl;
-            // std::cout << "REQUESTED DIRECTORY URL: " << _request.getUri() << std::endl;
-            // std::cout << "end->d_name: " << ent->d_name << std::endl;
 			if (dir_exists(uri + ent->d_name))
 				outfile << "<li><a href=\"" << ent->d_name <<"/\" >" << ent->d_name << "</a></li>" << std::endl;
 			else

@@ -64,6 +64,7 @@ label {
 
 #d2 {
 	max-width: 500px;
+	white-space: pre-line;
 	position: relative;
 	right: 10%;
 	color: #F9FAF8;
