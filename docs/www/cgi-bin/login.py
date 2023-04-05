@@ -32,8 +32,9 @@ if os.path.exists(db_path):
 		cookie = http.cookies.SimpleCookie()
 		# set a value for the cookie
 		cookie['username'] = user["username"]
+		# TODO get domain from website?
 		cookie["username"]["domain"] = "example.com"
-		cookie["username"]["path"] = "/"
+		cookie["username"]["path"] = f"/{username}"
 		cookie["username"]["max-age"] = 3600
 	# if user does not exist create user
 	else:
