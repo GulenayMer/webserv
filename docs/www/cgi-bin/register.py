@@ -1,19 +1,18 @@
 #!/usr/bin/python3
 
-import cgi, os, hashlib, json
-import cgitb
+import cgi, os, hashlib, json, cgitb
 from dotenv import load_dotenv
 
 load_dotenv()
 cgitb.enable()
 form = cgi.FieldStorage()
 
-user = form["username"].file.read()
+username= form["username"].file.read()
 password = form["password"].file.read()
 email = form["email"].file.read()
 
 user = {
-	"username": user,
+	"username": username,
 	"hash": str(hashlib.sha256(password.encode('utf-8')).hexdigest()),
 	"email": email
 }
