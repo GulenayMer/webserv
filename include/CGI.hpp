@@ -54,7 +54,7 @@ class CGI {
 		int		initOutputPipe();
 		int		initInputPipe();
 		Response &getResponse();
-		void	sendResponse();
+		bool	sendResponse();
 		void	add_to_buffer(char *buff, size_t rec);
 		void	setReadComplete();
 		bool	readComplete();

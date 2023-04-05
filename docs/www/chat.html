@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<head>
+<link href=/utils/cstyle.css rel=stylesheet type=text/css>
+<title>ChatBot</title>
+</head>
+<body>
+<h1>Ask ChatGPT a question</h1>
+<form id="form" action="/cgi-bin/chat.py" method="post" enctype="multipart/form-data">
+<label for="message">Enter a message</label>
+<textarea id="message" type="text" name="message" required></textarea><br/>
+<button id=button class=button type=submit value=Submit>Submit</button>
+</form>
+<form METHOD=GET ACTION="/">
+<button type="submit">Homepage</button>
+</form>
+</body>
+</html>

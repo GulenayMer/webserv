@@ -15,6 +15,9 @@ $cow
 <button type=\"submit\">Get new fortune.</button>
 </form>
 </pre>
+<form METHOD=GET ACTION=\"/\">
+<button type=\"submit\">Homepage</button>
+</form>
 </body>
 </html>
 "
