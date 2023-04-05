@@ -34,25 +34,35 @@ body input {
 	font-weight: 600;
 	padding: 10px 30px;
 	border-radius: 7px;
-	border: none;
+	border-color: black;
 }
 
 div {
 	color: #F9FAF8;
 	background-color: #c71010;
+	margin: 1px;
 	font-weight: 600;
 	padding: 10px 30px;
 	border-radius: 7px;
-	border: none;
+	border-width: 2px;
+	border-color: black;
+	border-style: solid;
+}
+
+#d1 {
+	position: relative;
+	right: 11%;
 }
 
 body button {
+	font-family: 'Roboto', sans-serif;
+	margin: 2px;
 	color: #F9FAF8;
 	background-color: #c71010;
 	font-weight: 600;
 	padding: 10px 30px;
 	border-radius: 7px;
-	border: none;
+	border-color: black;
 }
 
 

@@ -22,7 +22,7 @@ if response.status_code == 200:
 	body += "</div>"
 else:
 	body += f"<div>{pokemon.title()} not found.</div>"
-body += f"<div>Search again:</div>"
+body += f"<div id=d1>Search again:</div>"
 body += "<div><form id=form action=/pokemon/pokedex.py method=post enctype=multipart/form-data>"
 body += "<label for=pokemon>Enter a Pokemon:</label>"
 body += "<input id=pokemon type=text name=pokemon required></input>"

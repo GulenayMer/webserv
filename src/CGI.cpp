@@ -268,8 +268,10 @@ bool	CGI::sendResponse()
 	std::ostringstream response_stream;
 	std::string response_string;
 	std::string content;
+	bool error = false;
 	if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
 	{
+		error = true;
 		response_string = this->getResponse().createError(500, &this->getResponse().getConfig());
 		std::cout << "ERROR 505 sending" << std::endl;
 		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
@@ -284,10 +286,10 @@ bool	CGI::sendResponse()
 		sent = send(this->_response.getConnFd(), &_response_buff[this->_bytes_sent], _response_buff.size() - this->_bytes_sent, MSG_DONTWAIT);
 	}
 	std::cout << "sent: " << _bytes_sent << ", content length: " << _content_length << std::endl;
-	if (sent > 0)
+	if (sent > 0 || error)
 	{
 		this->_bytes_sent += sent;
-		if (this->_bytes_sent == this->_content_length)
+		if (this->_bytes_sent == this->_content_length || error)
 		{
 			std::cout << "SEND COMPLETE" << std::endl;
 			exit_status.erase(this->_pid);
