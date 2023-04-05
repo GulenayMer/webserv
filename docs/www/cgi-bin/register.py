@@ -1,30 +1,58 @@
 #!/usr/bin/python3
 
-import cgi, os
+import cgi, os, hashlib, json
+import cgitb
+from dotenv import load_dotenv
 
+load_dotenv()
+cgitb.enable()
 form = cgi.FieldStorage()
 
-username = form["username"].file.read()
-email = form["email"].file.read()
+user = form["username"].file.read()
 password = form["password"].file.read()
+email = form["email"].file.read()
 
+user = {
+	"username": user,
+	"hash": str(hashlib.sha256(password.encode('utf-8')).hexdigest()),
+	"email": email
+}
 # check if db file exists, if not create it
-db_path = os.getcwd() + '/docs/www/user_db/users.csv
-if os.oath.exists(db_path):
-	# check if user exists
+db_path = os.environ["DB_PATH"]
 
-	# if user does not exist create user
+if os.path.exists(db_path):
+	user_exists = False
+	with open(db_path, "r", encoding='utf-8') as db:
+		users = json.load(db)
+	# check if user exists or email is taken
+	for entry in users:
+		if entry["username"] == user["username"] or entry["email"] == user["email"]:
+			print("There was a problem creating your account.")
+			user_exists = True
+			break
+		# if user does not exist create user
+	if user_exists == False:
+		users.append(user)
+		with open(db_path, 'w', encoding='utf-8') as db:
+			json.dump(users,db)
+
+# File does not exist, create it with a list and add first user
 else:
-	with open(file_path, "w") as db:
-        f.write("index,username,email,hash")
-        print("User Database was created.")
+	with open(db_path, 'w', encoding='utf-8') as db:
+		json.dump([], db)
+	with open(db_path, "r", encoding='utf-8') as db:
+		users = json.load(db)
+	with open(db_path, 'w', encoding='utf-8') as db:	
+		users.append(user)
+		json.dump(users, db)
+		print("User was created.")	
 
-body = "<html><head><link rel=stylesheet href=/utils/style.css><title>Data Submitted</title></head><body>"
-body += "<h1>Form Submitted.</h1>"
-body += f"<h2>The email for the user {username}, \"{email}\" has been taken and will be sold to spammers.</h2>"
-body += "<form METHOD=GET ACTION=\"/\">"
-body += "<button type=\"submit\">Homepage</button>"
-body += "</form>\n</body>\n</html>"
-
-message = f"HTTP/1.1 200 OK\nContent-Length:{len(body)}\nContent-Type:text/html\r\n\r\n" + body
-print(message)
+print("Content-type:text/html\r\n")
+print("<html>")
+print("<head>")
+print("<title>Redirecting...</title>")
+print("<meta http-equiv='refresh' content='0;url=/index.html'>")
+print("</head>")
+print("<body>")
+print("</body>")
+print("</html>")
