@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 
-import requests, cgi
+import requests, cgi, os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 form = cgi.FieldStorage()
 
@@ -19,7 +22,7 @@ payload = {
 }
 headers = {
 	"content-type": "application/json",
-	"X-RapidAPI-Key": "",
+	"X-RapidAPI-Key": os.environ['API_KEY'],
 	"X-RapidAPI-Host": "openai80.p.rapidapi.com"
 }
 
