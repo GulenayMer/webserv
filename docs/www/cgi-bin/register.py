@@ -10,7 +10,6 @@ form = cgi.FieldStorage()
 username= form["username"].file.read()
 password = form["password"].file.read()
 email = form["email"].file.read()
-
 user = {
 	"username": username,
 	"hash": str(hashlib.sha256(password.encode('utf-8')).hexdigest()),
@@ -26,7 +25,7 @@ if os.path.exists(db_path):
 	# check if user exists or email is taken
 	for entry in users:
 		if entry["username"] == user["username"] or entry["email"] == user["email"]:
-			print("There was a problem creating your account.")
+			body = "There was a problem creating your account."
 			user_exists = True
 			break
 		# if user does not exist create user
@@ -44,14 +43,21 @@ else:
 	with open(db_path, 'w', encoding='utf-8') as db:	
 		users.append(user)
 		json.dump(users, db)
-		print("User was created.")	
+		body = "User was created."
 
-print("Content-type:text/html\r\n")
-print("<html>")
-print("<head>")
-print("<title>Redirecting...</title>")
-print("<meta http-equiv='refresh' content='0;url=/index.html'>")
-print("</head>")
-print("<body>")
-print("</body>")
-print("</html>")
+body = "<body>" + body + "</body>"
+
+html = "<html>"
+html += "<head>"
+html += "<title>Redirecting...</title>"
+html += "<meta http-equiv='refresh' content='0;url=/index.html'>"
+html += "</head>"
+html += body
+html += "</html>"
+
+message = "HTTP/1.1 200 OK\r\n"
+message += f"Content-length: {len(html)} \r\n"
+message += "Content-type:text/html\r\n\r\n"
+message += html
+
+print(message)
