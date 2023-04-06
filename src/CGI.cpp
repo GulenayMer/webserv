@@ -58,6 +58,7 @@ CGI::~CGI()
 
 void	CGI::env_init()
 {
+	_env["HOST"] = std::string(inet_ntoa(_response.getConfig().get_host()));
 	_env["GATEWAY_INTERFACE"] = std::string("CGI/1.1"); // The revision of the Common Gateway Interface that the server uses.
 	_env["SERVER_NAME"] = _response.getConfig().get_server_name(); //  The server's hostname or IP address.
 	_env["SERVER_SOFTWARE"] = std::string("webserv"); //  The name and version of the server software that is answering the client request.

@@ -174,7 +174,7 @@ void grim_reaper(int signum)
 	if (pid > 0)
 	{
 		exit_status.insert(std::map<int, int>::value_type(pid, WEXITSTATUS(status)));
-		//std::cout << GREEN << WEXITSTATUS(status) << RESET << std::endl;
+		std::cout << GREEN << WEXITSTATUS(status) << RESET << std::endl;
 	}
 }
 
