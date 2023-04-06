@@ -30,11 +30,11 @@ if os.path.exists(db_path):
 	if user_exists == True:
 		cookie = http.cookies.SimpleCookie()
 		# set a value for the cookie
-		cookie['username'] = user["username"]
+		cookie['session'] = user["username"]
 		# TODO get domain from website?
-		cookie["username"]["domain"] = "example.com"
-		cookie["username"]["path"] = f"/{username}"
-		cookie["username"]["max-age"] = 3600
+		cookie["session"]["domain"] = os.environ["HOST"]
+		cookie["session"]["path"] = "/"
+		cookie["session"]["max-age"] = 3600
 	# if user does not exist create user
 	else:
 		body = "There was a problem accessing this account"
@@ -50,14 +50,15 @@ html += "<title>Redirecting...</title>"
 html += "<meta http-equiv='refresh' content='0;url=/index.html'>"
 html += "</head>"
 html += body
-if user_exists == True:
-	html += cookie.output()
-html += "\n" # print a blank line to separate the headers from the body 
 html += "</html>"
 
 message = "HTTP/1.1 200 OK\r\n"
+if user_exists == True:
+	message += cookie.output()
+	message += "\n" # print a blank line to separate the headers from the body 
 message += f"Content-length: {len(html)} \r\n"
 message += "Content-type:text/html\r\n\r\n"
+
 message += html
 
 print(message)
