@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 cookie = http.cookies.SimpleCookie()
 # set a value for the cookie
-cookie['session'] = "merve"
+cookie['session'] = "logout"
 # TODO get domain from website?
 cookie["session"]["domain"] = os.environ["HOST"]
 cookie["session"]["path"] = "/"
