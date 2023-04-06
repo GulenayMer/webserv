@@ -198,6 +198,7 @@ void						Config::check_config()
 	// index value exists and given file exists
 	if (this->get_index().size() == 0 || file_exists(this->get_root() + this->get_index()) == false) {
 		this->set_error_code(21);
+		std::cout << "HERE" << std::endl;
 		throw std::logic_error(INVALID_INDEX);
 	}
 	

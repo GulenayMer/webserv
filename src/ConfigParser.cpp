@@ -239,23 +239,23 @@ void ConfigParser::clean_index(std::string line)
 	this->get_config(this->get_n_servers() - 1).set_index(line);
 }
 
-void			ConfigParser::clean_cgi_ext(std::string line, configCGI &cgi)
-{
-	size_t pos = 0;
-	size_t pos2 = 0;
-	line = remove_end(line, ';');
-	pos = line.find_first_not_of(" \r\t\b\f", pos);
-	pos = line.find_first_of(" \r\t\b\f", pos);
-	pos = line.find_first_not_of(" \r\t\b\f", pos);
-	while (pos != std::string::npos) {
-		pos = line.find_first_not_of(" \r\t\b\f", pos);
-		pos2 = line.find_first_of(" \r\t\b\f", pos);
-		cgi.set_ext(line.substr(pos, pos2 - pos));
-		pos = pos2;
-	}
-	if (cgi.get_path().empty())
-		this->set_error_code(15);
-}
+// void			ConfigParser::clean_cgi_ext(std::string line, configCGI &cgi)
+// {
+// 	size_t pos = 0;
+// 	size_t pos2 = 0;
+// 	line = remove_end(line, ';');
+// 	pos = line.find_first_not_of(" \r\t\b\f", pos);
+// 	pos = line.find_first_of(" \r\t\b\f", pos);
+// 	pos = line.find_first_not_of(" \r\t\b\f", pos);
+// 	while (pos != std::string::npos) {
+// 		pos = line.find_first_not_of(" \r\t\b\f", pos);
+// 		pos2 = line.find_first_of(" \r\t\b\f", pos);
+// 		cgi.set_ext(line.substr(pos, pos2 - pos));
+// 		pos = pos2;
+// 	}
+// 	if (cgi.get_path().empty())
+// 		this->set_error_code(15);
+// }
 
 int ConfigParser::exit_with_error(int err_code, std::ifstream& in_file)
 {

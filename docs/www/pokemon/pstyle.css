@@ -6,7 +6,9 @@ h1 {
 	font-weight: 600;
 	padding: 10px 30px;
 	border-radius: 7px;
-	border: none;
+	border-width: 2px;
+	border-color: black;
+	border-style: solid;
 }
 
 body
@@ -25,7 +27,16 @@ body label {
 	font-weight: 600;
 	padding: 10px 30px;
 	border-radius: 7px;
-	border: none;
+}
+
+#l1 {
+	border-width: 2px;
+	border-color: black;
+	border-style: solid;
+}
+
+img {
+	margin: 2px;
 }
 
 body input {

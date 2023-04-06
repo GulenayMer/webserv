@@ -21,6 +21,7 @@ configCGI::configCGI(std::ifstream& config_file, std::string line)
 		else if ((line.find(CGI_EXT) != std::string::npos) && check_def_format(CGI_EXT, line))
 			clean_ext(line);
 	}
+	addToMap();
 	if (!exit_context || (this->get_path().empty() || this->get_ext().empty() || this->get_root().empty()))
 		set_error_code(12);	
 }
@@ -36,10 +37,10 @@ void			configCGI::clean_ext(std::string line)
 	while (pos != std::string::npos) {
 		pos = line.find_first_not_of(" \r\t\b\f", pos);
 		pos2 = line.find_first_of(" \r\t\b\f", pos);
-		this->set_ext(line.substr(pos, pos2 - pos));
+		this->_ext.push_back(line.substr(pos, pos2 - pos));
 		pos = pos2;
 	}
-	if (this->get_path().empty())
+	if (this->_ext.empty())
 		this->set_error_code(15);
 }
 
@@ -55,6 +56,7 @@ configCGI &configCGI::operator=(const configCGI &src)
 		this->_path = src._path;
 		this->_ext = src._ext;
 		this->_error_code = src._error_code;
+		this->_intr_paths = src._intr_paths;
 	}
 	return *this;
 }
@@ -67,7 +69,7 @@ const std::string									&configCGI::get_root() const
 
 const std::map<std::string, std::string>			&configCGI::get_path() const
 {
-	return this->_path;
+	return this->_intr_paths;
 }
 
 const std::vector<std::string>					&configCGI::get_ext() const
@@ -90,14 +92,9 @@ void										configCGI::set_root(std::string root)
 	this->_root = root;
 }
 
-void										configCGI::set_path(std::string program, std::string path)
+void										configCGI::set_path(std::string ext, std::string path)
 {
-	this->_path.insert(std::make_pair(program, path));
-}
-
-void										configCGI::set_ext(std::string ext)
-{
-	this->_ext.push_back(ext);
+	this->_intr_paths.insert(std::map<std::string, std::string>::value_type(ext, path));
 }
 
 int											configCGI::cgi_check()
@@ -107,11 +104,10 @@ int											configCGI::cgi_check()
 		return 27;
 	}
 	
-	// provided programm paths are vealid
-	std::map<std::string, std::string> paths = this->get_path();
-	std::map<std::string, std::string>::const_iterator p_it = paths.begin();
-	while (p_it != paths.end()) {
-		if (file_exists(p_it->second) == false) {
+	// provided program paths are valid
+	std::map<std::string, std::string>::const_iterator p_it = _intr_paths.begin();
+	while (p_it != _intr_paths.end()) {
+		if (!file_exists(p_it->second)) {
 			return 28;
 		}
 		p_it++;
@@ -122,23 +118,20 @@ int											configCGI::cgi_check()
 void									configCGI::clean_path(std::string line)
 {
 	std::string temp;
-	std::string temp2;
 	size_t pos = 0;
 	size_t pos2 = 0;
-	size_t pos3 = 0;
 	line = remove_end(line, ';');
 	pos = line.find_first_not_of(" \r\t\b\f", pos);
 	pos = line.find_first_of(" \r\t\b\f", pos);
 	pos = line.find_first_not_of(" \r\t\b\f", pos);
 	while (pos != std::string::npos) {
-		pos3 = line.find_first_of(" \r\t\b\f", pos);
-		pos2 = line.find_last_of("/", pos3);
-		temp =  line.substr(pos2 + 1, pos3 - pos2 - 1);
-		temp2 = line.substr(pos, pos2 + 1 - pos + (temp).size());
-		this->set_path(temp, temp2);
-		pos = line.find_first_not_of(" \r\t\b\f", pos3);
+		pos2 = line.find_first_of(" \r\t\b\f", pos);
+		temp = line.substr(pos, pos2 - pos);
+		this->_path.push_back(temp);
+		pos = line.find_first_not_of(" \r\t\b\f", pos2);
 	}
-	if (this->get_path().empty())
+	std::cout << "done cleaning path" << std::endl;
+	if (this->_path.empty())
 		this->set_error_code(14);
 }
 
@@ -159,4 +152,19 @@ std::ostream &operator<<(std::ostream &os, const configCGI &cgi)
 	}
 	
 	return os;
+}
+
+void	configCGI::addToMap()
+{
+	std::vector<std::string>::iterator it1 = this->_ext.begin();
+	std::vector<std::string>::iterator it2 = this->_path.begin();
+	while (it1 != this->_ext.end() && it2 != this->_path.end())
+	{
+		this->_intr_paths.insert(std::map<std::string, std::string>::value_type(*it1, *it2));
+		std::cout << *it1 << " " << *it2 << std::endl;
+		++it1;
+		++it2;
+	}
+	if (it1 != this->_ext.end() || it2 != this->_path.end())
+		this->set_error_code(12);
 }

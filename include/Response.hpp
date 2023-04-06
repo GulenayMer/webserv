@@ -34,6 +34,7 @@ class Response
 		std::string					_buffer;
 		Config      	   			_config;
 		httpHeader	 				_request;
+		std::string					_ext;
 		bool						_error;
 		Location					_location;
 		size_t						_received_bytes;
@@ -64,6 +65,7 @@ class Response
 		MIME	&getTypes();
 		void	setCGIFd(int fd);
 		int		getCGIFd();
+		std::string &getExt();
 
 		static std::string	createError(int errorNumber, Config* config);
 		void getPath();

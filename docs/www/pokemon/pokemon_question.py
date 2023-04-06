@@ -12,7 +12,7 @@ body = "<!DOCTYPE html>\n<head>\n<link href=/pokemon/pstyle.css rel=stylesheet t
 body += "<h1>Who's that Pokemon?</h1>\n"
 body += f"<img src={image} alt=\"{image}\">\n"
 body += "<form id=form action=/pokemon/pokemon_answer.py method=post enctype=multipart/form-data>\n"
-body += "<label for=guess>Take a guess:</label>\n"
+body += "<label id=l1 for=guess>Take a guess:</label>\n"
 body += "<input id=guess type=text name=guess></input>\n"
 body += f"<input type=hidden value={choice} name=image>\n"
 body += "<button id=button class=button type=submit value=Submit>Submit</button>"

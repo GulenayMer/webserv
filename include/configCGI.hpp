@@ -11,7 +11,8 @@
 class configCGI {
 	private:
 		std::string								_root;
-		std::map<std::string, std::string>		_path;
+		std::map<std::string, std::string>		_intr_paths;
+		std::vector<std::string>                _path;
 		std::vector<std::string>				_ext;
 		int										_error_code;
 	public:
@@ -34,6 +35,7 @@ class configCGI {
 		int										cgi_check();
 		void									clean_path(std::string line);
 		void									clean_ext(std::string line);
+		void									addToMap();
 };
 
 std::ostream &operator<<(std::ostream &os, const configCGI &cgi);

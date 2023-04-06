@@ -43,6 +43,7 @@ Response &Response::operator=(const Response &src)
 		_is_complete = src._is_complete;
 		_to_close = src._to_close;
 		_addr = src._addr;
+		_ext = src._ext;
 	}
 	return *this;
 }
@@ -484,15 +485,16 @@ bool Response::checkCGI()
 		return false;
 	if (pos != std::string::npos)
 	{
-		std::string ext(this->_request.getUri().substr(pos));
+		_ext = this->_request.getUri().substr(pos);
 		std::vector<std::string>::const_iterator it = this->getConfig().get_cgi().get_ext().begin();
 		std::vector<std::string>::const_iterator end = this->getConfig().get_cgi().get_ext().end();
 		for (; it != end; it++)
 		{
-			if (*it == ext)
+			if (*it == _ext)
 				return true;
 		}
 	}
+	_ext.clear();
 	return false;
 }
 
@@ -627,3 +629,8 @@ ssize_t Response::receivedBytes(ssize_t received)
 //     } else {
 //         std::cout << dir_path << " is not a directory" << std::endl;
 //     }
+
+std::string &Response::getExt()
+{
+	return this->_ext;
+}

@@ -115,36 +115,46 @@ void	CGI::env_to_char(void)
 bool	CGI::handle_cgi()
 {
     std::ifstream file;
-	std::string new_path = this->_response.getRequest().getUri();
+	std::string script_path = this->_response.getRequest().getUri();
 	std::string shebang;
 
-	new_path = remove_end(this->_response.getRequest().getUri(), '?');
    	//new_path = "." + new_path;
 	// TODO check if ext is allowed
-	std::cout << "CGI PATH: " << new_path << std::endl;
-	file.open(new_path.c_str(), std::ios::in);
-	if (file.fail() == true) {
-		std::cout << "CGI FILE OPEN FAIL: " << new_path << std::endl;
+	std::cout << "CGI script path: " << script_path << std::endl;
+	std::map<std::string, std::string>::const_iterator path_it = this->_response.getConfig().get_cgi().get_path().find(this->_response.getExt());
+	if (path_it == this->_response.getConfig().get_cgi().get_path().end())
+	{
+		std::cout << "CGI Script interpreter path not found for:" << this->_response.getExt() << std::endl;
+		std::cout << "Known interpreters: ";
+		for (path_it = this->_response.getConfig().get_cgi().get_path().begin(); path_it != this->_response.getConfig().get_cgi().get_path().end(); path_it++)
+			std::cout << path_it->second << " ";
+		std::cout << std::endl;
 		this->_errno = 1;
 		return false;
 	}
-	getline(file, shebang);
-	// TODO invalid file, no shebang
-	if (shebang.find("#!") == std::string::npos)
-	{
-		std::cout << "CGI NO SHEBANG FAIL: " << std::endl;
-		this->_errno = 2;
-		file.close();
-		return false;
-	}
-	size_t pos = shebang.find_last_of("/");
-	shebang = &shebang[pos] + 1;
-	file.close();
+	// file.open(new_path.c_str(), std::ios::in);
+	// if (file.fail() == true) {
+	// 	std::cout << "CGI FILE OPEN FAIL: " << new_path << std::endl;
+	// 	this->_errno = 1;
+	// 	return false;
+	// }
+	// getline(file, shebang);
+	// // TODO invalid file, no shebang
+	// if (shebang.find("#!") == std::string::npos)
+	// {
+	// 	std::cout << "CGI NO SHEBANG FAIL: " << std::endl;
+	// 	this->_errno = 2;
+	// 	file.close();
+	// 	return false;
+	// }
+	// size_t pos = shebang.find_last_of("/");
+	// shebang = &shebang[pos] + 1;
+	// file.close();
 	this->_pid = fork();
     if (this->_pid == 0)
 	{
 		this->env_to_char();
-        exec_script(this->_input_pipe, this->_output_pipe, new_path);
+        exec_script(this->_input_pipe, this->_output_pipe, script_path, path_it->second);
 	}
     else
 	{
@@ -158,15 +168,16 @@ bool	CGI::handle_cgi()
 	return true;
 }
 
-void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
+void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path, std::string intpr_path)
 {
-	char *args[2];
+	char *args[3];
 	if (output_pipe[0] > 0)
 		close(output_pipe[0]);
 	if (input_pipe[1] > 0)
 		close(input_pipe[1]);
-    args[0] = strdup(path.c_str());
-	args[1] = NULL;
+    args[0] = strdup(intpr_path.c_str());
+    args[1] = strdup(path.c_str());
+	args[2] = NULL;
 	dup2(output_pipe[1], STDOUT_FILENO);
 	if (output_pipe[1] > 0)
 		close(output_pipe[1]);
@@ -264,18 +275,54 @@ int	CGI::initInputPipe()
 
 bool	CGI::sendResponse()
 {
-	size_t	sent;
+	ssize_t	sent;
 	std::ostringstream response_stream;
 	std::string response_string;
 	std::string content;
-	bool error = false;
 	if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
 	{
-		error = true;
 		response_string = this->getResponse().createError(500, &this->getResponse().getConfig());
 		std::cout << "ERROR 505 sending" << std::endl;
+		_content_length = response_string.size();
 		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
 		std::cout << response_string << std::endl;
+	}
+	else if (_content_length == 0)
+	{
+		response_string = "HTTP/1.1 204 OK\r\nConnection: Keep-Alive\r\n\r\n";
+		std::cout << "CGI complete - nothing to send" << std::endl;
+		_content_length = response_string.size();
+		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
+		std::cout << response_string << std::endl;
+	}
+	else if (this->_response.getExt() == ".php")
+	{
+		std::cout << RED << "Sending php response..." << RESET << std::endl;
+		if (this->_bytes_sent == 0)
+		{
+			for (int i = 0; i < 9; i++)
+			{
+				if (this->_response_buff[i] != "HTTP/1.1"[i])
+				{
+					std::stringstream ss;
+					ss << _response_buff.size();
+					std::vector<char>::iterator it = this->_response_buff.begin();
+					std::string size(ss.str());
+					for (int j = 27; j >= 0; j--)
+						this->_response_buff.insert(it, "\nContent-Type:text/html\r\n\r\n"[j]);
+					for (int j = size.size() - 1; j >= 0; j--)
+						this->_response_buff.insert(it, size[j]);
+					for (int j = 32; j >= 0; j--)
+						this->_response_buff.insert(it, "HTTP/1.1 200 OK\r\nContent-Length:"[j]);
+					break;
+				}
+			}
+			_content_length = this->_response_buff.size();
+		}
+		for (size_t i = 0; i < _response_buff.size(); i++)
+			std::cout << BLUE << _response_buff[i];
+		std::cout << RESET << std::endl;
+		sent = send(this->_response.getConnFd(), &_response_buff[this->_bytes_sent], _response_buff.size() - this->_bytes_sent, MSG_DONTWAIT);
 	}
 	else
 	{
@@ -286,10 +333,10 @@ bool	CGI::sendResponse()
 		sent = send(this->_response.getConnFd(), &_response_buff[this->_bytes_sent], _response_buff.size() - this->_bytes_sent, MSG_DONTWAIT);
 	}
 	std::cout << "sent: " << _bytes_sent << ", content length: " << _content_length << std::endl;
-	if (sent > 0 || error)
+	if (sent >= 0)
 	{
 		this->_bytes_sent += sent;
-		if (this->_bytes_sent == this->_content_length || error)
+		if (this->_bytes_sent == this->_content_length)
 		{
 			std::cout << "SEND COMPLETE" << std::endl;
 			exit_status.erase(this->_pid);
