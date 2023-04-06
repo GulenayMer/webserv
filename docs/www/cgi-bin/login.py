@@ -16,7 +16,7 @@ user = {
 }
 # check if db file exists, if not create it
 db_path = os.environ["DB_PATH"]
-
+user_exists = False
 if os.path.exists(db_path):
 	user_exists = False
 	with open(db_path, "r", encoding='utf-8') as db:
@@ -34,7 +34,7 @@ if os.path.exists(db_path):
 		# TODO get domain from website?
 		cookie["session"]["domain"] = os.environ["HOST"]
 		cookie["session"]["path"] = "/"
-		cookie["session"]["max-age"] = 3600
+		cookie["session"]["max-age"] = 9000
 	# if user does not exist create user
 	else:
 		body = "There was a problem accessing this account"
