@@ -10,14 +10,15 @@ form = cgi.FieldStorage()
 username= form["username"].file.read()
 password = form["password"].file.read()
 email = form["email"].file.read()
+
 user = {
 	"username": username,
 	"hash": str(hashlib.sha256(password.encode('utf-8')).hexdigest()),
 	"email": email
 }
+body = ""
 # check if db file exists, if not create it
 db_path = os.environ["DB_PATH"]
-
 if os.path.exists(db_path):
 	user_exists = False
 	with open(db_path, "r", encoding='utf-8') as db:
