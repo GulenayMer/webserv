@@ -24,6 +24,8 @@ class Response
 		int							_nfds;
 		std::string					_req_uri;
 		bool		                _is_cgi;
+		bool						_is_dir;
+		bool						_list_dir;
 		bool						_is_complete;
 		bool						_to_close;
 		int							_cgi_fd;

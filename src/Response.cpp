@@ -129,20 +129,26 @@ int 	Response::send_response()
 		size_t pos = this->_request.getUri().find_last_of(".");
 		if (pos != std::string::npos && !_is_cgi && _types.get_content_type(&this->_request.getUri()[pos]).empty())
 		{
-			response_stream << createError(415, &this->getConfig());
+			response_stream << createError(500, &this->getConfig());
 			_to_close = true;
 		}
-		else if(_request.getUri().find_first_of(".") == std::string::npos && _request.getMethod() == GET && _request.getUri().length() > 1)
+		else if(this->_is_dir && _request.getMethod() == GET)
 		{
-			if (this->_location.get_autoindex() && _request.getUri().at(_request.getUri().length() - 1) == '/')
+			if (this->_location.get_autoindex() && this->_list_dir)
 				response_stream << directoryListing(_respond_path);
 			else
 				response_stream << createError(404, &this->getConfig());
 		}
 		else if (_is_cgi)
 		{
+			if (!this->_location.allow_cgi())
+			{
+				response_stream << createError(403, &this->getConfig());
+				this->_is_cgi = false;
+			}
 			// TODO check if ext is in config->config_cgi -> if not, error 501; else:
-			return 0;
+			else
+				return 0;
 		}
 		else
 		{
@@ -257,11 +263,22 @@ bool	Response::new_request(httpHeader &request)
 	this->_request = request;
 	this->_to_close = false;
 	this->_is_complete = false;
+	this->_is_dir = false;
+	this->_list_dir = false;
 	this->_received_bytes = 0;
 	std::map<std::string, Location>::iterator loc_it;
 	std::string uri = request.getUri();
 	size_t pos;
-	size_t size = this->_request.getUri().size();
+	if (uri.find_first_of(".") == std::string::npos)
+	{
+		this->_is_dir = true;
+		if (uri.length() > 1 && uri[uri.length() - 1] == '/')
+		{
+			uri.erase(uri.length() - 1);
+			this->_list_dir = true;
+		}
+	}
+	size_t size = uri.size();
 	pos = uri.length() - 1;
 	std::cout << "new request: " << uri << std::endl;
 	while (!uri.empty())
@@ -282,9 +299,26 @@ bool	Response::new_request(httpHeader &request)
 		if (loc_it != this->getConfig().get_location().end())
 		{
 			this->_location = loc_it->second;
+			std::cout << "location: " << uri << std::endl;
 			std::cout << "OLD URI: " << this->_request.getUri() << std::endl;
-			if (uri.size() == size && !this->_location.get_index().empty())
-				this->_request.setURI(this->_location.get_root() + this->_location.get_index());
+			std::cout << "uri size: " << uri.size() << " size: " << size << std::endl;
+			std::cout << "index empty?: " << this->_location.get_index().empty() << std::endl;
+			if (this->_is_dir)
+			{
+				if (!this->_location.get_index().empty())
+				{
+					if (uri.size() == size || !this->_location.get_autoindex())
+					{
+						this->_request.setURI(this->_location.get_root() + this->_location.get_index());
+						this->_is_dir = false;
+					}
+					else
+						this->_request.setURI(this->_location.get_root() + &request.getUri()[pos + 1]);
+				}
+				else
+					this->_request.setURI(this->_location.get_root() + &request.getUri()[pos + 1]);
+
+			}
 			else
 				this->_request.setURI(this->_location.get_root() + &request.getUri()[pos + 1]);
 			std::cout << "NEW URI: " << this->_request.getUri() << std::endl;
@@ -481,20 +515,16 @@ std::string Response::getErrorPath(int &errorNumber, std::string& errorName, Con
 bool Response::checkCGI()
 {
 	size_t pos = this->_request.getUri().find_last_of(".");
-	if (this->getConfig().get_cgi().get_ext().empty())
+	if (this->getConfig().getIntrPath().empty())
 		return false;
 	if (pos != std::string::npos)
 	{
-		_ext = this->_request.getUri().substr(pos);
-		std::vector<std::string>::const_iterator it = this->getConfig().get_cgi().get_ext().begin();
-		std::vector<std::string>::const_iterator end = this->getConfig().get_cgi().get_ext().end();
-		for (; it != end; it++)
-		{
-			if (*it == _ext)
-				return true;
-		}
+		this->_ext = this->_request.getUri().substr(pos);
+		std::map<std::string, std::string>::iterator it = this->getConfig().getIntrPath().find(this->_ext);
+		if (it != this->getConfig().getIntrPath().end())
+			return true;
 	}
-	_ext.clear();
+	this->_ext.clear();
 	return false;
 }
 

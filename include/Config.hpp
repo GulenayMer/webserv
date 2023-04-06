@@ -7,7 +7,6 @@
 #include <iostream>
 # include <stdlib.h>
 #include "Location.hpp"
-#include "configCGI.hpp"
 #include "minilib.hpp"
 #include "Utils.hpp"
 
@@ -24,8 +23,8 @@
  			std::map<int, std::string>			_default_error;
   			std::map<std::string, Location>		_location;
   			std::map<std::string, std::string>	_redirection;
-			configCGI							_cgi;
 			int									_error_code;
+			std::map<std::string, std::string>	_intr_paths;
 
 		public:
 			Config();
@@ -45,9 +44,9 @@
   			std::string							get_index();
 			std::map<std::string, Location>		&get_location();
 			// Location							&find_location(std::string location);
-			configCGI							&get_cgi();
 			std::map<std::string, std::string>	&getRedirection();
 			int									get_error_code();
+			std::map<std::string, std::string>	&getIntrPath();
 
 		
 			// setters
@@ -61,7 +60,7 @@
   			void					set_root(std::string root);
   			void					set_index(std::string index);
   			void					set_location(std::ifstream& config_file, std::string line);
-			void					set_cgi(std::ifstream& config_file, std::string line);
+			void					setIntrPath(std::string &ext, std::string &path);
 			void					create_default_errors();
 			void					check_config();
 
@@ -69,5 +68,5 @@
 
 			
 	};
-	std::ostream& operator<<(std::ostream& os, Config& config);
+
 #endif

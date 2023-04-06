@@ -1,13 +1,34 @@
 #!/bin/bash
 
-if (( RANDOM % 2 ))
+array[0]="tux"
+array[1]="hellokitty"
+array[2]="bunny"
+array[3]="bud-frogs"
+array[4]="moose"
+array[5]="sheep"
+array[6]="three-eyes"
+array[7]="apt"
+array[8]="unipony-smaller"
+array[9]="fox"
+array[10]="stegosaurus"
+
+index=$(($RANDOM % ${#array[@]}))
+
+if (( RANDOM % 5 ))
 then
 	cow=`/usr/games/fortune | /usr/games/cowsay`
-else 
-	cow=`/usr/games/fortune | /usr/games/cowsay -f stegosaurus`
+else
+	cow=`/usr/games/fortune | /usr/games/cowsay -f ${array[$index]}`
 fi
 
 message="<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body {background-color: palepink;}
+</style>
+<title>Fortune</title>
+</head>
 <body>
 <pre>
 $cow

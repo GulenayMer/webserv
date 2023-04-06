@@ -56,6 +56,7 @@ extern int SWITCH;
 # define ROOT "root"
 # define INDEX "index"
 # define ALIAS "alias"
+# define ALLOW_CGI "allow_cgi"
 # define AUTOINDEX "autoindex"
 # define RETURN "return"
 # define CGI_EXT "cgi_ext"

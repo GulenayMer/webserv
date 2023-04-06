@@ -30,9 +30,9 @@ Config &Config::operator=(const Config& obj)
 		this->_root = obj._root;
 		this->_index = obj._index;
 		this->_error_code = obj._error_code;
-		this->_cgi = obj._cgi;
 		this->_location = obj._location;
 		this->_redirection = obj._redirection;
+		this->_intr_paths = obj._intr_paths;
 	}
 	return *this;
 }
@@ -103,17 +103,20 @@ std::map<std::string, Location>		&Config::get_location()
 // 	return (NULL);
 // }
 
-
-configCGI									&Config::get_cgi()
-{
-	return this->_cgi;
-}
-
 int 								Config::get_error_code()
 {
 	return this->_error_code;
 }
 
+std::map<std::string, std::string>	&Config::getIntrPath()
+{
+	return this->_intr_paths;
+}
+
+void								Config::setIntrPath(std::string &ext, std::string &path)
+{
+	this->_intr_paths.insert(std::map<std::string, std::string>::value_type(ext, path));
+}
 
 // Setters
 
@@ -140,7 +143,6 @@ void					Config::set_server_name(std::string server_name)
 void					Config::set_default_error(int i, std::string default_error)
 {
 	if (this->_default_error.find(i) != this->_default_error.end()) {
-		std::cout << "Error: " <<  this->get_root() + default_error << " is here" << std::endl;
 		this->_default_error.find(i)->second = this->get_root() + default_error;
 	}
 	else {
@@ -181,11 +183,6 @@ void					Config::set_location(std::ifstream& config_file, std::string line)
 		this->_location.insert(std::make_pair(key, location));
 }
 
-void					Config::set_cgi(std::ifstream& config_file, std::string line)
-{
-	this->_cgi = configCGI(config_file, line);
-}
-
 //TODO create test cases
 void						Config::check_config()
 {
@@ -196,9 +193,8 @@ void						Config::check_config()
 	}
 	
 	// index value exists and given file exists
-	if (this->get_index().size() == 0 || file_exists(this->get_root() + this->get_index()) == false) {
+	if (this->get_index().size() == 0 || !file_exists(this->get_root() + this->get_index())) {
 		this->set_error_code(21);
-		std::cout << "HERE" << std::endl;
 		throw std::logic_error(INVALID_INDEX);
 	}
 	
@@ -231,15 +227,13 @@ void						Config::check_config()
 			}
 		}
 	}
-	
 	// CGI check
-	this->set_error_code(this->get_cgi().cgi_check());
-	int cgi_error = this->get_error_code();
-	switch (cgi_error) {
-		case 27:
-			throw std::logic_error(INVALID_CGI_ROOT);
-		case 28:
+	std::map<std::string, std::string>::const_iterator p_it = _intr_paths.begin();
+	while (p_it != _intr_paths.end()) {
+		if (!file_exists(p_it->second)) {
 			throw std::logic_error(INVALID_PROGRAM_PATH);
+		}
+		p_it++;
 	}
 }
 
@@ -263,38 +257,6 @@ void	Config::create_default_errors()
 	this->set_default_error(503, "docs/www/error/503_ServiceUnavailable.html");
 	this->set_default_error(504, "docs/www/error/504_GatewayTimeout.html");
 	this->set_default_error(505, "docs/www/error/505_HTTPVersionNotSupported.html");
-}
-
-std::ostream& operator<<(std::ostream& os, Config& config)
-{
-	os << "port: " << config.get_port() << std::endl;
-	os << "host: " << inet_ntoa(config.get_host()) << std::endl;
-	
-	std::map<int, std::string> errors = config.get_default_error();
-	std::map<int, std::string>::const_iterator e_it = errors.begin();
-	std::cout << "error paths: " << std::endl;
-	while (e_it != errors.end()) {
-		os << e_it->first << " : " << e_it->second << std::endl;
-		e_it++;
-	}
-	
-	os << "server name: "<< config.get_server_name() << std::endl;
-	os << "client max body size: " << config.get_client_max_body_size() << std::endl;
-	os << "root: " << config.get_root() << std::endl;
-	os << "index: " << config.get_index() << std::endl;
-	
-	std::map<std::string, Location> locations = config.get_location();
-	std::map<std::string, Location>::iterator l_it = locations.begin();
-	while (l_it != locations.end()) {
-		os << std::endl;
-		os << "location: " <<l_it->first << std::endl;
-		os << l_it->second << std::endl;
-		l_it++;
-	}
-	
-	os << "cgi config: " << std::endl;
-	os << config.get_cgi() << std::endl;
-	return (os);
 }
 
 std::map<std::string, std::string> &Config::getRedirection()

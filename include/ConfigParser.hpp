@@ -14,8 +14,10 @@
 
 class ConfigParser {
 	private:
-		int					_n_servers;
-		int					_error_code;
+		int							_n_servers;
+		int							_error_code;
+		std::vector<std::string>	_path;
+		std::vector<std::string>	_ext;
 
 	public:
 		std::vector<Config> _configs;
@@ -43,12 +45,9 @@ class ConfigParser {
 		void clean_autoindex(std::string line);
 		void clean_root(std::string line);
 		void clean_index(std::string line);
-		void clean_location(std::ifstream& config_file, std::string line);
-		void clean_cgi(std::ifstream& config_file, std::string line);
-
-		
-		void clean_cgi_path(std::string line, configCGI &cgi);
-		void clean_cgi_ext(std::string line, configCGI &cgi);
+		void clean_path(std::string line);
+		void clean_ext(std::string line);
+		void addToMap();
 
 
 

@@ -8,7 +8,8 @@ cookie = http.cookies.SimpleCookie()
 # set a value for the cookie
 cookie['session'] = "logout"
 # TODO get domain from website?
-cookie["session"]["domain"] = os.environ["HOST"]
+if os.environ["HOST"] != "127.0.0.1":
+	cookie["session"]["domain"] = os.environ["HOST"]
 cookie["session"]["path"] = "/"
 cookie["session"]["max-age"] = 0
 body = "User logout"

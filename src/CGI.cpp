@@ -74,11 +74,11 @@ void	CGI::env_init()
 		default:
 			_env["REQUEST_METHOD"] = "BLAH";
 	}
-	_env["PATH_INFO"] = get_path_from_map(); //Extra path information passed to a CGI program.
-	if (_env["PATH_INFO"].length() == 0)
-		_env["PATH_TRANSLATED"] = this->_response.getConfig().get_cgi().get_root(); // The translated version of the path given by the variable PATH_INFO.
-	else
-		_env["PATH_TRANSLATED"] = _env["PATH_INFO"];
+	// _env["PATH_INFO"] = get_path_from_map(); //Extra path information passed to a CGI program.
+	// if (_env["PATH_INFO"].length() == 0)
+	// 	_env["PATH_TRANSLATED"] = this->_response.getRequest().; // The translated version of the path given by the variable PATH_INFO.
+	// else
+	// 	_env["PATH_TRANSLATED"] = _env["PATH_INFO"];
 	_env["SCRIPT_NAME"] = remove_end(_response.getRequest().getUri(), '?'); // The virtual path (e.g., /cgi-bin/program.pl) of the script being executed.
 	//TODO find which location to do, using servers for now.
 	_env["DOCUMENT_ROOT"] = this->_response.getConfig().get_root(); // The directory from which Web documents are served.
@@ -122,12 +122,12 @@ bool	CGI::handle_cgi()
    	//new_path = "." + new_path;
 	// TODO check if ext is allowed
 	std::cout << "CGI script path: " << script_path << std::endl;
-	std::map<std::string, std::string>::const_iterator path_it = this->_response.getConfig().get_cgi().get_path().find(this->_response.getExt());
-	if (path_it == this->_response.getConfig().get_cgi().get_path().end())
+	std::map<std::string, std::string>::const_iterator path_it = this->_response.getConfig().getIntrPath().find(this->_response.getExt());
+	if (path_it == this->_response.getConfig().getIntrPath().end())
 	{
 		std::cout << "CGI Script interpreter path not found for:" << this->_response.getExt() << std::endl;
 		std::cout << "Known interpreters: ";
-		for (path_it = this->_response.getConfig().get_cgi().get_path().begin(); path_it != this->_response.getConfig().get_cgi().get_path().end(); path_it++)
+		for (path_it = this->_response.getConfig().getIntrPath().begin(); path_it != this->_response.getConfig().getIntrPath().end(); path_it++)
 			std::cout << path_it->second << " ";
 		std::cout << std::endl;
 		this->_errno = 1;
@@ -195,7 +195,7 @@ std::string CGI::get_path_from_map()
 	std::string ext = remove_end(_response.getRequest().getUri(), '?');
 	int pos = ext.find_last_of(".");
 	ext = &ext[pos] + 1;
-	std::map<std::string, std::string> paths_map = this->_response.getConfig().get_cgi().get_path();
+	std::map<std::string, std::string> paths_map = this->_response.getConfig().getIntrPath();
 	std::map<std::string, std::string>::iterator it = paths_map.begin();
 	std::map<std::string, std::string>::iterator end = paths_map.end();
 	std::string path = "";

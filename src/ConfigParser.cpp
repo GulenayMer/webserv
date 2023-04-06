@@ -87,11 +87,10 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 		line = remove_comments(line);
 		if (line.find_first_not_of(" \r\t\b\f") == std::string::npos)
 			continue;
-		
 		if ((line.find("server") != std::string::npos && check_def_format("server", line) && line.find("{") != std::string::npos) && line.find("}") != std::string::npos)
 			return false;
 		else if ((line.find("server") != std::string::npos && check_def_format("server", line) && line.find("{") != std::string::npos) && context == 0) {
-			this->set_n_servers(this->get_n_servers() + 1);
+			this->_n_servers++;
 			context += 1;
 			this->_configs.push_back(Config());
 		}
@@ -99,7 +98,6 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 			this->set_error_code(2);
 			return false;
 		}
-
 		if ((context && line.find(LISTEN) != std::string::npos) && check_def_format(LISTEN, line))
 			this->clean_listen(line);
 		else if ((context && line.find(HOST) != std::string::npos) && check_def_format(HOST, line))
@@ -116,6 +114,10 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 			this->clean_client_max_body_size(line);
 		else if ((context && line.find(AUTOINDEX) != std::string::npos) && check_def_format(AUTOINDEX, line))
 			this->clean_autoindex(line);
+		else if ((line.find(CGI_PATH) != std::string::npos) && check_def_format(CGI_PATH, line))
+			this->clean_path(line);
+		else if ((line.find(CGI_EXT) != std::string::npos) && check_def_format(CGI_EXT, line))
+			this->clean_ext(line);
 		/*
 		
 			go into function and separate location config
@@ -124,24 +126,18 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 		*/
 		if (line.find("location") != std::string::npos && line.find("{") != std::string::npos) {
 			context += 1;
-			if (line.find("cgi-bin") != std::string::npos) {
-				this->get_config(this->get_n_servers() - 1).set_cgi(config_file, line);
-				int err = this->get_config(this->get_n_servers() - 1).get_cgi().get_error_code();
-				if (err != 0)
-					this->set_error_code(err);
-			}
-			else {
-				this->get_config(this->get_n_servers() - 1).set_location(config_file, line);
-				this->set_error_code(this->get_config(this->get_n_servers() - 1).get_error_code());
-			}
+			this->get_config(this->get_n_servers() - 1).set_location(config_file, line);
+			this->set_error_code(this->get_config(this->get_n_servers() - 1).get_error_code());
 			if (this->get_error_code() != 0)
 				return false;
 			context -= 1;
 		}
-		if (line.find("}") != std::string::npos && context > 0)
+		if (line.find("}") != std::string::npos)
+		{
+			addToMap();
 			context -= 1;
+		}
 	}
-
 	if (context != 0 && this->get_error_code() != 0)
 		return false;
 	return true;
@@ -239,23 +235,53 @@ void ConfigParser::clean_index(std::string line)
 	this->get_config(this->get_n_servers() - 1).set_index(line);
 }
 
-// void			ConfigParser::clean_cgi_ext(std::string line, configCGI &cgi)
-// {
-// 	size_t pos = 0;
-// 	size_t pos2 = 0;
-// 	line = remove_end(line, ';');
-// 	pos = line.find_first_not_of(" \r\t\b\f", pos);
-// 	pos = line.find_first_of(" \r\t\b\f", pos);
-// 	pos = line.find_first_not_of(" \r\t\b\f", pos);
-// 	while (pos != std::string::npos) {
-// 		pos = line.find_first_not_of(" \r\t\b\f", pos);
-// 		pos2 = line.find_first_of(" \r\t\b\f", pos);
-// 		cgi.set_ext(line.substr(pos, pos2 - pos));
-// 		pos = pos2;
-// 	}
-// 	if (cgi.get_path().empty())
-// 		this->set_error_code(15);
-// }
+void ConfigParser::clean_path(std::string line)
+{
+	size_t pos = 0;
+	size_t pos2 = 0;
+	line = remove_end(line, ';');
+	pos = line.find_first_not_of(" \r\t\b\f", pos);
+	pos = line.find_first_of(" \r\t\b\f", pos);
+	pos = line.find_first_not_of(" \r\t\b\f", pos);
+	while (pos != std::string::npos) {
+		pos2 = line.find_first_of(" \r\t\b\f", pos);
+		this->_path.push_back(line.substr(pos, pos2 - pos));
+		pos = line.find_first_not_of(" \r\t\b\f", pos2);
+	}
+}
+
+void			ConfigParser::clean_ext(std::string line)
+{
+	size_t pos = 0;
+	size_t pos2 = 0;
+	line = remove_end(line, ';');
+	pos = line.find_first_not_of(" \r\t\b\f", pos);
+	pos = line.find_first_of(" \r\t\b\f", pos);
+	pos = line.find_first_not_of(" \r\t\b\f", pos);
+	while (pos != std::string::npos) {
+		pos = line.find_first_not_of(" \r\t\b\f", pos);
+		pos2 = line.find_first_of(" \r\t\b\f", pos);
+		this->_ext.push_back(line.substr(pos, pos2 - pos));
+		pos = pos2;
+	}
+}
+
+void	ConfigParser::addToMap()
+{
+	std::vector<std::string>::iterator it1 = this->_ext.begin();
+	std::vector<std::string>::iterator it2 = this->_path.begin();
+	while (it1 != this->_ext.end() && it2 != this->_path.end())
+	{
+		this->get_config(this->get_n_servers() - 1).setIntrPath(*it1, *it2);
+		std::cout << *it1 << " " << *it2 << std::endl;
+		++it1;
+		++it2;
+	}
+	if (it1 != this->_ext.end() || it2 != this->_path.end())
+		this->set_error_code(12);
+	this->_ext.clear();
+	this->_path.clear();
+}
 
 int ConfigParser::exit_with_error(int err_code, std::ifstream& in_file)
 {

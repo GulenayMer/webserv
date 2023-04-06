@@ -32,9 +32,10 @@ if os.path.exists(db_path):
 		# set a value for the cookie
 		cookie['session'] = user["username"]
 		# TODO get domain from website?
-		cookie["session"]["domain"] = os.environ["HOST"]
+		if os.environ["HOST"] != "127.0.0.1":
+			cookie["session"]["domain"] = os.environ["HOST"]
 		cookie["session"]["path"] = "/"
-		cookie["session"]["max-age"] = 9000
+		#cookie["session"]["max-age"] = 90000
 	# if user does not exist create user
 	else:
 		body = "There was a problem accessing this account"
@@ -56,7 +57,7 @@ message = "HTTP/1.1 200 OK\r\n"
 if user_exists == True:
 	message += cookie.output()
 	message += "\n" # print a blank line to separate the headers from the body 
-message += f"Content-length: {len(html)} \r\n"
+message += f"Content-length:{len(html)}\r\n"
 message += "Content-type:text/html\r\n\r\n"
 
 message += html
