@@ -9,7 +9,7 @@ form = cgi.FieldStorage()
 # print(form)
 username = form["username"].file.read()
 password = form["password"].file.read()
-
+body = ""
 user = {
 	"username": username,
 	"hash": str(hashlib.sha256(password.encode('utf-8')).hexdigest()),
@@ -25,7 +25,6 @@ if os.path.exists(db_path):
 	for entry in users:
 		# User exists
 		if entry["username"] == user["username"] and entry["hash"] == user["hash"]:
-			print("There was a problem creating your account.")
 			user_exists = True
 			break
 	if user_exists == True:
@@ -38,12 +37,27 @@ if os.path.exists(db_path):
 		cookie["username"]["max-age"] = 3600
 	# if user does not exist create user
 	else:
-		print("User does not exist.")	
+		body = "There was a problem accessing this account"
 # File does not exist, create it with a list and add first user
 else:
-	print("User does not exist.")	
+	body = "User does not exist."	
 
-print("Content-Type: text/html")
-print(cookie.output())
-print()  # print a blank line to separate the headers from the body
-print("<html><body><h1>Cookie sent!</h1></body></html>")
+body = "<body>" + body + "</body>"
+
+html = "<html>"
+html += "<head>"
+html += "<title>Redirecting...</title>"
+html += "<meta http-equiv='refresh' content='0;url=/index.html'>"
+html += "</head>"
+html += body
+if user_exists == True:
+	html += cookie.output()
+html += "\n" # print a blank line to separate the headers from the body 
+html += "</html>"
+
+message = "HTTP/1.1 200 OK\r\n"
+message += f"Content-length: {len(html)} \r\n"
+message += "Content-type:text/html\r\n\r\n"
+message += html
+
+print(message)
