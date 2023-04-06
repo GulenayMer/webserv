@@ -129,7 +129,6 @@
 	function getCookieValue(cookieName)
 	{
   		const cookies = document.cookie.split('; ');
-		console.log(cookies);
   		for (let i = 0; i < cookies.length; i++) 
 		{
     		const cookie = cookies[i].split('=');
@@ -141,13 +140,10 @@
   return null;
 }
 
-const myCookieValue = getCookieValue('bob');
-console.log(myCookieValue);
+const username = getCookieValue('session');
 
-	const username = "<%=session%>";
-	//console.log(username);
 
- 	document.getElementById("btn-login").text = username;
+document.getElementById("btn-login").innerHTML = username;
 </script>
 </body>
 </html>
