@@ -135,6 +135,7 @@ void										Location::set_methods(short method, bool allowed)
 
 void										Location::set_index(std::string	index)
 {
+	std::cout << index << std::endl;
 	this->_index = index;
 }
 

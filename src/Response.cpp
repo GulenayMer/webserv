@@ -31,7 +31,6 @@ Response &Response::operator=(const Response &src)
 		_cgi_fd = src._cgi_fd;
 		_bytes_sent = src._bytes_sent;
 		_received_bytes = src._received_bytes;
-		_req_uri = src._req_uri;
 		_is_cgi = src._is_cgi;
         _types = src._types;
 		_response_body = src._response_body;
@@ -81,7 +80,12 @@ int 	Response::send_response()
 	_response_body.clear();
 	_response.clear();
 	_is_cgi = false;
-	if (!_request.isHttp11())
+	if (this->_request.isError())
+	{
+		response_stream << createError(414, &this->getConfig());
+		_to_close = true;
+	}
+	else if (!_request.isHttp11())
 	{
 		response_stream << createError(505, &this->getConfig());
 		_to_close = true;
@@ -97,10 +101,6 @@ int 	Response::send_response()
 		response_stream << createError(501, &this->getConfig());
 		_to_close = true;
 	}
-	// else if (this->checkPermissions())
-	// {
-	// 	response_stream << createError(403);
-	// }
 	else if(!this->_location.check_method_at(_request.getMethod()))
 	{
 		response_stream << createError(405, &this->getConfig());
@@ -124,10 +124,8 @@ int 	Response::send_response()
 	else
 	{
 		getPath();
-
-		//Location* location = findLocation(status);
 		size_t pos = this->_request.getUri().find_last_of(".");
-		if (pos != std::string::npos && !_is_cgi && _types.get_content_type(&this->_request.getUri()[pos]).empty())
+		if (!this->_is_dir && pos != std::string::npos && !_is_cgi && _types.get_content_type(&this->_request.getUri()[pos]).empty())
 		{
 			response_stream << createError(500, &this->getConfig());
 			_to_close = true;
@@ -141,12 +139,17 @@ int 	Response::send_response()
 		}
 		else if (_is_cgi)
 		{
-			if (!this->_location.allow_cgi())
+			pos = this->_request.getUri().find_last_of("/");
+			if (pos != std::string::npos && !dir_exists(this->_request.getUri().substr(0, pos)))
+			{
+				response_stream << createError(404, &this->getConfig());
+				this->_is_cgi = false;
+			}
+			else if (!this->_location.allow_cgi())
 			{
 				response_stream << createError(403, &this->getConfig());
 				this->_is_cgi = false;
 			}
-			// TODO check if ext is in config->config_cgi -> if not, error 501; else:
 			else
 				return 0;
 		}
@@ -299,21 +302,13 @@ bool	Response::new_request(httpHeader &request)
 		if (loc_it != this->getConfig().get_location().end())
 		{
 			this->_location = loc_it->second;
-			std::cout << "location: " << uri << std::endl;
 			std::cout << "OLD URI: " << this->_request.getUri() << std::endl;
-			std::cout << "uri size: " << uri.size() << " size: " << size << std::endl;
-			std::cout << "index empty?: " << this->_location.get_index().empty() << std::endl;
 			if (this->_is_dir)
 			{
-				if (!this->_location.get_index().empty())
+				if (!this->_location.get_index().empty() && uri.size() == size)
 				{
-					if (uri.size() == size || !this->_location.get_autoindex())
-					{
-						this->_request.setURI(this->_location.get_root() + this->_location.get_index());
-						this->_is_dir = false;
-					}
-					else
-						this->_request.setURI(this->_location.get_root() + &request.getUri()[pos + 1]);
+					this->_request.setURI(this->_location.get_root() + this->_location.get_index());
+					this->_is_dir = false;
 				}
 				else
 					this->_request.setURI(this->_location.get_root() + &request.getUri()[pos + 1]);
@@ -426,7 +421,7 @@ std::string	Response::createError(int errorNumber, Config* config)
 	std::ifstream error(error_body.c_str());
 
 	if(!error.is_open())
-		std::cerr << RED << "error opening " << errorNumber << " file\n" << RESET << std::endl;
+		std::cerr << RED << "error opening " << errorNumber << " file at " << error_body << RESET << std::endl;
 	else
 	{
 		std::stringstream	file_buffer;
@@ -515,10 +510,16 @@ std::string Response::getErrorPath(int &errorNumber, std::string& errorName, Con
 bool Response::checkCGI()
 {
 	size_t pos = this->_request.getUri().find_last_of(".");
+	size_t pos2 = this->_request.getUri().find_last_of("/");
 	if (this->getConfig().getIntrPath().empty())
 		return false;
 	if (pos != std::string::npos)
 	{
+		if (pos2 != std::string::npos && pos < pos2)
+		{
+			this->_is_dir = true;
+			return false;
+		}
 		this->_ext = this->_request.getUri().substr(pos);
 		std::map<std::string, std::string>::iterator it = this->getConfig().getIntrPath().find(this->_ext);
 		if (it != this->getConfig().getIntrPath().end())

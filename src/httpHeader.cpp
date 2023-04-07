@@ -13,12 +13,21 @@ httpHeader::httpHeader(std::string header)
 	std::string tmp_method = header.substr(start, end - start);
 	start = end + 1;
 	end = header.find(" ", start);
-	this->_uri = decodeURI(header.substr(start, end - start));
-	start = this->_uri.find_first_of("?");
-	if (start != std::string::npos)
+	if (end - start > 2048)
 	{
-		this->_query = this->_uri.substr(start);
-		this->_uri.erase(start);
+		this->_error = 1;
+		this->_uri.clear();
+	}
+	else
+	{
+		this->_error = 0;
+		this->_uri = decodeURI(header.substr(start, end - start));
+		start = this->_uri.find_first_of("?");
+		if (start != std::string::npos)
+		{
+			this->_query = this->_uri.substr(start);
+			this->_uri.erase(start);
+		}
 	}
 	start = end + 1;
 	end = header.find("\r\n", start);
@@ -62,6 +71,7 @@ httpHeader &httpHeader::operator=(const httpHeader& rhs)
 		this->_header_length = rhs._header_length;
 		this->_content_length = rhs._content_length;
 		this->_cookie = rhs._cookie;
+		this->_error = rhs._error;
 	}
 	return *this;
 }
@@ -79,6 +89,11 @@ const std::string &httpHeader::getUri() const
 const std::string &httpHeader::getVersion() const
 {
 	return(this->_version);
+}
+
+const uint8_t &httpHeader::isError() const
+{
+	return this->_error;
 }
 
 const std::string httpHeader::get_single_header(std::string entry)

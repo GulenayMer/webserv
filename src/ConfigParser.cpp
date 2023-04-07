@@ -138,6 +138,13 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 			context -= 1;
 		}
 	}
+	// std::map<int, std::string>::iterator it = this->get_config(this->get_n_servers() - 1).get_default_error().begin();
+	// while (it != this->get_config(this->get_n_servers() - 1).get_default_error().end())
+	// {
+	// 	std::cout << it->first << std::endl;
+	// 	std::cout << it->second << std::endl;
+	// 	++it;
+	// }
 	if (context != 0 && this->get_error_code() != 0)
 		return false;
 	return true;
@@ -169,26 +176,25 @@ void ConfigParser::clean_host(std::string line)
 
 void ConfigParser::clean_error_page(std::string line)
 {
+	if (this->get_config(this->get_n_servers() - 1).get_root().empty())
+		return this->set_error_code(5);
 	std::string error;
 	error = find_int(line, 1);
 	if (error.empty())
-		this->set_error_code(5);
+		return this->set_error_code(5);
 	std::size_t pos;
 	std::size_t pos2;
 	pos = line.find(error);
 	pos = line.find_first_of(" \r\t\b\f", pos);
 	pos = line.find_first_not_of(" \r\t\b\f", pos);
-	pos2 = line.find_first_of(" \r\t\b\f", pos);
-	pos2 = line.find_first_not_of(" \r\t\b\f", pos2);
+	pos2 = line.find_first_of(" \r\t\b\f;", pos);
 	if (pos == std::string::npos)
 		return this->set_error_code(5);
 	if (line[pos] == '/')
 		pos += 1;
-	line.erase(0, pos);
 	if (pos2 != std::string::npos)
 		line.erase(pos2);
-	line = remove_end(line, ';');
-	this->get_config(this->get_n_servers() - 1).set_default_error(to_int(error), line);
+	this->get_config(this->get_n_servers() - 1).set_default_error(to_int(error), this->get_config(this->get_n_servers() - 1).get_root() + &line[pos]);
 }
 
 void ConfigParser::clean_server_name(std::string line)

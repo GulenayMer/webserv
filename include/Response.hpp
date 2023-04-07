@@ -22,7 +22,6 @@ class Response
 		size_t						_bytes_sent;
 		struct pollfd*				_fds;
 		int							_nfds;
-		std::string					_req_uri;
 		bool		                _is_cgi;
 		bool						_is_dir;
 		bool						_list_dir;
