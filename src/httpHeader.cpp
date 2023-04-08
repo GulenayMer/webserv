@@ -211,9 +211,11 @@ void httpHeader::printHeader()
 /* check if header is http 1.1 protocol */
 bool httpHeader::isHttp11()
 {
+	std::cout << "VERSION: " << this->_version << std::endl;
 	if ((this->_version == "HTTP/1.1" || this->_version == "http/1.1" || this->_version == "Http/1.1") \
-		&& get_single_header("Host").size() > 0)
+		&& !get_single_header("Host").empty())
 		return true;
+	std::cout << "HERE INVALID HTTP" << std::endl;
 	return false;
 }
 
@@ -230,4 +232,9 @@ size_t httpHeader::getContentLength()
 void	httpHeader::setURI(std::string str)
 {
 	this->_uri = str;
+}
+
+const std::map<std::string, std::string>& httpHeader::getCompleteHeader() const
+{
+	return this->_header;
 }

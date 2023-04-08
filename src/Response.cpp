@@ -32,6 +32,7 @@ Response &Response::operator=(const Response &src)
 		_bytes_sent = src._bytes_sent;
 		_received_bytes = src._received_bytes;
 		_is_cgi = src._is_cgi;
+		_is_chunked = src._is_chunked;
         _types = src._types;
 		_response_body = src._response_body;
 		_respond_path = src._respond_path;
@@ -79,6 +80,7 @@ int 	Response::send_response()
 	_respond_path.clear();
 	_response_body.clear();
 	_response.clear();
+	setChunked();
 	_is_cgi = false;
 	if (this->_request.isError())
 	{
@@ -106,12 +108,12 @@ int 	Response::send_response()
 		response_stream << createError(405, &this->getConfig());
 		_to_close = true;
 	}
-	else if (_request.getMethod() == POST && this->_request.get_single_header("Content-Length").empty())
+	else if (_request.getMethod() == POST && this->_request.get_single_header("Content-Length").empty() && !this->_is_chunked)
 	{
 		response_stream << createError(411, &this->getConfig());
 		_to_close = true;
 	}
-	else if (_request.getMethod() == POST && _request.getContentLength() == 0)
+	else if (_request.getMethod() == POST && _request.getContentLength() == 0 && !this->_is_chunked)
 	{
 		response_stream << createError(400, &this->getConfig());
 		_to_close = true;
@@ -125,7 +127,13 @@ int 	Response::send_response()
 	{
 		getPath();
 		size_t pos = this->_request.getUri().find_last_of(".");
-		if (!this->_is_dir && pos != std::string::npos && !_is_cgi && _types.get_content_type(&this->_request.getUri()[pos]).empty())
+		if (!this->_is_cgi && this->_is_chunked)
+		{
+			response_stream << createError(404, &this->getConfig());
+			this->_is_cgi = false;
+			_to_close = true;
+		}
+		else if (!this->_is_dir && pos != std::string::npos && !_is_cgi && _types.get_content_type(&this->_request.getUri()[pos]).empty())
 		{
 			response_stream << createError(500, &this->getConfig());
 			_to_close = true;
@@ -664,4 +672,24 @@ ssize_t Response::receivedBytes(ssize_t received)
 std::string &Response::getExt()
 {
 	return this->_ext;
+}
+
+void	Response::setChunked()
+{
+	if (this->_request.get_single_header("Transfer-Encoding") == "chunked")
+		this->_is_chunked = true;
+	else if (this->_request.get_single_header("transfer-encoding") == "chunked")
+		this->_is_chunked = true;
+	else
+		this->_is_chunked = false;
+}
+
+void	Response::finishChunk()
+{
+	this->_is_chunked = false;
+}
+
+bool	Response::isChunked()
+{
+	return this->_is_chunked;
 }

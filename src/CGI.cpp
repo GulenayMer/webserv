@@ -15,6 +15,7 @@ CGI::CGI(Response &response): _response(response)
 	this->_pid = 0;
 	this->env_init();
 	this->set_boundary();
+	this->_header_length = 0;
 }
 
 CGI::CGI(const CGI& obj): _response(obj._response)
@@ -46,6 +47,7 @@ CGI& CGI::operator=(const CGI& obj)
 		this->_input_pipe[1] = obj._input_pipe[1];
 		this->_output_pipe[0] = obj._output_pipe[0];
 		this->_output_pipe[1] = obj._output_pipe[1];
+		this->_header_length = obj._header_length;
 	}
 	return *this;
 }
@@ -58,7 +60,6 @@ CGI::~CGI()
 
 void	CGI::env_init()
 {
-	_env["HOST"] = std::string(inet_ntoa(_response.getConfig().get_host()));
 	_env["GATEWAY_INTERFACE"] = std::string("CGI/1.1"); // The revision of the Common Gateway Interface that the server uses.
 	_env["SERVER_NAME"] = _response.getConfig().get_server_name(); //  The server's hostname or IP address.
 	_env["SERVER_SOFTWARE"] = std::string("webserv"); //  The name and version of the server software that is answering the client request.
@@ -119,8 +120,6 @@ bool	CGI::handle_cgi()
 	std::string script_path = this->_response.getRequest().getUri();
 	std::string shebang;
 
-   	//new_path = "." + new_path;
-	// TODO check if ext is allowed
 	std::cout << "CGI script path: " << script_path << std::endl;
 	std::map<std::string, std::string>::const_iterator path_it = this->_response.getConfig().getIntrPath().find(this->_response.getExt());
 	if (path_it == this->_response.getConfig().getIntrPath().end())
@@ -220,6 +219,7 @@ std::string CGI::get_query()
 		query = "";
 	return query;
 }
+
 int	CGI::initOutputPipe()
 {
     if (pipe(this->_output_pipe) < 0)
@@ -457,4 +457,59 @@ void	CGI::closePipes()
 		close(this->_output_pipe[0]);
 	if (this->_output_pipe[1] > 0)
 		close(this->_output_pipe[1]);
+}
+
+void CGI::mergeChunk(char *buffer)
+{
+	size_t	pos;
+	size_t	size;
+	pos = convertHex(buffer, size);
+	if (size == 0)
+	{
+		addHeaderChunked();
+		this->_content_length += this->_header_length;
+		this->_response.finishChunk();
+		return;
+	}
+	storeBuffer(&buffer[pos], size);
+}
+
+size_t CGI::convertHex(char *buffer, size_t &size)
+{
+	int	i = 0;
+	while (buffer[i] && buffer[i] != '\r' && buffer[i] != '\n')
+		i++;
+	size = std::strtoul(buffer, &buffer + i, 16);
+	this->_content_length += size;
+	while (buffer[i] && (buffer[i] == '\r' || buffer[i] != '\n'))
+		i++;
+	return i;
+}
+
+void CGI::addHeaderChunked()
+{
+	std::map<std::string, std::string>::const_iterator it = this->_response.getRequest().getCompleteHeader().begin();
+	std::ostringstream oss;
+	oss << this->_content_length;
+	std::string len(oss.str() + "\r\n\r\n");
+	for (int i = len.length() - 1; i > 0; i--)
+	{
+		this->_request_buff.insert(this->_request_buff.begin(), len[i]);
+		this->_header_length++;
+	}
+	for (int i = 16; i >  0; i--)
+	{
+		this->_request_buff.insert(this->_request_buff.begin(), "Content-Length: "[i]);
+		this->_header_length++;
+	}
+	for (; it != this->_response.getRequest().getCompleteHeader().end(); it++)
+	{
+		if (it->first == "Transfer-Encoding")
+			continue;
+		this->_request_buff.insert(this->_request_buff.begin(), it->second.begin(), it->second.end());
+		this->_request_buff.insert(this->_request_buff.begin(), ' ');
+		this->_request_buff.insert(this->_request_buff.begin(), ':');
+		this->_request_buff.insert(this->_request_buff.begin(), it->first.begin(), it->first.end());
+		this->_header_length += it->second.length() + it->first.length() + 2;
+	}
 }

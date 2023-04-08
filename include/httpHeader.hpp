@@ -43,7 +43,7 @@ class httpHeader
 		const std::string& getUri() const;
 		const std::string& getVersion() const;
 		const uint8_t &isError() const;
-		//const std::map<std::string, std::string>& get_complete_header() const;
+		const std::map<std::string, std::string>& getCompleteHeader() const;
 		const std::string get_single_header(std::string entry);
 
 		void setHeader(std::string name, std::string value);

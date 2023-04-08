@@ -27,14 +27,15 @@ class CGI {
 		std::vector<char>					_response_buff;
 		size_t								_vector_pos;
 		size_t								_content_length;
+		size_t								_header_length;
 		size_t								_bytes_sent;
 		std::map<std::string, std::string>	_env;
 		int									_input_pipe[2];
 		int									_output_pipe[2];
 		std::string							_boundary;
 		int									_errno;
-		pid_t								_pid;
-		
+		pid_t								_pid;			
+
 	public:
 		CGI(Response &response);
 		CGI(const CGI& obj);
@@ -67,6 +68,9 @@ class CGI {
 		bool	completeContent();
 		int		PID();
 		void	closePipes();
+		void	mergeChunk(char *buffer);
+		size_t	convertHex(char *buffer, size_t &size);
+		void	addHeaderChunked();
 };
 
 

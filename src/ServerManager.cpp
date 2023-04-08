@@ -170,8 +170,10 @@ int ServerManager::run_servers()
 						// }
 						if (cgi_it != this->_cgis.end() && !cgi_it->second.completeContent()) // cgi fd
 						{
-							cgi_it->second.storeBuffer(buffer, received);
-							cgi_it->second.writeToCGI();
+							if (cgi_it->second.getResponse().isChunked())
+								cgi_it->second.mergeChunk(buffer);
+							else
+								cgi_it->second.storeBuffer(buffer, received);
 						}
 						else //not a cgi fd
 						{
@@ -284,7 +286,10 @@ int ServerManager::run_servers()
 				{
 					cgi_it = this->_cgis.find(cgi_fd_it->second);
 					if (!cgi_it->second.bodySentCGI())
-						cgi_it->second.writeToCGI();
+					{
+						if (!cgi_it->second.getResponse().isChunked())
+							cgi_it->second.writeToCGI();
+					}
 					else if (cgi_it->second.bodySentCGI())
 					{
 						std::cout << "CGI BODY COMPLETE" << std::endl;
@@ -390,7 +395,7 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 			this->_fds[_nfds].fd = -1;
 			this->_compress_array = true;
 			cgi_it->second.closePipes();
-			std::cout << RED << "handle_cgi: internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500
+			std::cout << RED << "handle_cgi: internal server error -> send 500" << RESET << std::endl;
 			cgi_it->second.sendResponse();
 			close_connection(cgi_it->second.getResponse(), i);
 			this->_cgis.erase(ret_pair.first);
@@ -398,8 +403,13 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 			return false;			
 		}
 		response.setCGIFd(out_fd);
-		cgi_it->second.storeBuffer(buffer, received);
-		cgi_it->second.writeToCGI();
+		if (response.isChunked())
+			std::cout << "Chunked" << std::endl; //TODO separate header from body
+		else
+		{
+			cgi_it->second.storeBuffer(buffer, received);
+			cgi_it->second.writeToCGI();
+		}
 	}
 	return true;
 }

@@ -23,6 +23,7 @@ class Response
 		struct pollfd*				_fds;
 		int							_nfds;
 		bool		                _is_cgi;
+		bool						_is_chunked;
 		bool						_is_dir;
 		bool						_list_dir;
 		bool						_is_complete;
@@ -32,7 +33,6 @@ class Response
 		std::string			        _response_body;
 		std::string			        _respond_path;
 		std::string			        _response;
-		std::string					_buffer;
 		Config      	   			_config;
 		httpHeader	 				_request;
 		std::string					_ext;
@@ -80,6 +80,9 @@ class Response
 		bool shouldClose();
 		bool dir_exists(const std::string& dirName_in);
 		ssize_t receivedBytes(ssize_t received);
+		void setChunked();
+		bool isChunked();
+		void finishChunk();
 };
 
 #endif
