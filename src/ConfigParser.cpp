@@ -4,8 +4,8 @@ ConfigParser::ConfigParser()
 {
 	std::ifstream in_file;
 	
-	this->set_error_code(0);
-	this->set_n_servers(0);
+	this->_error_code = 0;
+	this->_n_servers = 0;
 	//this->_configs = new std::vector<Config>;
 	
 	// Check if config file exists
@@ -19,14 +19,23 @@ ConfigParser::ConfigParser()
 	if (this->check_server_context(in_file) == false)
 		this->exit_with_error(this->get_error_code(), in_file);
 	in_file.close();
+	std::vector<Config>::iterator it = this->_configs.begin();
+	while (it != this->_configs.end())
+	{
+		std::cout << "name: " << it->get_server_name() << std::endl;
+		std::cout << "index: " << it->get_index() << std::endl;
+		std::cout << "root: " << it->get_root() << std::endl;
+		std::cout << "port: " << it->get_port() << std::endl;
+		it++;
+	}
 }
 
 ConfigParser::ConfigParser(std::string config_file)
 {
 	std::ifstream in_file;
 	
-	this->set_error_code(0);
-	this->set_n_servers(0);
+	this->_error_code = 0;
+	this->_n_servers = 0;
 	//this->_configs = new std::vector<Config>;
 	
 	// Check if config file exists
@@ -48,7 +57,7 @@ ConfigParser::~ConfigParser()
 	//  	delete this->_configs[i];
 }
 
-std::vector<Config>	ConfigParser::get_configs()
+std::vector<Config>	&ConfigParser::get_configs()
 {
 	return this->_configs;
 }
@@ -83,7 +92,7 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 	std::string line;
 	int context = 0;
 
-	while (getline(config_file, line) && this->get_error_code() == 0) {
+	while (getline(config_file, line) && !this->_error_code) {
 		line = remove_comments(line);
 		if (line.find_first_not_of(" \r\t\b\f") == std::string::npos)
 			continue;
@@ -92,6 +101,7 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 		else if ((line.find("server") != std::string::npos && check_def_format("server", line) && line.find("{") != std::string::npos) && context == 0) {
 			this->_n_servers++;
 			context += 1;
+			std::cout << "adding server" << std::endl;
 			this->_configs.push_back(Config());
 		}
 		else if (context == 0) {
@@ -155,10 +165,11 @@ void ConfigParser::clean_listen(std::string line)
 	line = find_int(line, 1);
 	if (line.empty())
 	{
-		this->get_config(this->get_n_servers() - 1).set_port(0);
+		this->get_config(this->_n_servers - 1).set_port(0);
 		return (this->set_error_code(3));
 	}
-	this->get_config(this->get_n_servers() - 1).set_port(to_int(line.c_str()));
+	std::cout << "port: " << line.c_str() << std::endl;
+	this->get_config(this->_n_servers - 1).set_port(to_int(line.c_str()));
 }
 
 void ConfigParser::clean_host(std::string line)
@@ -210,15 +221,15 @@ void ConfigParser::clean_client_max_body_size(std::string line)
 	line = find_int(line, 1);
 	if (line.size() == 0)
 		this->set_error_code(7);
-	this->get_config(this->get_n_servers() - 1).set_client_max_body_size(to_int(line.c_str()));
+	this->get_config(this->_n_servers - 1).set_client_max_body_size(to_int(line.c_str()));
 }
 
 void ConfigParser::clean_autoindex(std::string line)
 {
 	if (line.find("on") != std::string::npos)
-		this->get_config(this->get_n_servers() - 1).set_autoindex(true);
+		this->get_config(this->_n_servers - 1).set_autoindex(true);
 	else if (line.find("off") != std::string::npos)
-		this->get_config(this->get_n_servers() - 1).set_autoindex(false);
+		this->get_config(this->_n_servers - 1).set_autoindex(false);
 	else	
 		this->set_error_code(8);
 }
@@ -230,7 +241,8 @@ void ConfigParser::clean_root(std::string line)
 		this->set_error_code(9);
 	if (line[line.size() - 1] != '/')
 		line = line + "/";
-	this->get_config(this->get_n_servers() - 1).set_root(line);
+	std::cout << "setting root: " << line << std::endl;
+	this->get_config(this->_n_servers - 1).set_root(line);
 }
 
 void ConfigParser::clean_index(std::string line)
@@ -279,7 +291,6 @@ void	ConfigParser::addToMap()
 	while (it1 != this->_ext.end() && it2 != this->_path.end())
 	{
 		this->get_config(this->get_n_servers() - 1).setIntrPath(*it1, *it2);
-		std::cout << *it1 << " " << *it2 << std::endl;
 		++it1;
 		++it2;
 	}

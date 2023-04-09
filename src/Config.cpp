@@ -8,17 +8,15 @@ Config::Config(): _error_code(0)
 	this->set_server_name("default");
 	this->set_client_max_body_size(1048576);
 	this->set_autoindex(false);
-	//this->set_root("docs/www");
 	this->create_default_errors();
-	this->set_index("");
 }
 
-Config::Config(const Config& obj)
+Config::Config(const Config &obj)
 {
 	*this = obj;
 }
 
-Config &Config::operator=(const Config& obj)
+Config &Config::operator=(const Config &obj)
 {
 	if (this != &obj) {
 		this->_port = obj._port;
@@ -125,7 +123,7 @@ void 					Config::set_error_code(int error_code)
 	this->_error_code = error_code;
 }
 
-void					Config::set_port(u_int16_t port)
+void					Config::set_port(uint16_t port)
 {
 	this->_port = port;
 }

@@ -16,6 +16,9 @@ CGI::CGI(Response &response): _response(response)
 	this->env_init();
 	this->set_boundary();
 	this->_header_length = 0;
+	this->_chunk_context = false;
+	this->_chunk_size = 0;
+	this->_chunk_remaining = 0;
 }
 
 CGI::CGI(const CGI& obj): _response(obj._response)
@@ -48,6 +51,9 @@ CGI& CGI::operator=(const CGI& obj)
 		this->_output_pipe[0] = obj._output_pipe[0];
 		this->_output_pipe[1] = obj._output_pipe[1];
 		this->_header_length = obj._header_length;
+		this->_chunk_context = obj._chunk_context;
+		this->_chunk_size = obj._chunk_size;
+		this->_chunk_remaining = obj._chunk_remaining;
 	}
 	return *this;
 }
@@ -154,7 +160,7 @@ bool	CGI::handle_cgi()
     if (this->_pid == 0)
 	{
 		this->env_to_char();
-        exec_script(this->_input_pipe, this->_output_pipe, script_path, path_it->second);
+        exec_script(this->_input_pipe, this->_output_pipe, script_path);
 	}
     else
 	{
@@ -168,16 +174,15 @@ bool	CGI::handle_cgi()
 	return true;
 }
 
-void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path, std::string intpr_path)
+void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
 {
 	char *args[3];
 	if (output_pipe[0] > 0)
 		close(output_pipe[0]);
 	if (input_pipe[1] > 0)
 		close(input_pipe[1]);
-    args[0] = strdup(intpr_path.c_str());
-    args[1] = strdup(path.c_str());
-	args[2] = NULL;
+    args[0] = strdup(path.c_str());
+	args[1] = NULL;
 	dup2(output_pipe[1], STDOUT_FILENO);
 	if (output_pipe[1] > 0)
 		close(output_pipe[1]);
@@ -393,8 +398,10 @@ void	CGI::set_boundary()
 
 void	CGI::storeBuffer(char *buffer, size_t received)
 {
+	std::cout << "STORE BUFFER" << std::endl;
 	for (size_t i = 0; i < received; i++)
 		this->_request_buff.push_back(buffer[i]);
+	std::cout << "STORE BUFFER END" << std::endl;
 }
 
 int		CGI::getOutFd()
@@ -459,30 +466,60 @@ void	CGI::closePipes()
 		close(this->_output_pipe[1]);
 }
 
-void CGI::mergeChunk(char *buffer)
+void CGI::mergeChunk(char *buffer, size_t received) //TODO need to check if \r\n removed from output
 {
-	size_t	pos;
-	size_t	size;
-	pos = convertHex(buffer, size);
-	if (size == 0)
+	std::cout << "MERGE CHUNK" << std::endl;
+	size_t	pos = 0;
+	while (pos < received)
 	{
-		addHeaderChunked();
-		this->_content_length += this->_header_length;
-		this->_response.finishChunk();
-		return;
+		if (!this->_chunk_context)
+		{
+			pos = convertHex(buffer);
+			this->_chunk_remaining = this->_chunk_size;
+		}
+		std::cout << "back from convert hex" << std::endl;
+		if (this->_chunk_size == 0)
+		{
+			std::cout << "chunk size 0" << std::endl;
+			addHeaderChunked();
+			this->_content_length += this->_header_length;
+			this->_response.finishChunk();
+			std::cout << "MERGE CHUNK END" << std::endl;
+			return;
+		}
+		if (pos + this->_chunk_remaining >= 2048) // TODO the logic here is wrong somehow
+		{
+			std::cout << "chunk greater than buffer" << std::endl;
+			storeBuffer(&buffer[pos], 2048 - pos);
+			this->_chunk_remaining -= (2048 - pos);
+			pos = 2048;
+		}
+		else
+		{
+			std::cout << "chunk less than buffer" << std::endl;
+			storeBuffer(&buffer[pos], this->_chunk_remaining);
+			pos += this->_chunk_remaining + 2;
+			this->_chunk_context = false;
+		}
 	}
-	storeBuffer(&buffer[pos], size);
+	std::cout << "MERGE CHUNK END" << std::endl;
 }
 
-size_t CGI::convertHex(char *buffer, size_t &size)
+size_t CGI::convertHex(char *buffer)
 {
+	std::cout << "CONVERT HEX" << std::endl;
+	std::cout << buffer << std::endl;
+	char *stopstr;
 	int	i = 0;
 	while (buffer[i] && buffer[i] != '\r' && buffer[i] != '\n')
 		i++;
-	size = std::strtoul(buffer, &buffer + i, 16);
-	this->_content_length += size;
-	while (buffer[i] && (buffer[i] == '\r' || buffer[i] != '\n'))
-		i++;
+	this->_chunk_size = std::strtoul(buffer, &stopstr, 16);
+	std::cout << "chunk size: " << this->_chunk_size;
+	this->_content_length += this->_chunk_size;
+	i += 2;
+	this->_chunk_context = true;
+	std::cout << "pos: " << i << ", stopstr: " << stopstr << std::endl;
+	std::cout << "CONVERT HEX END" << std::endl;
 	return i;
 }
 
@@ -511,5 +548,22 @@ void CGI::addHeaderChunked()
 		this->_request_buff.insert(this->_request_buff.begin(), ':');
 		this->_request_buff.insert(this->_request_buff.begin(), it->first.begin(), it->first.end());
 		this->_header_length += it->second.length() + it->first.length() + 2;
+	}
+}
+
+void	CGI::removeHeader(char *buffer, ssize_t received)
+{
+	std::cout << "REMOVE HEADER" << std::endl;
+	for (ssize_t i = 0; i < received; i++)
+	{
+		if (buffer[i] == '\r' && buffer[i + 1] == '\n')
+		{
+			if (buffer[i + 2] == '\r' && buffer[i + 3] == '\n')
+			{
+				mergeChunk(&buffer[i + 4], received - (i + 4));
+				std::cout << "REMOVE HEADER END" << std::endl;
+				break;
+			}
+		}
 	}
 }

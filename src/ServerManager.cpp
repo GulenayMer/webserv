@@ -1,12 +1,15 @@
 #include "../include/ServerManager.hpp"
 
-ServerManager::ServerManager(std::vector<Config> configs): _configs(configs), _nfds(0) {
+ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _nfds(0) {
 
 
     for (size_t i = 0; i < this->_configs.size(); i++)
     {
 		try {
 			this->_configs[i].check_config();
+			std::cout << this->_configs[i].get_port() << std::endl;
+			std::cout << this->_configs[i].get_root() << std::endl;
+			std::cout << this->_configs[i].get_server_name() << std::endl;
         	Server server = Server(this->_configs[i]);
        		this->_servers.push_back(server);
 		}
@@ -171,7 +174,7 @@ int ServerManager::run_servers()
 						if (cgi_it != this->_cgis.end() && !cgi_it->second.completeContent()) // cgi fd
 						{
 							if (cgi_it->second.getResponse().isChunked())
-								cgi_it->second.mergeChunk(buffer);
+								cgi_it->second.mergeChunk(buffer, received);
 							else
 								cgi_it->second.storeBuffer(buffer, received);
 						}
@@ -404,7 +407,10 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 		}
 		response.setCGIFd(out_fd);
 		if (response.isChunked())
+		{
+			cgi_it->second.removeHeader(buffer, received);
 			std::cout << "Chunked" << std::endl; //TODO separate header from body
+		}
 		else
 		{
 			cgi_it->second.storeBuffer(buffer, received);

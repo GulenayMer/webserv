@@ -33,7 +33,7 @@
 			Config& operator=(const Config& obj);
 
 			// getters
-			u_int16_t							&get_port();
+			uint16_t							&get_port();
 			in_addr								&get_host();                  
   			std::string							&get_server_name();
  			std::map<int, std::string>			&get_default_error();
@@ -51,7 +51,7 @@
 		
 			// setters
 			void					set_error_code(int error_code);
-			void					set_port(u_int16_t port);
+			void					set_port(uint16_t port);
 			void					set_host(in_addr_t host);                  
   			void					set_server_name(std::string server_name);
  			void					set_default_error(int i, std::string default_error);

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<head>
+<link href=/pokemon/pstyle.css rel=stylesheet type=text/css>
+<title>Pokedex</title>
+</head>
+<body>
+<img src="/pokemon/images/pokeball.png" alt="/images/pokeball">
+<form id="form" action="/pokemon/pokedex.py" method="post" enctype="multipart/form-data">
+<label id=l1 for="pokemon">Enter a Pokemon:</label>
+<input id="pokemon" type="text" name="pokemon" required></input>
+<button id=button class=button type=submit value=Submit>Submit</button>
+</form>
+<form METHOD=GET ACTION="/">
+<button type="submit">Homepage</button>
+</form>
+</body>
+</html>

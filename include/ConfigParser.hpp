@@ -27,7 +27,7 @@ class ConfigParser {
 		
 
 		// Getter
-		std::vector<Config>	get_configs();
+		std::vector<Config>	&get_configs();
 		Config& get_config(int i);
 		int get_error_code();
 		int get_n_servers();

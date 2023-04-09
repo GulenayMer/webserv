@@ -34,7 +34,10 @@ class CGI {
 		int									_output_pipe[2];
 		std::string							_boundary;
 		int									_errno;
-		pid_t								_pid;			
+		pid_t								_pid;
+		bool								_chunk_context;
+		size_t								_chunk_size;
+		size_t								_chunk_remaining;
 
 	public:
 		CGI(Response &response);
@@ -48,7 +51,7 @@ class CGI {
 		void		env_init(void);
 		void		env_to_char(void);
 		bool		handle_cgi();
-		void		exec_script(int *input_pipe, int *output_pipe, std::string path, std::string intpr_path);
+		void		exec_script(int *input_pipe, int *output_pipe, std::string path);
 		std::string get_path_from_map();
 		std::string get_query();
 		std::string& get_boundary();
@@ -68,9 +71,10 @@ class CGI {
 		bool	completeContent();
 		int		PID();
 		void	closePipes();
-		void	mergeChunk(char *buffer);
-		size_t	convertHex(char *buffer, size_t &size);
+		void	mergeChunk(char *buffer, size_t received);
+		size_t	convertHex(char *buffer);
 		void	addHeaderChunked();
+		void	removeHeader(char *buffer, ssize_t received);
 };
 
 

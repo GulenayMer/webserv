@@ -25,7 +25,7 @@ class ServerManager {
         //  ServerManager &operator=(ServerManager const &rhs);
     
     public:
-		ServerManager(std::vector<Config> configs);
+		ServerManager(std::vector<Config> &configs);
 
         ~ServerManager();
 
