@@ -51,6 +51,7 @@ label {
 
 #d1 {
 	max-width: 500px;
+	white-space: pre-line;
 	position: relative;
 	left: 10%;
 	color: #F9FAF8;

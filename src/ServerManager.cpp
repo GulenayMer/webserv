@@ -113,7 +113,7 @@ int ServerManager::run_servers()
 				if (response_it != this->_responses.end())
 				{
 					// receive request ->
-					char	buffer[2048];
+					char	buffer[BUFFER_SIZE];
 					//TODO implement client max body size
 					ssize_t		received;
 					memset(buffer, 0, sizeof(buffer));
@@ -223,8 +223,8 @@ int ServerManager::run_servers()
 				else // CGI out ready for reading
 				{
 					std::cout << "CGI PIPE END" << std::endl;
-					char	buffer[2048];
-					memset(buffer, 0, 2048);
+					char	buffer[BUFFER_SIZE];
+					memset(buffer, 0, BUFFER_SIZE);
 					std::map<int, CGI>::iterator cgi_it = this->_cgis.find(this->_fds[i].fd);
 					ssize_t rec = read(this->_fds[i].fd, buffer, sizeof(buffer));
 					if (rec > 0)
@@ -239,9 +239,9 @@ int ServerManager::run_servers()
 				std::map<int, CGI>::iterator cgi_it = this->_cgis.find(this->_fds[i].fd);
 				if (cgi_it != this->_cgis.end())
 				{
-					char	buffer[2048];
+					char	buffer[BUFFER_SIZE];
 					ssize_t	rec;
-					memset(buffer, 0, 2048);
+					memset(buffer, 0, BUFFER_SIZE);
 					rec = read(this->_fds[i].fd, buffer, sizeof(buffer));
 					while (rec > 0)
 					{
