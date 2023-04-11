@@ -12,15 +12,19 @@ def is_json_file_valid(file_path):
             json.loads(contents)
         except ValueError:
             return False
-        return len(json.loads(contents)) == 0
+        return True
 
 load_dotenv()
 cgitb.enable()
 form = cgi.FieldStorage()
 
-username= form["username"].file.read()
+username = form["username"].file.read()
 password = form["password"].file.read()
 email = form["email"].file.read()
+
+username= "bob"
+password = "secret"
+email = "bob@gmail.com"
 
 user = {
 	"username": username,
@@ -28,6 +32,7 @@ user = {
 	"email": email
 }
 body = ""
+user_exists = False
 db_path = os.environ["DB_PATH"]
 # File does not exist, create it with a list and add first user
 if not os.path.exists(db_path[:-10]):
@@ -64,7 +69,12 @@ body = "<body>" + body + "</body>"
 html = "<html>"
 html += "<head>"
 html += "<title>Redirecting...</title>"
-html += "<meta http-equiv='refresh' content='0;url=/index.html'>"
+
+# Meaning user was created in this registration
+if user_exists == False:
+	html += "<meta http-equiv='refresh' content='0;url=/index.html'>"
+else:
+	html += "<meta http-equiv='refresh' content='0;url=/failedRegistration.html'>"
 html += "</head>"
 html += body
 html += "</html>"

@@ -57,7 +57,10 @@ body = "<body>" + body + "</body>"
 html = "<html>"
 html += "<head>"
 html += "<title>Redirecting...</title>"
-html += "<meta http-equiv='refresh' content='0;url=/index.html'>"
+if user_exists == True:
+	html += "<meta http-equiv='refresh' content='0;url=/index.html'>"
+else:
+	html += "<meta http-equiv='refresh' content='0;url=/failedLogin.html'>"
 html += "</head>"
 html += body
 html += "</html>"
