@@ -181,9 +181,11 @@ void					Config::set_location(std::ifstream& config_file, std::string line)
 	std::string key = get_value(line);
 	Location location(config_file, line);
 	this->set_error_code(location.get_error_code());
-	std::map<std::string, Location>::iterator it = this->_location.find(location.get_redirection());
-	if (it != this->_location.end())
-		this->_redirection.insert(std::make_pair(key, it->first));
+	// std::map<std::string, Location>::iterator it = this->_location.find(location.get_redirection());
+	if (!location.get_redirection().empty())
+	{
+		this->_redirection.insert(std::make_pair(key, location.get_redirection()));
+	}
 	else
 		this->_location.insert(std::make_pair(key, location));
 }
