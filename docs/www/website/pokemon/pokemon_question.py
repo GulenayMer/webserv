@@ -3,7 +3,7 @@
 import os
 import random
 
-choices = ["bellsprout", "charmander", "vulpix", "lugia", "piloswine", "rayquaza", "diglett"]
+choices = ["bellsprout", "charmander", "vulpix", "lugia", "piloswine", "rayquaza", "diglett", "moltres"]
 choice = random.choice(choices)
 
 image = "images/" + choice + ".png"

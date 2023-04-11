@@ -7,12 +7,14 @@ image = form["image"].file.read()
 guess = form["guess"].file.read()
 guess = guess.lower()
 
-image_path = f"images/{image}-2.png"
-
-if image == "diglett":
-	image = "uncle ben"
 
 response = requests.get(f"https://pokeapi.co/api/v2/pokemon/{image}/")
+
+if image == "diglett" and guess != "uncle ben":
+	image = "uncle ben"
+	image_path = f"images/diglett-3.png"
+else:
+	image_path = f"images/{image}-2.png"
 
 body = "<!DOCTYPE html>\n<head>\n<link href=/pokemon/pstyle.css rel=stylesheet type=text/css>\n<title>Who's that Pokemon?</title>\n</head>\n<body>\n"
 if image == guess:
