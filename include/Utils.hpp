@@ -23,6 +23,7 @@
 
 
 const int MAX_CONN = 10000;
+const int BUFFER_SIZE = 2048;
 extern int SWITCH;
 
 /*

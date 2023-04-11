@@ -82,7 +82,11 @@ int 	Response::send_response()
 	_response.clear();
 	setChunked();
 	_is_cgi = false;
-	if (this->_request.isError())
+	if (_is_redirect)
+	{
+		response_stream << redirect(_request.getUri());
+	}
+	else if (this->_request.isError())
 	{
 		response_stream << createError(414, &this->getConfig());
 		_to_close = true;
@@ -275,6 +279,7 @@ bool	Response::new_request(httpHeader &request)
 	this->_to_close = false;
 	this->_is_complete = false;
 	this->_is_dir = false;
+	this->_is_redirect = false;
 	this->_list_dir = false;
 	this->_received_bytes = 0;
 	std::map<std::string, Location>::iterator loc_it;
@@ -297,6 +302,12 @@ bool	Response::new_request(httpHeader &request)
 		if (uri.length() > 1 && uri[uri.length() -1] == '/')
 			uri.erase(uri.length() - 1);
 		std::cout << uri << std::endl;
+		// std::map<std::string, std::string>::iterator red_it = this->getConfig().getRedirection().begin();
+		// while (red_it != this->getConfig().getRedirection().end())
+		// {
+		// 	std::cout << "REDIRECT: " << red_it->first << " -> " << red_it->second << std::endl;
+		// 	red_it++;
+		// }
 		std::map<std::string, std::string>::iterator red_it = this->getConfig().getRedirection().find(uri);
 		if (red_it != this->getConfig().getRedirection().end())
 		{
@@ -304,6 +315,13 @@ bool	Response::new_request(httpHeader &request)
 			std::cout << "SIZE: " << size << std::endl;
 			uri = red_it->second;
 			loc_it = this->getConfig().get_location().find(red_it->second);
+			if (loc_it == this->getConfig().get_location().end())
+			{
+				_is_redirect = true;
+				this->_request.setURI(red_it->second);
+				return true; 
+			}
+
 		}
 		else
 			loc_it = this->getConfig().get_location().find(uri);
@@ -692,4 +710,21 @@ void	Response::finishChunk()
 bool	Response::isChunked()
 {
 	return this->_is_chunked;
+}
+
+// bool Response::isRedirect(std::string uri)
+// {
+// 	(void )uri;
+
+
+// 	return true;
+// }
+
+std::string Response::redirect(std::string uri)
+{
+	std::ostringstream message;
+
+	message << "HTTP/1.1 307 Temporary Redirect\r\n";
+	message << "Location: " << uri << "\r\n\r\n";
+	return (message.str());
 }

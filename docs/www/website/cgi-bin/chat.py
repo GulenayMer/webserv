@@ -34,7 +34,7 @@ body += f"<div id=d1>{message}</div>"
 body += "<div id=d2>"
 if response.status_code == 200:
 	data = response.json()
-	body += data["choices"][0]["message"]["content"] #["choices"]["0"]["message"]["content"]
+	body += data["choices"][0]["message"]["content"]
 else:
 	body += "ChatGPT decided to ignore you."
 body += "</div>"
