@@ -22,10 +22,6 @@ username = form["username"].file.read()
 password = form["password"].file.read()
 email = form["email"].file.read()
 
-username= "bob"
-password = "secret"
-email = "bob@gmail.com"
-
 user = {
 	"username": username,
 	"hash": str(hashlib.sha256(password.encode('utf-8')).hexdigest()),

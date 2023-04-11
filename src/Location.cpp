@@ -159,7 +159,7 @@ void										Location::set_allow_cgi(std::string allow_cgi)
 int								Location::check_location()
 {
 	// root value exists and given directory exists
-	if (this->get_root().size() == 0 || dir_exists(this->get_root()) == false) {
+	if ((this->get_root().size() == 0 || dir_exists(this->get_root()) == false) && this->get_redirection().size() == 0) {
 		return 23;
 	}
 	// index value exists and given file exists
@@ -167,9 +167,11 @@ int								Location::check_location()
 		return 24;
 	}
 	// if redirection path is given check if file exists
-	if (this->get_redirection().size() > 0 && dir_exists(this->get_redirection()) == false) {
-		return 25;
-	}
+	// if (this->get_redirection().size() > 0 && dir_exists(this->get_redirection()) == false) {
+	// 	return 25;
+	// }
+	if (this->get_redirection().size() > 0)
+		return EXIT_SUCCESS;
 
 	// methods check: at least one method needs to be set to true
 	std::map<short, bool> methods = this->get_methods();
@@ -213,7 +215,7 @@ void				Location::clean_methods(std::string line)
 
 void							Location::init_methods()
 {
-	this->_methods.insert(std::make_pair(0, false));
+	this->_methods.insert(std::make_pair(0, true));
 	this->_methods.insert(std::make_pair(1, false));
 	this->_methods.insert(std::make_pair(2, false));
 	this->_methods.insert(std::make_pair(3, false));
