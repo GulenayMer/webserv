@@ -13,7 +13,8 @@ Location::Location()
 Location::Location(std::ifstream &config_file, std::string line)
 {
 	int	exit_context = 0;
-
+	this->_autoindex = false;
+	this->_allow_cgi = false;
 	this->init_methods();
 	while (exit_context == 0 && getline(config_file, line)) {
 		line = remove_comments(line);
@@ -29,10 +30,12 @@ Location::Location(std::ifstream &config_file, std::string line)
 			this->set_index(get_value(line));
 		if ((line.find(ALIAS) != std::string::npos)  && check_def_format(ALIAS, line))
 			this->set_alias(get_value(line));
+		if ((line.find(ALLOW_CGI) != std::string::npos)  && check_def_format(ALLOW_CGI, line))
+			this->set_allow_cgi(get_value(line));
 		if ((line.find(RETURN) != std::string::npos)  && check_def_format(RETURN, line))
 			this->set_redirection(get_value(line));
 	}	
-	if (exit_context != 1 || (this->get_index().empty() || this->get_root().empty()))
+	if (exit_context != 1 || this->get_root().empty())
 		set_error_code(11);
 	this->set_error_code(0);
 }
@@ -53,6 +56,7 @@ Location &Location::operator=(const Location &src)
       	this->_redirection = src._redirection;
      	this->_alias = src._alias;
 		this->_error_code = src._error_code;  
+		this->_allow_cgi = src._allow_cgi;
 	}
 	return *this;
 }
@@ -85,6 +89,11 @@ std::string									Location::get_redirection()
 std::string									Location::get_alias()
 {
 	return this->_alias;
+}
+
+bool										Location::allow_cgi()
+{
+	return this->_allow_cgi;
 }
 
 bool										Location::check_method_at(short method)
@@ -139,6 +148,14 @@ void										Location::set_alias(std::string	alias)
 	this->_alias = alias;
 }
 
+void										Location::set_allow_cgi(std::string allow_cgi)
+{
+	if (allow_cgi == "yes")
+		this->_allow_cgi = true;
+	else
+		this->_allow_cgi = false;
+}
+
 int								Location::check_location()
 {
 	// root value exists and given directory exists
@@ -146,7 +163,7 @@ int								Location::check_location()
 		return 23;
 	}
 	// index value exists and given file exists
-	if (this->get_index().size() == 0 || file_exists(this->get_root() + this->get_index()) == false) {
+	if (this->get_index().size() != 0 && file_exists(this->get_root() + this->get_index()) == false) {
 		return 24;
 	}
 	// if redirection path is given check if file exists

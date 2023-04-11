@@ -8,17 +8,15 @@ Config::Config(): _error_code(0)
 	this->set_server_name("default");
 	this->set_client_max_body_size(1048576);
 	this->set_autoindex(false);
-	this->set_root("docs/www");
 	this->create_default_errors();
-	this->set_index("");
 }
 
-Config::Config(const Config& obj)
+Config::Config(const Config &obj)
 {
 	*this = obj;
 }
 
-Config &Config::operator=(const Config& obj)
+Config &Config::operator=(const Config &obj)
 {
 	if (this != &obj) {
 		this->_port = obj._port;
@@ -30,9 +28,9 @@ Config &Config::operator=(const Config& obj)
 		this->_root = obj._root;
 		this->_index = obj._index;
 		this->_error_code = obj._error_code;
-		this->_cgi = obj._cgi;
 		this->_location = obj._location;
 		this->_redirection = obj._redirection;
+		this->_intr_paths = obj._intr_paths;
 	}
 	return *this;
 }
@@ -103,17 +101,20 @@ std::map<std::string, Location>		&Config::get_location()
 // 	return (NULL);
 // }
 
-
-configCGI									&Config::get_cgi()
-{
-	return this->_cgi;
-}
-
 int 								Config::get_error_code()
 {
 	return this->_error_code;
 }
 
+std::map<std::string, std::string>	&Config::getIntrPath()
+{
+	return this->_intr_paths;
+}
+
+void								Config::setIntrPath(std::string &ext, std::string &path)
+{
+	this->_intr_paths.insert(std::map<std::string, std::string>::value_type(ext, path));
+}
 
 // Setters
 
@@ -122,7 +123,7 @@ void 					Config::set_error_code(int error_code)
 	this->_error_code = error_code;
 }
 
-void					Config::set_port(u_int16_t port)
+void					Config::set_port(uint16_t port)
 {
 	this->_port = port;
 }
@@ -139,14 +140,20 @@ void					Config::set_server_name(std::string server_name)
 
 void					Config::set_default_error(int i, std::string default_error)
 {
-	if (this->_default_error.find(i) != this->_default_error.end()) {
-		std::cout << "Error: " <<  this->get_root() + default_error << " is here" << std::endl;
-		this->_default_error.find(i)->second = this->get_root() + default_error;
-	}
-	else {
-		std::pair<int, std::string> p = std::make_pair(i, default_error);
-		this->_default_error.insert(p);
-	}
+	this->_default_error[i] = default_error;
+	// if (this->_default_error.find(i) != this->_default_error.end()) {
+	// 	std::cout << i << std::endl;
+	// 	std::cout << default_error << std::endl;
+	// 	std::cout << "found" << std::endl;
+	// 	this->_default_error.find(i)->second = this->get_root() + default_error;
+	// }
+	// else {
+	// 	std::cout << i << std::endl;
+	// 	std::cout << default_error << std::endl;
+	// 	std::cout << "not found" << std::endl;
+	// 	std::pair<int, std::string> p = std::make_pair(i, default_error);
+	// 	this->_default_error.insert(p);
+	// }
 }
 
 void 					Config::set_client_max_body_size(int clien_max_body_size)
@@ -181,11 +188,6 @@ void					Config::set_location(std::ifstream& config_file, std::string line)
 		this->_location.insert(std::make_pair(key, location));
 }
 
-void					Config::set_cgi(std::ifstream& config_file, std::string line)
-{
-	this->_cgi = configCGI(config_file, line);
-}
-
 //TODO create test cases
 void						Config::check_config()
 {
@@ -196,22 +198,22 @@ void						Config::check_config()
 	}
 	
 	// index value exists and given file exists
-	if (this->get_index().size() == 0 || file_exists(this->get_root() + this->get_index()) == false) {
+	if (this->get_index().size() == 0 || !file_exists(this->get_root() + this->get_index())) {
 		this->set_error_code(21);
-		std::cout << "HERE" << std::endl;
 		throw std::logic_error(INVALID_INDEX);
 	}
 	
 	// default error check - files provided by paths exist 
 	// if (this->get_default_error().size() == 0)
 	// 	this->get_default_error().insert(std::make_pair(404, "/error/404_NotFound.html"));
-	std::map<int, std::string> error = this->get_default_error();
-	for (std::map<int, std::string>::iterator it = error.begin(); it != error.end(); it++) {
-		if (file_exists(it->second) == false) {
-			this->set_error_code(22);
-			throw std::logic_error(INVALID_ERROR_CHECK);
-		}
-	}
+	// std::map<int, std::string> error = this->get_default_error();
+	// for (std::map<int, std::string>::iterator it = error.begin(); it != error.end(); it++) {
+	// 	if (file_exists(it->second) == false) {
+	// 		std::cout << "NOT FOUND: " << it->second << std::endl;
+	// 		this->set_error_code(22);
+	// 		throw std::logic_error(INVALID_ERROR_CHECK);
+	// 	}
+	// }
 
 	// Location check
 	std::map<std::string, Location> location = this->get_location();
@@ -231,70 +233,36 @@ void						Config::check_config()
 			}
 		}
 	}
-	
 	// CGI check
-	this->set_error_code(this->get_cgi().cgi_check());
-	int cgi_error = this->get_error_code();
-	switch (cgi_error) {
-		case 27:
-			throw std::logic_error(INVALID_CGI_ROOT);
-		case 28:
+	std::map<std::string, std::string>::const_iterator p_it = _intr_paths.begin();
+	while (p_it != _intr_paths.end()) {
+		if (!file_exists(p_it->second)) {
 			throw std::logic_error(INVALID_PROGRAM_PATH);
+		}
+		p_it++;
 	}
 }
 
 void	Config::create_default_errors()
 {
-	this->set_default_error(400, "docs/www/error/400_BadRequest.html");
-	this->set_default_error(403, "docs/www/error/403_Forbidden.html");
-	this->set_default_error(404, "docs/www/error/404_NotFound.html");
-	this->set_default_error(405, "docs/www/error/405_MethodNotAllowed.html");
-	this->set_default_error(406, "docs/www/error/406_NotAcceptable.html");
-	this->set_default_error(408, "docs/www/error/408_RequestTimeout.html");
-	this->set_default_error(411, "docs/www/error/411_LengthRequired.html");
-	this->set_default_error(413, "docs/www/error/413_PayloadTooLarge.html");
-	this->set_default_error(414, "docs/www/error/414_URITooLarge.html");
-	this->set_default_error(415, "docs/www/error/415_UnsupportedMediaType.html");
-	this->set_default_error(418, "docs/www/error/418_Imateapot.html");
-	this->set_default_error(429, "docs/www/error/429_TooManyRequests.html");
-	this->set_default_error(500, "docs/www/error/500_InternalServer.html");
-	this->set_default_error(501, "docs/www/error/501_NotImplemented.html");
-	this->set_default_error(502, "docs/www/error/502_BadGateway.html");
-	this->set_default_error(503, "docs/www/error/503_ServiceUnavailable.html");
-	this->set_default_error(504, "docs/www/error/504_GatewayTimeout.html");
-	this->set_default_error(505, "docs/www/error/505_HTTPVersionNotSupported.html");
-}
-
-std::ostream& operator<<(std::ostream& os, Config& config)
-{
-	os << "port: " << config.get_port() << std::endl;
-	os << "host: " << inet_ntoa(config.get_host()) << std::endl;
-	
-	std::map<int, std::string> errors = config.get_default_error();
-	std::map<int, std::string>::const_iterator e_it = errors.begin();
-	std::cout << "error paths: " << std::endl;
-	while (e_it != errors.end()) {
-		os << e_it->first << " : " << e_it->second << std::endl;
-		e_it++;
-	}
-	
-	os << "server name: "<< config.get_server_name() << std::endl;
-	os << "client max body size: " << config.get_client_max_body_size() << std::endl;
-	os << "root: " << config.get_root() << std::endl;
-	os << "index: " << config.get_index() << std::endl;
-	
-	std::map<std::string, Location> locations = config.get_location();
-	std::map<std::string, Location>::iterator l_it = locations.begin();
-	while (l_it != locations.end()) {
-		os << std::endl;
-		os << "location: " <<l_it->first << std::endl;
-		os << l_it->second << std::endl;
-		l_it++;
-	}
-	
-	os << "cgi config: " << std::endl;
-	os << config.get_cgi() << std::endl;
-	return (os);
+	this->set_default_error(400, "docs/www/default_error/400_BadRequest.html");
+	this->set_default_error(403, "docs/www/default_error/403_Forbidden.html");
+	this->set_default_error(404, "docs/www/default_error/404_NotFound.html");
+	this->set_default_error(405, "docs/www/default_error/405_MethodNotAllowed.html");
+	this->set_default_error(406, "docs/www/default_error/406_NotAcceptable.html");
+	this->set_default_error(408, "docs/www/default_error/408_RequestTimeout.html");
+	this->set_default_error(411, "docs/www/default_error/411_LengthRequired.html");
+	this->set_default_error(413, "docs/www/default_error/413_PayloadTooLarge.html");
+	this->set_default_error(414, "docs/www/default_error/414_URITooLarge.html");
+	this->set_default_error(415, "docs/www/default_error/415_UnsupportedMediaType.html");
+	this->set_default_error(418, "docs/www/default_error/418_Imateapot.html");
+	this->set_default_error(429, "docs/www/default_error/429_TooManyRequests.html");
+	this->set_default_error(500, "docs/www/default_error/500_InternalServer.html");
+	this->set_default_error(501, "docs/www/default_error/501_NotImplemented.html");
+	this->set_default_error(502, "docs/www/default_error/502_BadGateway.html");
+	this->set_default_error(503, "docs/www/default_error/503_ServiceUnavailable.html");
+	this->set_default_error(504, "docs/www/default_error/504_GatewayTimeout.html");
+	this->set_default_error(505, "docs/www/default_error/505_HTTPVersionNotSupported.html");
 }
 
 std::map<std::string, std::string> &Config::getRedirection()

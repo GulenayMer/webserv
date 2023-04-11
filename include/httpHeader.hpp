@@ -30,6 +30,7 @@ class httpHeader
 		size_t		_header_length;
 		size_t		_content_length;
 		std::string	_cookie;
+		uint8_t		_error;
 		
 	public:
 		httpHeader();
@@ -41,7 +42,8 @@ class httpHeader
 		const httpMethods& getMethod() const;
 		const std::string& getUri() const;
 		const std::string& getVersion() const;
-		//const std::map<std::string, std::string>& get_complete_header() const;
+		const uint8_t &isError() const;
+		const std::map<std::string, std::string>& getCompleteHeader() const;
 		const std::string get_single_header(std::string entry);
 
 		void setHeader(std::string name, std::string value);

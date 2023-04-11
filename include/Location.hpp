@@ -11,6 +11,7 @@
 			// Data to send
 			std::string						_root;          	
       		bool							_autoindex;
+			bool							_allow_cgi;
      		std::map<short, bool> 			_methods;
       		std::string						_index;
       		std::string						_redirection;
@@ -31,6 +32,7 @@
 			void set_redirection(std::string redirection);
 			void set_alias(std::string alias);
 			void set_error_code(int error_code);
+			void set_allow_cgi(std::string allow_cgi);
 		
 			// Getters
 			std::string						get_root();          	
@@ -40,6 +42,7 @@
       		std::string						get_redirection();
      	 	std::string						get_alias();
 			int 							get_error_code();
+			bool							allow_cgi();
 
 			bool							check_method_at(short method);
 			int								check_location();

@@ -29,7 +29,6 @@ OBJDIR =		obj/
 SRCS	=	$(SRCDIR)Config.cpp			\
 			$(SRCDIR)ConfigParser.cpp	\
 			$(SRCDIR)Location.cpp		\
-			$(SRCDIR)configCGI.cpp		\
 			$(SRCDIR)httpHeader.cpp		\
 			$(SRCDIR)Server.cpp			\
 			$(SRCDIR)ServerManager.cpp	\

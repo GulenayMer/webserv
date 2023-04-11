@@ -15,6 +15,10 @@ CGI::CGI(Response &response): _response(response)
 	this->_pid = 0;
 	this->env_init();
 	this->set_boundary();
+	this->_header_length = 0;
+	this->_chunk_context = false;
+	this->_chunk_size = 0;
+	this->_chunk_remaining = 0;
 }
 
 CGI::CGI(const CGI& obj): _response(obj._response)
@@ -46,6 +50,10 @@ CGI& CGI::operator=(const CGI& obj)
 		this->_input_pipe[1] = obj._input_pipe[1];
 		this->_output_pipe[0] = obj._output_pipe[0];
 		this->_output_pipe[1] = obj._output_pipe[1];
+		this->_header_length = obj._header_length;
+		this->_chunk_context = obj._chunk_context;
+		this->_chunk_size = obj._chunk_size;
+		this->_chunk_remaining = obj._chunk_remaining;
 	}
 	return *this;
 }
@@ -58,7 +66,6 @@ CGI::~CGI()
 
 void	CGI::env_init()
 {
-	_env["HOST"] = std::string(inet_ntoa(_response.getConfig().get_host()));
 	_env["GATEWAY_INTERFACE"] = std::string("CGI/1.1"); // The revision of the Common Gateway Interface that the server uses.
 	_env["SERVER_NAME"] = _response.getConfig().get_server_name(); //  The server's hostname or IP address.
 	_env["SERVER_SOFTWARE"] = std::string("webserv"); //  The name and version of the server software that is answering the client request.
@@ -74,11 +81,11 @@ void	CGI::env_init()
 		default:
 			_env["REQUEST_METHOD"] = "BLAH";
 	}
-	_env["PATH_INFO"] = get_path_from_map(); //Extra path information passed to a CGI program.
-	if (_env["PATH_INFO"].length() == 0)
-		_env["PATH_TRANSLATED"] = this->_response.getConfig().get_cgi().get_root(); // The translated version of the path given by the variable PATH_INFO.
-	else
-		_env["PATH_TRANSLATED"] = _env["PATH_INFO"];
+	// _env["PATH_INFO"] = get_path_from_map(); //Extra path information passed to a CGI program.
+	// if (_env["PATH_INFO"].length() == 0)
+	// 	_env["PATH_TRANSLATED"] = this->_response.getRequest().; // The translated version of the path given by the variable PATH_INFO.
+	// else
+	// 	_env["PATH_TRANSLATED"] = _env["PATH_INFO"];
 	_env["SCRIPT_NAME"] = remove_end(_response.getRequest().getUri(), '?'); // The virtual path (e.g., /cgi-bin/program.pl) of the script being executed.
 	//TODO find which location to do, using servers for now.
 	_env["DOCUMENT_ROOT"] = this->_response.getConfig().get_root(); // The directory from which Web documents are served.
@@ -119,15 +126,13 @@ bool	CGI::handle_cgi()
 	std::string script_path = this->_response.getRequest().getUri();
 	std::string shebang;
 
-   	//new_path = "." + new_path;
-	// TODO check if ext is allowed
 	std::cout << "CGI script path: " << script_path << std::endl;
-	std::map<std::string, std::string>::const_iterator path_it = this->_response.getConfig().get_cgi().get_path().find(this->_response.getExt());
-	if (path_it == this->_response.getConfig().get_cgi().get_path().end())
+	std::map<std::string, std::string>::const_iterator path_it = this->_response.getConfig().getIntrPath().find(this->_response.getExt());
+	if (path_it == this->_response.getConfig().getIntrPath().end())
 	{
 		std::cout << "CGI Script interpreter path not found for:" << this->_response.getExt() << std::endl;
 		std::cout << "Known interpreters: ";
-		for (path_it = this->_response.getConfig().get_cgi().get_path().begin(); path_it != this->_response.getConfig().get_cgi().get_path().end(); path_it++)
+		for (path_it = this->_response.getConfig().getIntrPath().begin(); path_it != this->_response.getConfig().getIntrPath().end(); path_it++)
 			std::cout << path_it->second << " ";
 		std::cout << std::endl;
 		this->_errno = 1;
@@ -155,7 +160,7 @@ bool	CGI::handle_cgi()
     if (this->_pid == 0)
 	{
 		this->env_to_char();
-        exec_script(this->_input_pipe, this->_output_pipe, script_path, path_it->second);
+        exec_script(this->_input_pipe, this->_output_pipe, script_path);
 	}
     else
 	{
@@ -169,16 +174,15 @@ bool	CGI::handle_cgi()
 	return true;
 }
 
-void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path, std::string intpr_path)
+void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
 {
 	char *args[3];
 	if (output_pipe[0] > 0)
 		close(output_pipe[0]);
 	if (input_pipe[1] > 0)
 		close(input_pipe[1]);
-    args[0] = strdup(intpr_path.c_str());
-    args[1] = strdup(path.c_str());
-	args[2] = NULL;
+    args[0] = strdup(path.c_str());
+	args[1] = NULL;
 	dup2(output_pipe[1], STDOUT_FILENO);
 	if (output_pipe[1] > 0)
 		close(output_pipe[1]);
@@ -195,7 +199,7 @@ std::string CGI::get_path_from_map()
 	std::string ext = remove_end(_response.getRequest().getUri(), '?');
 	int pos = ext.find_last_of(".");
 	ext = &ext[pos] + 1;
-	std::map<std::string, std::string> paths_map = this->_response.getConfig().get_cgi().get_path();
+	std::map<std::string, std::string> paths_map = this->_response.getConfig().getIntrPath();
 	std::map<std::string, std::string>::iterator it = paths_map.begin();
 	std::map<std::string, std::string>::iterator end = paths_map.end();
 	std::string path = "";
@@ -220,6 +224,7 @@ std::string CGI::get_query()
 		query = "";
 	return query;
 }
+
 int	CGI::initOutputPipe()
 {
     if (pipe(this->_output_pipe) < 0)
@@ -393,8 +398,10 @@ void	CGI::set_boundary()
 
 void	CGI::storeBuffer(char *buffer, size_t received)
 {
+	std::cout << "STORE BUFFER" << std::endl;
 	for (size_t i = 0; i < received; i++)
 		this->_request_buff.push_back(buffer[i]);
+	std::cout << "STORE BUFFER END" << std::endl;
 }
 
 int		CGI::getOutFd()
@@ -457,4 +464,106 @@ void	CGI::closePipes()
 		close(this->_output_pipe[0]);
 	if (this->_output_pipe[1] > 0)
 		close(this->_output_pipe[1]);
+}
+
+void CGI::mergeChunk(char *buffer, size_t received) //TODO need to check if \r\n removed from output
+{
+	std::cout << "MERGE CHUNK" << std::endl;
+	size_t	pos = 0;
+	while (pos < received)
+	{
+		if (!this->_chunk_context)
+		{
+			pos = convertHex(buffer);
+			this->_chunk_remaining = this->_chunk_size;
+		}
+		std::cout << "back from convert hex" << std::endl;
+		if (this->_chunk_size == 0)
+		{
+			std::cout << "chunk size 0" << std::endl;
+			addHeaderChunked();
+			this->_content_length += this->_header_length;
+			this->_response.finishChunk();
+			std::cout << "MERGE CHUNK END" << std::endl;
+			return;
+		}
+		if (pos + this->_chunk_remaining >= 2048) // TODO the logic here is wrong somehow
+		{
+			std::cout << "chunk greater than buffer" << std::endl;
+			storeBuffer(&buffer[pos], 2048 - pos);
+			this->_chunk_remaining -= (2048 - pos);
+			pos = 2048;
+		}
+		else
+		{
+			std::cout << "chunk less than buffer" << std::endl;
+			storeBuffer(&buffer[pos], this->_chunk_remaining);
+			pos += this->_chunk_remaining + 2;
+			this->_chunk_context = false;
+		}
+	}
+	std::cout << "MERGE CHUNK END" << std::endl;
+}
+
+size_t CGI::convertHex(char *buffer)
+{
+	std::cout << "CONVERT HEX" << std::endl;
+	std::cout << buffer << std::endl;
+	char *stopstr;
+	int	i = 0;
+	while (buffer[i] && buffer[i] != '\r' && buffer[i] != '\n')
+		i++;
+	this->_chunk_size = std::strtoul(buffer, &stopstr, 16);
+	std::cout << "chunk size: " << this->_chunk_size;
+	this->_content_length += this->_chunk_size;
+	i += 2;
+	this->_chunk_context = true;
+	std::cout << "pos: " << i << ", stopstr: " << stopstr << std::endl;
+	std::cout << "CONVERT HEX END" << std::endl;
+	return i;
+}
+
+void CGI::addHeaderChunked()
+{
+	std::map<std::string, std::string>::const_iterator it = this->_response.getRequest().getCompleteHeader().begin();
+	std::ostringstream oss;
+	oss << this->_content_length;
+	std::string len(oss.str() + "\r\n\r\n");
+	for (int i = len.length() - 1; i > 0; i--)
+	{
+		this->_request_buff.insert(this->_request_buff.begin(), len[i]);
+		this->_header_length++;
+	}
+	for (int i = 16; i >  0; i--)
+	{
+		this->_request_buff.insert(this->_request_buff.begin(), "Content-Length: "[i]);
+		this->_header_length++;
+	}
+	for (; it != this->_response.getRequest().getCompleteHeader().end(); it++)
+	{
+		if (it->first == "Transfer-Encoding")
+			continue;
+		this->_request_buff.insert(this->_request_buff.begin(), it->second.begin(), it->second.end());
+		this->_request_buff.insert(this->_request_buff.begin(), ' ');
+		this->_request_buff.insert(this->_request_buff.begin(), ':');
+		this->_request_buff.insert(this->_request_buff.begin(), it->first.begin(), it->first.end());
+		this->_header_length += it->second.length() + it->first.length() + 2;
+	}
+}
+
+void	CGI::removeHeader(char *buffer, ssize_t received)
+{
+	std::cout << "REMOVE HEADER" << std::endl;
+	for (ssize_t i = 0; i < received; i++)
+	{
+		if (buffer[i] == '\r' && buffer[i + 1] == '\n')
+		{
+			if (buffer[i + 2] == '\r' && buffer[i + 3] == '\n')
+			{
+				mergeChunk(&buffer[i + 4], received - (i + 4));
+				std::cout << "REMOVE HEADER END" << std::endl;
+				break;
+			}
+		}
+	}
 }
