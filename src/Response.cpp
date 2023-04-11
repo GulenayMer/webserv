@@ -712,13 +712,13 @@ bool	Response::isChunked()
 	return this->_is_chunked;
 }
 
-bool Response::isRedirect(std::string uri)
-{
-	(void )uri;
+// bool Response::isRedirect(std::string uri)
+// {
+// 	(void )uri;
 
 
-	return true;
-}
+// 	return true;
+// }
 
 std::string Response::redirect(std::string uri)
 {
