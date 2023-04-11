@@ -26,6 +26,7 @@ class Response
 		bool						_is_chunked;
 		bool						_is_dir;
 		bool						_list_dir;
+		bool						_is_redirect;
 		bool						_is_complete;
 		bool						_to_close;
 		int							_cgi_fd;
@@ -83,6 +84,7 @@ class Response
 		void setChunked();
 		bool isChunked();
 		void finishChunk();
+		std::string redirect(std::string uri);
 };
 
 #endif
