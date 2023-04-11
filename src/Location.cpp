@@ -213,7 +213,7 @@ void				Location::clean_methods(std::string line)
 
 void							Location::init_methods()
 {
-	this->_methods.insert(std::make_pair(0, false));
+	this->_methods.insert(std::make_pair(0, true));
 	this->_methods.insert(std::make_pair(1, false));
 	this->_methods.insert(std::make_pair(2, false));
 	this->_methods.insert(std::make_pair(3, false));
