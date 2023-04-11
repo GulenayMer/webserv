@@ -3,6 +3,17 @@
 import cgi, os, hashlib, json, cgitb
 from dotenv import load_dotenv
 
+def is_json_file_valid(file_path):
+    with open(file_path, 'r') as f:
+        contents = f.read()
+        if len(contents) == 0:
+            return False
+        try:
+            json.loads(contents)
+        except ValueError:
+            return False
+        return len(json.loads(contents)) == 0
+
 load_dotenv()
 cgitb.enable()
 form = cgi.FieldStorage()
@@ -17,9 +28,21 @@ user = {
 	"email": email
 }
 body = ""
-# check if db file exists, if not create it
 db_path = os.environ["DB_PATH"]
-if os.path.exists(db_path):
+# File does not exist, create it with a list and add first user
+if not os.path.exists(db_path[:-10]):
+	os.mkdir(db_path[:-10])
+if not os.path.exists(db_path) or is_json_file_valid(db_path) == False:
+	with open(db_path, 'w', encoding='utf-8') as db:
+		json.dump([], db)
+	with open(db_path, "r", encoding='utf-8') as db:
+		users = json.load(db)
+	with open(db_path, 'w', encoding='utf-8') as db:	
+		users.append(user)
+		json.dump(users, db)
+		body = "User was created."
+# db file exists, check user
+else:
 	user_exists = False
 	with open(db_path, "r", encoding='utf-8') as db:
 		users = json.load(db)
@@ -35,16 +58,6 @@ if os.path.exists(db_path):
 		with open(db_path, 'w', encoding='utf-8') as db:
 			json.dump(users,db)
 
-# File does not exist, create it with a list and add first user
-else:
-	with open(db_path, 'w', encoding='utf-8') as db:
-		json.dump([], db)
-	with open(db_path, "r", encoding='utf-8') as db:
-		users = json.load(db)
-	with open(db_path, 'w', encoding='utf-8') as db:	
-		users.append(user)
-		json.dump(users, db)
-		body = "User was created."
 
 body = "<body>" + body + "</body>"
 
