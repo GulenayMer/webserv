@@ -46,9 +46,6 @@ if os.path.exists(db_path):
 			cookie = http.cookies.SimpleCookie()
 			# set a value for the cookie
 			cookie['session'] = user["username"]
-			# # TODO get domain from website?
-			# if os.environ["HOST"] != "127.0.0.1":
-			# 	cookie["session"]["domain"] = os.environ["HOST"]
 			cookie["session"]["path"] = "/"
 			cookie["session"]["max-age"] = 90000
 		# if user does not exist create user
