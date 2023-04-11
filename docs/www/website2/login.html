@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="./utils/loginStyle.css">
+	<title>Login</title>
+</head>
+
+<body>
+
+	<div class="main">
+		<h2>Login to your account</h2>
+		<button onclick="document.getElementById('modal').style.display='block'" class="btn-login">Login</button>
+	</div>
+
+	<div class="container" id="modal">
+
+  		<form id="form" class="form" action="../cgi-bin/login.py" method="post" enctype="multipart/form-data">
+			<div class="close-login">
+				<span onclick="document.getElementById('modal').style.display='none'" class="close" title="Close Modal">&times;</span>
+			  </div>
+			
+			<div class="form-input">
+				<label for="text"><b>Username</b></label>
+				<input type="username" id="username" name="username" placeholder="Enter Username" required>
+		
+				<label for="number"><b>Password</b></label>
+				<input type="password" id="password" name="password" placeholder="Enter Password" required>
+		
+				<button type="submit" class="btn-login submit">Login</button>
+				<label>
+				  <input type="checkbox" checked="checked" name="remember"> Remember me
+				</label>
+
+			  <div class="btn-remember">
+				<span class="password">Forgot <a href="#">password?</a></span>
+			  </div>
+			</div>
+  		</form>
+	</div>
+	
+
+<script>
+	let modal = document.getElementById('modal');
+
+	window.onclick = (e) => {
+		if (event.target == modal)
+		 {
+			modal.style.display = "none";
+		}
+	}
+</script>
+
+</body>
+</html>

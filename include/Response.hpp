@@ -22,8 +22,10 @@ class Response
 		size_t						_bytes_sent;
 		struct pollfd*				_fds;
 		int							_nfds;
-		std::string					_req_uri;
 		bool		                _is_cgi;
+		bool						_is_chunked;
+		bool						_is_dir;
+		bool						_list_dir;
 		bool						_is_complete;
 		bool						_to_close;
 		int							_cgi_fd;
@@ -31,11 +33,11 @@ class Response
 		std::string			        _response_body;
 		std::string			        _respond_path;
 		std::string			        _response;
-		std::string					_buffer;
 		Config      	   			_config;
 		httpHeader	 				_request;
+		std::string					_ext;
 		bool						_error;
-		std::string					_location;
+		Location					_location;
 		size_t						_received_bytes;
     
         Response();
@@ -50,7 +52,7 @@ class Response
         int 	send_response();
         void 	send_404(std::string root, std::ostringstream &response_stream);
 
-		void	new_request(httpHeader &request);
+		bool	new_request(httpHeader &request);
 
 		void	responseToGET(std::ifstream &file, const std::string& path, std::ostringstream &response_stream);
 		void	responseToPOST(const httpHeader request, std::ostringstream &response_stream);
@@ -64,20 +66,23 @@ class Response
 		MIME	&getTypes();
 		void	setCGIFd(int fd);
 		int		getCGIFd();
+		std::string &getExt();
 
 		static std::string	createError(int errorNumber, Config* config);
 		void getPath();
 		bool directoryExists(const char* path);
-		std::string directoryLisiting(std::string uri);
+		std::string directoryListing(std::string uri);
 		bool checkCGI();
 		bool checkPermissions();
-		void completeProg(bool complete);
+		void setCompletion(bool complete);
 		bool isComplete();
 		std::string &getAddress();
 		bool shouldClose();
-		Location *findLocation(int &status);
 		bool dir_exists(const std::string& dirName_in);
 		ssize_t receivedBytes(ssize_t received);
+		void setChunked();
+		bool isChunked();
+		void finishChunk();
 };
 
 #endif

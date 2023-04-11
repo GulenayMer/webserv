@@ -7,7 +7,6 @@
 #include <iostream>
 # include <stdlib.h>
 #include "Location.hpp"
-#include "configCGI.hpp"
 #include "minilib.hpp"
 #include "Utils.hpp"
 
@@ -23,8 +22,9 @@
   			std::string							_index;
  			std::map<int, std::string>			_default_error;
   			std::map<std::string, Location>		_location;
-			configCGI							_cgi;
+  			std::map<std::string, std::string>	_redirection;
 			int									_error_code;
+			std::map<std::string, std::string>	_intr_paths;
 
 		public:
 			Config();
@@ -33,7 +33,7 @@
 			Config& operator=(const Config& obj);
 
 			// getters
-			u_int16_t							&get_port();
+			uint16_t							&get_port();
 			in_addr								&get_host();                  
   			std::string							&get_server_name();
  			std::map<int, std::string>			&get_default_error();
@@ -43,14 +43,15 @@
   			std::string							&get_root();
   			std::string							get_index();
 			std::map<std::string, Location>		&get_location();
-			Location							*find_location(std::string location);
-			configCGI							&get_cgi();
+			// Location							&find_location(std::string location);
+			std::map<std::string, std::string>	&getRedirection();
 			int									get_error_code();
+			std::map<std::string, std::string>	&getIntrPath();
 
 		
 			// setters
 			void					set_error_code(int error_code);
-			void					set_port(u_int16_t port);
+			void					set_port(uint16_t port);
 			void					set_host(in_addr_t host);                  
   			void					set_server_name(std::string server_name);
  			void					set_default_error(int i, std::string default_error);
@@ -59,7 +60,7 @@
   			void					set_root(std::string root);
   			void					set_index(std::string index);
   			void					set_location(std::ifstream& config_file, std::string line);
-			void					set_cgi(std::ifstream& config_file, std::string line);
+			void					setIntrPath(std::string &ext, std::string &path);
 			void					create_default_errors();
 			void					check_config();
 
@@ -67,5 +68,5 @@
 
 			
 	};
-	std::ostream& operator<<(std::ostream& os, Config& config);
+
 #endif

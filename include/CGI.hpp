@@ -27,14 +27,18 @@ class CGI {
 		std::vector<char>					_response_buff;
 		size_t								_vector_pos;
 		size_t								_content_length;
+		size_t								_header_length;
 		size_t								_bytes_sent;
 		std::map<std::string, std::string>	_env;
 		int									_input_pipe[2];
 		int									_output_pipe[2];
 		std::string							_boundary;
-		int									_errnum;
+		int									_errno;
 		pid_t								_pid;
-		
+		bool								_chunk_context;
+		size_t								_chunk_size;
+		size_t								_chunk_remaining;
+
 	public:
 		CGI(Response &response);
 		CGI(const CGI& obj);
@@ -54,7 +58,7 @@ class CGI {
 		int		initOutputPipe();
 		int		initInputPipe();
 		Response &getResponse();
-		void	sendResponse();
+		bool	sendResponse();
 		void	add_to_buffer(char *buff, size_t rec);
 		void	setReadComplete();
 		bool	readComplete();
@@ -67,6 +71,10 @@ class CGI {
 		bool	completeContent();
 		int		PID();
 		void	closePipes();
+		void	mergeChunk(char *buffer, size_t received);
+		size_t	convertHex(char *buffer);
+		void	addHeaderChunked();
+		void	removeHeader(char *buffer, ssize_t received);
 };
 
 

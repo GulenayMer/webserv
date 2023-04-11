@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link href = "utils/style.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="./utils/loginStyle.css">
+
+	<title>Landing Page</title>
+</head>
+
+<body>
+	
+	<div class="header">
+
+		<div class="logo" src="">
+			<a href="/">Logo</a>
+		</div>
+
+		<nav class="navbar">
+			<ul class="nav-list">
+				<li class="list-item">
+					<a href="../about.html">About</a>
+				</li>
+				<li class="list-item">
+					<a href="#project-section">Services</a>
+				</li>
+				<li class="list-item">
+					<a href="../cgi-bin/cowsay.sh">Contact</a>
+				</li>
+				<li class="list-item">
+					<a href="../login.html" id="btn-login">Login</a>
+<!--  						<button onclick="document.getElementById('modal').style.display='block'" class="btn-login" id="btn-login">Login</button>
+ -->				</li>
+			</ul>
+		</nav>
+	</div>
+
+	<div class="container" id="modal">
+
+		<form id="form" class="form" action="../cgi-bin/login.py" method="post" enctype="multipart/form-data">
+		  <div class="close-login">
+			  <span onclick="document.getElementById('modal').style.display='none'" class="close" title="Close Modal">&times;</span>
+			</div>
+		  
+		  <div class="form-input">
+			  <label for="text"><b>Username</b></label>
+			  <input type="username" id="username" name="username" placeholder="Enter Username" required>
+	  
+			  <label for="number"><b>Password</b></label>
+			  <input type="password" id="password" name="password" placeholder="Enter Password" required>
+	  
+			  <button type="submit" class="btn-login submit">Login</button>
+			  <label>
+				<input type="checkbox" checked="checked" name="remember"> Remember me
+			  </label>
+
+			<div class="btn-remember">
+			  <span class="password">Forgot <a href="#">password?</a></span>
+			</div>
+		  </div>
+		</form>
+  </div>
+
+	<div class="intro-container">
+		<div class="intro-text">
+			<h2>Welcome to Our Site</h2>
+			<p>We deliver high-quality products for your business. Sign up for newsletter and stay informed!</p>
+			<a href="./form.html">
+				<button id="btn">Sign Up</button>
+			</a>
+		</div>
+		<div class="intro-img">
+			<img src="./images/programming.png" alt="programming"></img>
+		</div>
+	</div>
+
+	<section id="project-section">
+		<h2 class="project-header">Our Services</h2>
+		<div class="projects">
+			<div class="project-item">
+				<form METHOD=GET ACTION=/pokemon/pokemon_question.py>
+				<button type=submit>
+				<img class="project-img" src="./images/agile.png" alt="agile"></img>
+				</button>
+				</form>
+				<p>Training for Agile Project Management</p>
+			</div>
+			<div class="project-item">
+				<form METHOD=GET ACTION=/pokemon/pokemon.html>
+				<button type=submit>
+				<img class="project-img" src="./images/projectmanagement.png" alt="project management"></img>
+				</button>
+				</form>
+				<p>Training for Project Managers </p>
+			</div>
+			<div class="project-item">
+				<form METHOD=GET ACTION=/chat.html>
+				<button type=submit>
+				<img class="project-img" src="./images/productmanagement.png" alt="product manager"></img>
+				</button>
+				</form>
+				<p>Training for Product Managers</p>
+			</div>
+			<div class="project-item">
+				<img class="project-img" src="./images/motivation.png" alt="motivation"></img>
+				<p>Training for Motivation</p>
+			</div>
+		</div>
+	</section>
+
+<!-- Contact Section-->
+<footer id="footer">
+	<a href="#" class="email">team@42students.com</a>
+	<p class="copyright">Copyright &#169; Team WebServer42 </p>
+</footer>
+
+
+<script type="text/javascript">
+	const modal = document.getElementById('modal');
+
+	window.onclick = (e) => {
+		if (event.target == modal)
+		 {
+			modal.style.display = "none";
+		}
+	}
+
+	function getCookieValue(cookieName)
+	{
+  		const cookies = document.cookie.split('; ');
+		console.log(cookies);
+  		for (let i = 0; i < cookies.length; i++) 
+		{
+    		const cookie = cookies[i].split('=');
+    		if (cookie[0] === cookieName) 
+			{
+      			return cookie[1];
+    		}
+  		}
+  return null;
+}
+
+
+const username = getCookieValue('session');
+const btn = document.getElementById("btn-login");
+console.log(username);
+if (username != null)
+{
+	btn.innerHTML = username + " Logout";
+	btn.href = "../cgi-bin/logout.py";
+}
+
+</script>
+</body>
+</html>

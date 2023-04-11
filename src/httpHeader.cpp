@@ -13,7 +13,22 @@ httpHeader::httpHeader(std::string header)
 	std::string tmp_method = header.substr(start, end - start);
 	start = end + 1;
 	end = header.find(" ", start);
-	this->_uri = decodeURI(header.substr(start, end - start));
+	if (end - start > 2048)
+	{
+		this->_error = 1;
+		this->_uri.clear();
+	}
+	else
+	{
+		this->_error = 0;
+		this->_uri = decodeURI(header.substr(start, end - start));
+		start = this->_uri.find_first_of("?");
+		if (start != std::string::npos)
+		{
+			this->_query = this->_uri.substr(start);
+			this->_uri.erase(start);
+		}
+	}
 	start = end + 1;
 	end = header.find("\r\n", start);
 	this->_version = header.substr(start, end - start);
@@ -55,6 +70,8 @@ httpHeader &httpHeader::operator=(const httpHeader& rhs)
 		this->_version = rhs._version;
 		this->_header_length = rhs._header_length;
 		this->_content_length = rhs._content_length;
+		this->_cookie = rhs._cookie;
+		this->_error = rhs._error;
 	}
 	return *this;
 }
@@ -72,6 +89,11 @@ const std::string &httpHeader::getUri() const
 const std::string &httpHeader::getVersion() const
 {
 	return(this->_version);
+}
+
+const uint8_t &httpHeader::isError() const
+{
+	return this->_error;
 }
 
 const std::string httpHeader::get_single_header(std::string entry)
@@ -189,9 +211,11 @@ void httpHeader::printHeader()
 /* check if header is http 1.1 protocol */
 bool httpHeader::isHttp11()
 {
+	std::cout << "VERSION: " << this->_version << std::endl;
 	if ((this->_version == "HTTP/1.1" || this->_version == "http/1.1" || this->_version == "Http/1.1") \
-		&& get_single_header("Host").size() > 0)
+		&& !get_single_header("Host").empty())
 		return true;
+	std::cout << "HERE INVALID HTTP" << std::endl;
 	return false;
 }
 
@@ -203,4 +227,14 @@ size_t httpHeader::getHeaderLength()
 size_t httpHeader::getContentLength()
 {
 	return this->_content_length;
+}
+
+void	httpHeader::setURI(std::string str)
+{
+	this->_uri = str;
+}
+
+const std::map<std::string, std::string>& httpHeader::getCompleteHeader() const
+{
+	return this->_header;
 }
