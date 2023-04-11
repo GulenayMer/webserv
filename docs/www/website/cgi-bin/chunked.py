@@ -3,7 +3,7 @@
 import sys
 
 try:
-	f = open("upload.png", "x")
+	f = open("uploaded.txt", "x")
 except:
 	print("File already exists.")
 	sys.exit()
