@@ -50,7 +50,9 @@ class Response
         Response &operator=(Response const &rhs);
         ~Response();
 
-        int 	send_response();
+        int 	handle_response();
+		int		handle_response_error(std::ostringstream& response_stream);
+		int		send_response(std::ostringstream& response_stream);
         void 	send_404(std::string root, std::ostringstream &response_stream);
 
 		bool	new_request(httpHeader &request);
