@@ -6,7 +6,18 @@ from dotenv import load_dotenv
 load_dotenv()
 form = cgi.FieldStorage()
 
-# print(form)
+def is_json_file_valid(file_path):
+    with open(file_path, 'r') as f:
+        contents = f.read()
+        if len(contents) == 0:
+            return False
+        try:
+            json.loads(contents)
+        except ValueError:
+            return False
+        return True
+
+
 username = form["username"].file.read()
 password = form["password"].file.read()
 body = ""
@@ -19,29 +30,30 @@ db_path = os.environ["DB_PATH"]
 user_exists = False
 if os.path.exists(db_path):
 	user_exists = False
-	with open(db_path, "r", encoding='utf-8') as db:
-		users = json.load(db)
-	# check if user exists or email is taken
-	for entry in users:
-		# User exists
-		if entry["username"] == user["username"] and entry["hash"] == user["hash"]:
-			user_exists = True
-			break
-	if user_exists == True:
-		cookie = http.cookies.SimpleCookie()
-		# set a value for the cookie
-		cookie['session'] = user["username"]
-		# # TODO get domain from website?
-		# if os.environ["HOST"] != "127.0.0.1":
-		# 	cookie["session"]["domain"] = os.environ["HOST"]
-		cookie["session"]["path"] = "/"
-		#cookie["session"]["max-age"] = 90000
-	# if user does not exist create user
-	else:
-		body = "There was a problem accessing this account"
+	if is_json_file_valid(db_path) == False:
+		body = "User does not exist."	
 # File does not exist, create it with a list and add first user
-else:
-	body = "User does not exist."	
+	else:
+		with open(db_path, "r", encoding='utf-8') as db:
+			users = json.load(db)
+		# check if user exists or email is taken
+		for entry in users:
+		# User exists
+			if entry["username"] == user["username"] and entry["hash"] == user["hash"]:
+				user_exists = True
+				break
+		if user_exists == True:
+			cookie = http.cookies.SimpleCookie()
+			# set a value for the cookie
+			cookie['session'] = user["username"]
+			# # TODO get domain from website?
+			# if os.environ["HOST"] != "127.0.0.1":
+			# 	cookie["session"]["domain"] = os.environ["HOST"]
+			cookie["session"]["path"] = "/"
+			cookie["session"]["max-age"] = 90000
+		# if user does not exist create user
+		else:
+			body = "There was a problem accessing this account"
 
 body = "<body>" + body + "</body>"
 

@@ -3,11 +3,11 @@
 import cgi, os, hashlib, json, cgitb
 from dotenv import load_dotenv
 
-def is_json_file_empty(file_path):
+def is_json_file_valid(file_path):
     with open(file_path, 'r') as f:
         contents = f.read()
         if len(contents) == 0:
-            return True
+            return False
         try:
             json.loads(contents)
         except ValueError:
@@ -32,7 +32,7 @@ db_path = os.environ["DB_PATH"]
 # File does not exist, create it with a list and add first user
 if not os.path.exists(db_path[:-10]):
 	os.mkdir(db_path[:-10])
-if not os.path.exists(db_path) or is_json_file_empty(db_path) == True:
+if not os.path.exists(db_path) or is_json_file_valid(db_path) == False:
 	with open(db_path, 'w', encoding='utf-8') as db:
 		json.dump([], db)
 	with open(db_path, "r", encoding='utf-8') as db:
