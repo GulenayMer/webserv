@@ -14,7 +14,7 @@ array[10]="stegosaurus"
 
 index=$(($RANDOM % ${#array[@]}))
 
-if (( RANDOM % 5 ))
+if (( RANDOM % 3 ))
 then
 	cow=`/usr/games/fortune | /usr/games/cowsay`
 else
