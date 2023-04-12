@@ -33,6 +33,29 @@ body
 
 }
 
+.btn-all
+{
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+}
+
+.logout, .delete
+{
+	padding: 10px 20px;
+	width: 100%;
+	background-color: #ed1818;
+	color: white;
+	border: none;
+	cursor: pointer;
+
+}
+
+.logoutForm, .deleteForm
+{
+	margin-right: 10%;
+}
+
 
 .container
 {
