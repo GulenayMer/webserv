@@ -14,7 +14,7 @@ array[10]="stegosaurus"
 
 index=$(($RANDOM % ${#array[@]}))
 
-if (( RANDOM % 5 ))
+if (( RANDOM % 3 ))
 then
 	cow=`/usr/games/fortune | /usr/games/cowsay`
 else
@@ -32,7 +32,7 @@ body {background-color: palepink;}
 <body>
 <pre>
 $cow
-<form METHOD=GET ACTION=\"/cgi-bin/cowsay.sh\">
+<form METHOD=GET ACTION=\"/contact\">
 <button type=\"submit\">Get new fortune.</button>
 </form>
 </pre>
