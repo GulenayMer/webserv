@@ -47,7 +47,8 @@ class ConfigParser {
 		void clean_index(std::string line);
 		void clean_path(std::string line);
 		void clean_ext(std::string line);
-		void addToMap();
+		void addToExtMap();
+		std::string findIP(std::string &word);
 
 
 

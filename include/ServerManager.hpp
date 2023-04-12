@@ -10,12 +10,14 @@
 class ServerManager {
 	
     private:
-		std::vector<Server> _servers;
+		std::map<std::string, Server> _host_serv;
+		int	_n_servers;
 		std::vector<Config> _configs;
 		std::map<int, Response> _responses;
 		std::map<int, CGI>		_cgis;
 		std::map<int, int>		_cgi_fds;
 		std::map<std::string, int>	_addr_fd;
+		std::map<int, std::string> _default_host;
 		int					_nfds;
 		struct pollfd*		_fds;
 		int					_nbr_fd_ready;
@@ -27,12 +29,12 @@ class ServerManager {
     public:
 		ServerManager(std::vector<Config> &configs);
 
-        ~ServerManager();
+        //~ServerManager();
 
-		void 	pollfd_init();
+		int 	pollfd_init();
 		int		run_servers();
-		int		check_connection();
-		int		check_request_respond();
+		//int		check_connection();
+		//int		check_request_respond();
 		void	close_connection(Response &response, int i);
 
 		std::vector<Server>	get_servers();

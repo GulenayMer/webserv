@@ -110,8 +110,8 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 		}
 		if ((context && line.find(LISTEN) != std::string::npos) && check_def_format(LISTEN, line))
 			this->clean_listen(line);
-		else if ((context && line.find(HOST) != std::string::npos) && check_def_format(HOST, line))
-			this->clean_host(line);
+		// else if ((context && line.find(HOST) != std::string::npos) && check_def_format(HOST, line))
+		// 	this->clean_host(line);
 		else if ((context && line.find(ROOT) != std::string::npos) && check_def_format(ROOT, line))
 			this->clean_root(line);
 		else if ((context && line.find(INDEX) != std::string::npos) && check_def_format(INDEX, line))
@@ -144,7 +144,8 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 		}
 		if (line.find("}") != std::string::npos)
 		{
-			addToMap();
+			addToExtMap();
+			this->get_config(this->_n_servers - 1).combineHost();
 			context -= 1;
 		}
 	}
@@ -169,20 +170,50 @@ void ConfigParser::clean_listen(std::string line)
 		return (this->set_error_code(3));
 	}
 	std::cout << "port: " << line.c_str() << std::endl;
+	this->get_config(this->_n_servers - 1).setHost(line);
 	this->get_config(this->_n_servers - 1).set_port(to_int(line.c_str()));
 }
 
-void ConfigParser::clean_host(std::string line)
+void ConfigParser::clean_server_name(std::string line)
 {
-	line = get_word(line, 1);
-	if (line.empty())
+	std::string word = get_word(line, 1);
+	std::string word2 = get_word(line, 2);
+	bool	w_ip = true;
+	if (word.empty())
 		return (this->set_error_code(4));
-	for (size_t i = 0; i < line.length(); i++)
+	for (size_t i = 0; i < word.length(); i++)
 	{
-		if (!isdigit(line[i]) && line[i] != '.')
-			return (this->set_error_code(4));
+		if (!isdigit(word[i]) && word[i] != '.')
+		{
+			w_ip = false;
+			if (word2.empty())
+				word2 = findIP(word);
+			break;
+		}
 	}
-	this->get_config(this->get_n_servers() - 1).set_host(inet_addr(line.c_str()));
+	if (!w_ip && !word2.empty())
+	{
+		for (size_t i = 0; i < word2.length(); i++)
+		{
+			if (!isdigit(word2[i]) && word2[i] != '.')
+				return (this->set_error_code(4));
+		}
+	}
+	else if (!w_ip)
+		return (this->set_error_code(4));
+	if (w_ip)
+	{
+		if (word2.empty())
+			this->get_config(this->get_n_servers() - 1).set_server_name(word);
+		else
+			this->get_config(this->get_n_servers() - 1).set_server_name(word2);
+		this->get_config(this->get_n_servers() - 1).set_addr(inet_addr(word.c_str()));
+	}
+	else if (!w_ip)
+	{
+		this->get_config(this->get_n_servers() - 1).set_server_name(word);
+		this->get_config(this->get_n_servers() - 1).set_addr(inet_addr(word2.c_str()));
+	}
 }
 
 void ConfigParser::clean_error_page(std::string line)
@@ -208,13 +239,13 @@ void ConfigParser::clean_error_page(std::string line)
 	this->get_config(this->get_n_servers() - 1).set_default_error(to_int(error), this->get_config(this->get_n_servers() - 1).get_root() + &line[pos]);
 }
 
-void ConfigParser::clean_server_name(std::string line)
-{
-	line = get_value(line);
-	if (line.size() == 0)
-		this->set_error_code(6);
-	this->get_config(this->get_n_servers() - 1).set_server_name(line);
-}
+// void ConfigParser::clean_server_name(std::string line)
+// {
+// 	line = get_value(line);
+// 	if (line.size() == 0)
+// 		this->set_error_code(6);
+// 	this->get_config(this->get_n_servers() - 1).set_server_name(line);
+// }
 
 void ConfigParser::clean_client_max_body_size(std::string line)
 {
@@ -284,13 +315,13 @@ void			ConfigParser::clean_ext(std::string line)
 	}
 }
 
-void	ConfigParser::addToMap()
+void	ConfigParser::addToExtMap()
 {
 	std::vector<std::string>::iterator it1 = this->_ext.begin();
 	std::vector<std::string>::iterator it2 = this->_path.begin();
 	while (it1 != this->_ext.end() && it2 != this->_path.end())
 	{
-		this->get_config(this->get_n_servers() - 1).setIntrPath(*it1, *it2);
+		this->get_config(this->_n_servers - 1).setIntrPath(*it1, *it2);
 		++it1;
 		++it2;
 	}
@@ -337,4 +368,23 @@ int ConfigParser::exit_with_error(int err_code, std::ifstream& in_file)
 	in_file.close();
 	this->set_error_code(err_code);
 	return(err_code);
+}
+
+std::string ConfigParser::findIP(std::string &word)
+{
+	std::ifstream ifile;
+	char	buff[256];
+
+	ifile.open("/etc/hosts");
+	while (ifile.getline(buff, 256))
+	{
+		std::string str(buff);
+		if (str.find(word) != std::string::npos)
+		{
+			size_t pos = str.find_first_of(" \f\n\r\t\v");
+			if (pos != std::string::npos)
+				return str.substr(0, pos);
+		}
+	}
+	return "";
 }

@@ -45,12 +45,13 @@ class Response
 		static std::string getErrorPath(int &errorNumber, std::string& errorName, Config* config);
 
     public:
-		Response(int conn_fd, int server_fd, Config& config, struct pollfd* fds, int nfds, std::string addr);
+		Response(int conn_fd, int server_fd, struct pollfd* fds, int nfds, std::string addr);
         Response(Response const &cpy);
         Response &operator=(Response const &rhs);
         ~Response();
 
-        int 	handle_response();
+        void	newConfig(Config &config);
+		int 	handle_response();
 		int		handle_response_error(std::ostringstream& response_stream);
 		int		send_response(std::ostringstream& response_stream);
         void 	send_404(std::string root, std::ostringstream &response_stream);

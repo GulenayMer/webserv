@@ -224,3 +224,11 @@ std::string decodeURI(const std::string& input) {
     }
     return output.str();
 }
+
+std::string toLowerCase(const std::string& str) {
+    std::string result = str;
+    for (std::string::iterator it = result.begin(); it != result.end(); ++it) {
+        *it = std::tolower(*it);
+    }
+    return result;
+}

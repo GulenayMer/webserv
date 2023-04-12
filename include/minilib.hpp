@@ -21,5 +21,6 @@ std::string clean_response_path(std::string response_path);
 std::string	get_word(std::string line, int loc);
 std::string decodeURI(const std::string &uri);
 std::string encodeURI(const std::string &uri);
+std::string toLowerCase(const std::string& str);
 
 #endif

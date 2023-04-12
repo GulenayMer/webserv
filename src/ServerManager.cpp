@@ -1,8 +1,6 @@
 #include "../include/ServerManager.hpp"
 
 ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _nfds(0) {
-
-
     for (size_t i = 0; i < this->_configs.size(); i++)
     {
 		try {
@@ -10,8 +8,10 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 			std::cout << this->_configs[i].get_port() << std::endl;
 			std::cout << this->_configs[i].get_root() << std::endl;
 			std::cout << this->_configs[i].get_server_name() << std::endl;
-        	Server server = Server(this->_configs[i]);
-       		this->_servers.push_back(server);
+			this->_default_host.insert(std::map<int, std::string>::value_type(this->_configs[i].get_port(), this->_configs[i].getHost()));
+        	Server server(this->_configs[i]);
+			std::cout << server.get_sockfd() << std::endl;
+			this->_host_serv.insert(std::map<std::string, Server>::value_type(this->_configs[i].getHost(), server));
 		}
 		catch (std::logic_error &e) {
 			std::cerr << std::endl;
@@ -25,33 +25,49 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 			std::cerr << std::endl;
 		}
     }
-	if (this->get_servers().size() > 0) {
+	std::cout << "after inserting all" << std::endl;
+	if (this->_host_serv.size() > 0) {
+		std::cout << "after checking size" << std::endl;
 		this->_compress_array = false;
-		this->_fds = new struct pollfd[MAX_CONN * this->get_servers().size()];
-		this->pollfd_init();
-		this->_nfds = this->get_servers().size();
+		this->_fds = new struct pollfd[MAX_CONN * 2];
+		this->_n_servers = this->pollfd_init();
+		this->_nfds = this->_n_servers;
+		// std::vector<Server>::iterator it = this->get_servers().begin();
+		// for (; it != this->get_servers().end(); it++)
+		// {
+		// 	std::cout << it->get_port() << std::endl;
+		// 	std::cout << inet_ntoa(it->get_config().get_host()) << std::endl;
+		// 	std::cout << it->get_config().get_server_name() << std::endl;
+		// }
+		std::cout << "running servers" << std::endl;
 		this->run_servers();
 	}
 	else
 		std::cerr << RED << NO_VALID_SERVERS << RESET << std::endl;
 }
 
-ServerManager::~ServerManager()
-{
-	for (size_t i = 0; i < this->get_servers().size(); i++)
-		this->get_server_at(i).clean_fd();
-	if (this->get_servers().size() > 0) {
-		delete [] this->_fds;
-	}
-}
+// ServerManager::~ServerManager()
+// {
+// 	for (size_t i = 0; i < this->get_servers().size(); i++)
+// 		this->get_server_at(i).clean_fd();
+// 	if (this->get_servers().size() > 0) {
+// 		delete [] this->_fds;
+// 	}
+// }
 
-void ServerManager::pollfd_init()
+int ServerManager::pollfd_init()
 {
-	for (size_t i = 0; i < this->_configs.size(); i++)
+	int	i = 0;
+	std::cout << "pollfd init start" << std::endl;
+	std::map<std::string, Server>::iterator it = this->_host_serv.begin();
+	for (; it != this->_host_serv.end(); it++)
     {
-        this->_fds[i].fd = this->_servers[i].get_sockfd();
-        this->_fds[i].events = POLLIN;
+		this->_fds[i].fd = it->second.get_sockfd();
+		this->_fds[i].events = POLLIN;
+		i++;
     }
+	std::cout << "pollfd init end" << std::endl;
+	return i;
 }
 
 int ServerManager::run_servers()
@@ -60,7 +76,9 @@ int ServerManager::run_servers()
 	int		nbr_fd_ready;
 	while (SWITCH)
     {
+		std::cout << "here before poll" << std::endl;
         nbr_fd_ready = poll(this->_fds, this->_nfds, -1);
+		std::cout << "here after poll" << std::endl;
         if (nbr_fd_ready == -1)
         {
             // TODO avoid killing the server, implement test how to deal with it 
@@ -71,14 +89,14 @@ int ServerManager::run_servers()
 		{
 			if (this->_fds[i].revents == 0)
 				continue ;
-			if (i < (int)this->_servers.size())
+			if (i < this->_n_servers)
 			{
-				sockaddr addr;
-				socklen_t addr_len = 0;
+				struct sockaddr_in addr;
+				socklen_t addr_len = sizeof(sockaddr_in);
 				int	connection_fd;
-				connection_fd = accept(this->_servers[i].get_sockfd(), &addr, &addr_len);
-				struct sockaddr_in *s = (struct sockaddr_in *)&addr;
-				std::string address(inet_ntoa(s->sin_addr));
+				connection_fd = accept(this->_fds[i].fd, (struct sockaddr *)&addr, &addr_len);
+				std::string address(inet_ntoa(addr.sin_addr));
+				//int port = ntohs(addr.sin_port);
 				// if (this->_addr_fd.find(address) != this->_addr_fd.end())
 				// {
 				// 	close(connection_fd);
@@ -101,9 +119,11 @@ int ServerManager::run_servers()
 					continue ;
 				}
 				std::cout << GREEN << "New Connection" << RESET << std::endl;
+				std::cout << "nfds: " << this->_nfds << std::endl;
 				this->_fds[this->_nfds].fd = connection_fd;
 				this->_fds[this->_nfds].events = POLLIN;
-				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_servers[i].get_sockfd(), this->_servers[i].get_config(), this->_fds, this->_nfds, address)));
+				std::cout << "pollin fd: " << this->_fds[i].fd << std::endl;
+				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_fds[i].fd, this->_fds, this->_nfds, address)));
 				this->_nfds++;
 			}
 			else if (this->_fds[i].revents & POLLIN)
@@ -112,9 +132,7 @@ int ServerManager::run_servers()
 				std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
 				if (response_it != this->_responses.end())
 				{
-					// receive request ->
 					char	buffer[BUFFER_SIZE];
-					//TODO implement client max body size
 					ssize_t		received;
 					memset(buffer, 0, sizeof(buffer));
 					received = recv(this->_fds[i].fd, buffer, sizeof(buffer), MSG_DONTWAIT);
@@ -124,13 +142,12 @@ int ServerManager::run_servers()
 					std::cout << "REQUEST FD: " << this->_fds[i].fd << std::endl;
 					if (received < 0)
 					{
-						//this->close_connection(response_it->second, i);
+						nbr_fd_ready--;
 						perror("recv");
 					}
 					else if (received == 0)
 					{
-						// nbr_fd_ready--;
-						// continue;
+						nbr_fd_ready--;
 						this->close_connection(response_it->second, i);
 						printf("Connection closed\n");
 					}
@@ -201,6 +218,30 @@ int ServerManager::run_servers()
 							// 	this->_compress_array = true;
 							// }
 							httpHeader request(buffer);
+							std::map<std::string, Server>::iterator serv_it = this->_host_serv.find(request.get_single_header("host"));
+							std::cout << "HERE2" << std::endl;
+							if (serv_it != this->_host_serv.end())
+							{
+								std::cout << "HERE3" << std::endl;
+								response_it->second.newConfig(serv_it->second.get_config());
+							}
+							else
+							{
+								std::cout << "HERE4" << std::endl;
+								std::map<int, std::string>::iterator def_it = this->_default_host.find(request.getPort());
+								if (def_it != this->_default_host.end())
+								{
+									std::cout << "HERE5" << std::endl;
+									std::cout << "default: " << def_it->second << std::endl;
+									response_it->second.newConfig(this->_host_serv.find(def_it->second)->second.get_config());
+								}
+								else
+								{
+									std::cout << "HERE6" << std::endl;
+									close_connection(response_it->second, i);
+									continue;
+								}
+							}
 							response_it->second.new_request(request);
 							request.printHeader();
 							response_it->second.handle_response();
@@ -260,6 +301,7 @@ int ServerManager::run_servers()
 			}
 			if (this->_fds[i].revents & POLLOUT && this->_fds[i].fd > 0) // if POLLOUT -> write to fd ready for writing
 			{
+				std::cout << "POLLOUT" << std::endl;
 				std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
 				std::map<int, CGI>::iterator cgi_it = this->_cgis.end();
 				std::map<int, int>::iterator cgi_fd_it = this->_cgi_fds.find(this->_fds[i].fd);
@@ -311,7 +353,7 @@ int ServerManager::run_servers()
 		{
 			std::cout << "COMPRESS" << std::endl;
 			this->_compress_array = false;
-			for (int i = this->_nfds - 1; i > (int)this->_servers.size() - 1; i--)
+			for (int i = this->_nfds - 1; i >= this->_n_servers; i--)
 			{
 				if (this->_fds[i].fd == -1)
 				{
@@ -342,15 +384,15 @@ int ServerManager::run_servers()
 	return EXIT_SUCCESS;
 }
 
-std::vector<Server>	ServerManager::get_servers()
-{
-	return this->_servers;
-}
+// std::vector<Server>	ServerManager::get_servers()
+// {
+// 	return this->_servers;
+// }
 
-Server	ServerManager::get_server_at(int i)
-{
-	return this->_servers[i];
-}
+// Server	ServerManager::get_server_at(int i)
+// {
+// 	return this->_servers[i];
+// }
 
 void	ServerManager::close_connection(Response &response, int i)
 {

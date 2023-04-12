@@ -4,7 +4,7 @@
 Config::Config(): _error_code(0)
 {
 	this->set_port(80);
-	this->set_host(inet_addr("127.0.0.1"));
+	this->set_addr(inet_addr("127.0.0.1"));
 	this->set_server_name("default");
 	this->set_client_max_body_size(1048576);
 	this->set_autoindex(false);
@@ -20,8 +20,9 @@ Config &Config::operator=(const Config &obj)
 {
 	if (this != &obj) {
 		this->_port = obj._port;
-		this->_host = obj._host;
+		this->_addr = obj._addr;
 		this->_server_name = obj._server_name;
+		this->_host = obj._host;
 		this->_default_error = obj._default_error;
 		this->_client_max_body_size = obj._client_max_body_size;
 		this->_autoindex = obj._autoindex;
@@ -47,7 +48,12 @@ u_int16_t					&Config::get_port()
 	return this->_port;
 }
 
-in_addr					&Config::get_host()
+in_addr					&Config::get_addr()
+{
+	return this->_addr;
+}
+
+std::string		&Config::getHost()
 {
 	return this->_host;
 }
@@ -128,9 +134,14 @@ void					Config::set_port(uint16_t port)
 	this->_port = port;
 }
 
-void					Config::set_host(in_addr_t host)
+void					Config::set_addr(in_addr_t addr)
 {
-	this->_host.s_addr = host;
+	this->_addr.s_addr = addr;
+}
+
+void	Config::setHost(std::string &host)
+{
+	this->_host = host;
 }
 
 void					Config::set_server_name(std::string server_name)
@@ -270,4 +281,10 @@ void	Config::create_default_errors()
 std::map<std::string, std::string> &Config::getRedirection()
 {
 	return this->_redirection;
+}
+
+void	Config::combineHost()
+{
+	this->_host.insert(0, ":");
+	this->_host.insert(0, this->_server_name);
 }

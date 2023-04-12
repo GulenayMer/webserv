@@ -45,11 +45,12 @@ httpHeader::httpHeader(std::string header)
 			else
 				name = line.substr(0, separator);
 			std::string value = line.substr(separator + 2);
+			name = toLowerCase(name);
 			this->setHeader(name, value);
 		}
 		start = end + 2;
 	}
-	this->_content_length = atol(this->get_single_header("Content-Length").c_str());
+	this->_content_length = atol(this->get_single_header("content-length").c_str());
 }
 
 httpHeader::~httpHeader()
@@ -213,7 +214,7 @@ bool httpHeader::isHttp11()
 {
 	std::cout << "VERSION: " << this->_version << std::endl;
 	if ((this->_version == "HTTP/1.1" || this->_version == "http/1.1" || this->_version == "Http/1.1") \
-		&& !get_single_header("Host").empty())
+		&& !get_single_header("host").empty())
 		return true;
 	std::cout << "HERE INVALID HTTP" << std::endl;
 	return false;
@@ -237,4 +238,20 @@ void	httpHeader::setURI(std::string str)
 const std::map<std::string, std::string>& httpHeader::getCompleteHeader() const
 {
 	return this->_header;
+}
+
+int httpHeader::getPort()
+{
+	std::map<std::string, std::string>::iterator it = this->_header.find("host");
+	if (it != this->_header.end())
+	{
+		size_t pos = it->second.find_first_of(":");
+		if (pos != std::string::npos)
+		{
+			pos++;
+			char *end = NULL;
+			return strtoul(it->second.substr(pos).c_str(), &end, 10);
+		}
+	}
+	return -1;
 }

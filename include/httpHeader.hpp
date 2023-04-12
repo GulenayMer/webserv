@@ -3,6 +3,7 @@
 
 # include "Utils.hpp"
 # include "minilib.hpp"
+# include <cstdlib>
 
 // Set-Cookie: key=value; expires='formated date'; asdfaf=sadadd
 
@@ -45,7 +46,7 @@ class httpHeader
 		const uint8_t &isError() const;
 		const std::map<std::string, std::string>& getCompleteHeader() const;
 		const std::string get_single_header(std::string entry);
-
+		int getPort();
 		void setHeader(std::string name, std::string value);
 		void setMethod(std::string tmp_method);
 		void setVersion(std::string version);

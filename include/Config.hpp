@@ -16,8 +16,9 @@
   			size_t 								_client_max_body_size;
 			bool								_autoindex;
 			uint16_t							_port;
-  			in_addr								_host;                  
+  			in_addr								_addr;
   			std::string							_server_name;
+			std::string							_host;
   			std::string							_root;
   			std::string							_index;
  			std::map<int, std::string>			_default_error;
@@ -34,7 +35,8 @@
 
 			// getters
 			uint16_t							&get_port();
-			in_addr								&get_host();                  
+			in_addr								&get_addr();
+			std::string							&getHost();
   			std::string							&get_server_name();
  			std::map<int, std::string>			&get_default_error();
 			std::string							&get_error_path(int error);
@@ -52,7 +54,9 @@
 			// setters
 			void					set_error_code(int error_code);
 			void					set_port(uint16_t port);
-			void					set_host(in_addr_t host);                  
+			void					set_addr(in_addr_t addr);
+			void					setHost(std::string &host);
+			void					combineHost();               
   			void					set_server_name(std::string server_name);
  			void					set_default_error(int i, std::string default_error);
   			void 					set_client_max_body_size(int clien_max_body_size);

@@ -45,7 +45,7 @@ int	Server::bind_socket()
 {
 	this->_serv_addr.sin_family = AF_INET;
     this->_serv_addr.sin_port = htons(_port);
-    this->_serv_addr.sin_addr = this->_config.get_host();
+    this->_serv_addr.sin_addr = this->_config.get_addr();
     if (bind(this->_sockfd, (struct sockaddr *)&this->_serv_addr, sizeof(this->_serv_addr)) < 0)
     {
         throw std::logic_error("Could not bind socket to address.");

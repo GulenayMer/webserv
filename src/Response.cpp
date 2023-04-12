@@ -1,6 +1,6 @@
 #include "../include/Response.hpp"
 
-Response::Response(int conn_fd, int server_fd, Config& config, struct pollfd* fds, int nfds, std::string addr): _config(config)
+Response::Response(int conn_fd, int server_fd, struct pollfd* fds, int nfds, std::string addr)
 {
     _conn_fd = conn_fd;
     _server_fd = server_fd;
@@ -49,6 +49,11 @@ Response &Response::operator=(const Response &src)
 }
 
 Response::~Response() {}
+
+void Response::newConfig(Config &config)
+{
+	this->_config = config;
+}
 
 void Response::getPath()
 {
@@ -153,6 +158,7 @@ int 	Response::handle_response()
 			file.close();
 		}
 	}
+	std::cout << response_stream.str() << std::endl;
 	return (send_response(response_stream));
 }
 
@@ -184,7 +190,7 @@ int 	Response::handle_response_error(std::ostringstream& response_stream)
 		_to_close = true;
 		return 1;
 	}
-	else if (_request.getMethod() == POST && this->_request.get_single_header("Content-Length").empty() && !this->_is_chunked) {
+	else if (_request.getMethod() == POST && this->_request.get_single_header("content-length").empty() && !this->_is_chunked) {
 		response_stream << createError(411, &this->getConfig());
 		_to_close = true;
 		return 1;
@@ -697,9 +703,7 @@ std::string &Response::getExt()
 
 void	Response::setChunked()
 {
-	if (this->_request.get_single_header("Transfer-Encoding") == "chunked")
-		this->_is_chunked = true;
-	else if (this->_request.get_single_header("transfer-encoding") == "chunked")
+	if (this->_request.get_single_header("transfer-encoding") == "chunked")
 		this->_is_chunked = true;
 	else
 		this->_is_chunked = false;
