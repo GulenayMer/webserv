@@ -27,7 +27,6 @@ ConfigParser::ConfigParser(std::string config_file)
 	
 	this->_error_code = 0;
 	this->_n_servers = 0;
-	//this->_configs = new std::vector<Config>;
 	
 	// Check if config file exists
 	in_file.open(config_file.c_str(), std::ios::in);
@@ -132,12 +131,20 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 				return false;
 			context -= 1;
 		}
-		if (line.find("}") != std::string::npos)
-		{
-			addToExtMap();
-			this->get_config(this->_n_servers - 1).combineHost();
-			context -= 1;
-		}
+        if (line.find("}") != std::string::npos)
+        {
+            context -= 1;
+            if (context == 0)
+            {
+                addToExtMap();
+                this->get_config(this->_n_servers - 1).combineHost();
+            }
+            else if (context < 0)
+            {
+                // TODO throw or break
+				// throw std::runtime_error("Invalid configuration file");
+            }
+        }
 	}
 	// std::map<int, std::string>::iterator it = this->get_config(this->get_n_servers() - 1).get_default_error().begin();
 	// while (it != this->get_config(this->get_n_servers() - 1).get_default_error().end())
@@ -165,44 +172,44 @@ void ConfigParser::clean_listen(std::string line)
 
 void ConfigParser::clean_server_name(std::string line)
 {
-	std::string word = get_word(line, 1);
-	std::string word2 = get_word(line, 2);
-	bool	w_ip = true;
-	if (word.empty())
-		return (this->set_error_code(4));
-	for (size_t i = 0; i < word.length(); i++)
-	{
-		if (!isdigit(word[i]) && word[i] != '.')
-		{
-			w_ip = false;
-			if (word2.empty())
-				word2 = findIP(word);
-			break;
-		}
-	}
-	if (!w_ip && !word2.empty())
-	{
-		for (size_t i = 0; i < word2.length(); i++)
-		{
-			if (!isdigit(word2[i]) && word2[i] != '.')
-				return (this->set_error_code(4));
-		}
-	}
-	else if (!w_ip)
-		return (this->set_error_code(4));
-	if (w_ip)
-	{
-		if (word2.empty())
-			this->get_config(this->get_n_servers() - 1).set_server_name(word);
-		else
-			this->get_config(this->get_n_servers() - 1).set_server_name(word2);
-		this->get_config(this->get_n_servers() - 1).set_addr(inet_addr(word.c_str()));
-	}
-	else if (!w_ip)
-	{
-		this->get_config(this->get_n_servers() - 1).set_server_name(word);
-		this->get_config(this->get_n_servers() - 1).set_addr(inet_addr(word2.c_str()));
-	}
+    std::string word = get_word(line, 1);
+    std::string word2 = get_word(line, 2);
+    bool	w_ip = true;
+    if (word.empty())
+        return (this->set_error_code(4));
+    for (size_t i = 0; i < word.length(); i++)
+    {
+        if (!isdigit(word[i]) && word[i] != '.')
+        {
+            w_ip = false;
+            if (word2.empty())
+                word2 = findIP(word);
+            break;
+        }
+    }
+    if (!w_ip && !word2.empty())
+    {
+        for (size_t i = 0; i < word2.length(); i++)
+        {
+            if (!isdigit(word2[i]) && word2[i] != '.')
+                return (this->set_error_code(4));
+        }
+    }
+    else if (!w_ip)
+        return (this->set_error_code(4));
+    if (w_ip)
+    {
+        if (word2.empty())
+            this->get_config(this->get_n_servers() - 1).set_server_name(word);
+        else
+            this->get_config(this->get_n_servers() - 1).set_server_name(word2);
+        this->get_config(this->get_n_servers() - 1).set_addr(inet_addr(word.c_str()));
+    }
+    else if (!w_ip)
+    {
+        this->get_config(this->get_n_servers() - 1).set_server_name(word);
+        this->get_config(this->get_n_servers() - 1).set_addr(inet_addr(word2.c_str()));
+    }
 }
 
 void ConfigParser::clean_error_page(std::string line)
@@ -364,6 +371,8 @@ std::string ConfigParser::findIP(std::string &word)
 	char	buff[256];
 
 	ifile.open("/etc/hosts");
+	if (!ifile.is_open())
+		return "";
 	while (ifile.getline(buff, 256))
 	{
 		std::string str(buff);
