@@ -285,7 +285,6 @@ int ServerManager::run_servers()
 			}
 			if (this->_fds[i].revents & POLLOUT && this->_fds[i].fd > 0) // if POLLOUT -> write to fd ready for writing
 			{
-				std::cout << "POLLOUT" << std::endl;
 				std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
 				std::map<int, CGI>::iterator cgi_it = this->_cgis.end();
 				std::map<int, int>::iterator cgi_fd_it = this->_cgi_fds.find(this->_fds[i].fd);

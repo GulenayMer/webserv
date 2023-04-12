@@ -10,18 +10,31 @@ response = requests.get(f"https://pokeapi.co/api/v2/pokemon/{pokemon}/")
 
 body = "<!DOCTYPE html>\n<head>\n<link href=/pokemon/pstyle.css rel=stylesheet type=text/css>\n<title>Pokedex</title>\n</head>\n<body>\n"
 
-
 if response.status_code == 200:
 	data = response.json()
+	response = requests.get(f"https://pokeapi.co/api/v2/pokemon-species/{data['id']}/")
 	sprite = data["sprites"]["front_default"]
 	body += f"<img src={sprite} alt=/images/pokeball width=200 height=200>"
 	body += f"<div>{pokemon.title()}</div>"
-	body += f"<div>Abilities:<br/>"
+	body += "<div class=flex-container id=d3>"
+	body += "<div>Types:<br/>"
+	for types in data["types"]:
+		body += f"- {types['type']['name'].capitalize()}<br/>"
+	body += "</div>"
+	body += "<div>Abilities:<br/>"
 	for ability in data["abilities"]:
 		body += f"- {ability['ability']['name'].capitalize()}<br/>"
 	body += "</div>"
+	if response.status_code == 200:
+		evolution = response.json()
+		if evolution['evolves_from_species'] != None:
+			body += "<div id=d2>Evolves from:<br/>"
+			body += f"{evolution['evolves_from_species']['name'].capitalize()}<br/>"
+			body += "</div>"
+
 else:
 	body += f"<div>{pokemon.title()} not found.</div>"
+body += "</div>"
 body += f"<div id=d1>Search again:</div>"
 body += "<div><form id=form action=/pokemon/pokedex.py method=post enctype=multipart/form-data>"
 body += "<label for=pokemon>Enter a Pokemon:</label>"

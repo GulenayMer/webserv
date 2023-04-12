@@ -60,10 +60,24 @@ div {
 	border-style: solid;
 }
 
+.flex-container {
+    display: flex;
+	border: none;
+	background: none;
+}
+
+.flex-child:first-child {
+    margin-right: 10px;
+}
+
 #d1 {
 	position: relative;
 	right: 11%;
 }
+
+/* #d2 {
+	display: inline-block;
+} */
 
 body button {
 	font-family: 'Roboto', sans-serif;
