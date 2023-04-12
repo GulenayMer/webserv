@@ -470,23 +470,18 @@ void	CGI::closePipes()
 
 void CGI::mergeChunk(char *buffer, size_t received) //TODO need to check if \r\n removed from output
 {
-	std::cout << "MERGE CHUNK" << std::endl;
 	size_t	pos = 0;
 	while (pos < received)
 	{
-		std::cout << "received: " << received << std::endl;
 		if (!this->_chunk_context)
 		{
 			pos = convertHex(&buffer[pos]);
 			this->_chunk_remaining = this->_chunk_size;
-			std::cout << "back from convert hex" << std::endl;
 			if (this->_chunk_size == 0)
 			{
-				std::cout << "chunk size 0" << std::endl;
 				addHeaderChunked();
 				this->_content_length += this->_header_length;
 				this->_response.finishChunk();
-				std::cout << "MERGE CHUNK END" << std::endl;
 				std::cout << "Complete message:" << std::endl;
 				for (size_t i = 0; i < this->_request_buff.size(); i++)
 					std::cout << this->_request_buff[i];
@@ -495,27 +490,20 @@ void CGI::mergeChunk(char *buffer, size_t received) //TODO need to check if \r\n
 				return;
 			}
 		}
-		if (this->_chunk_remaining >= BUFFER_SIZE - pos) // TODO the logic here is wrong somehow
+		if (this->_chunk_remaining >= received - pos) // TODO the logic here is wrong somehow
 		{
-			std::cout << "chunk greater than buffer" << std::endl;
-			std::cout << "chunk remaining: " << this->_chunk_remaining << std::endl;
-			std::cout << "pos: " << pos << std::endl;
-			storeBuffer(&buffer[pos], BUFFER_SIZE - (pos + 1));
-			this->_chunk_remaining -= (BUFFER_SIZE - (pos + 1));
-			pos = BUFFER_SIZE;
+			storeBuffer(&buffer[pos], received - pos);
+			this->_chunk_remaining -= (received - pos);
+			pos = received;
 		}
 		else
 		{
-			std::cout << "chunk less than buffer" << std::endl;
-			std::cout << "pos: " << pos << std::endl;
-			std::cout << "chunk remaining: " << this->_chunk_remaining << std::endl;
 			storeBuffer(&buffer[pos], this->_chunk_remaining);
 			pos += this->_chunk_remaining + 2;
 			this->_chunk_context = false;
 			this->_chunk_remaining = 0;
 		}
 	}
-	std::cout << "MERGE CHUNK END" << std::endl;
 }
 
 size_t CGI::convertHex(char *buffer)
