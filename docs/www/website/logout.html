@@ -16,11 +16,57 @@
 				<form class="logoutForm" action="" method="post" enctype="multipart/form-data">
 					<button class="logout">Logout</button>
 				</form>
-				<form class="deleteForm" action="" method="post" enctype="multipart/form-data">
-					<button class="delete">Delete</button>
+				<form class="deleteForm" onsubmit="submitForm(e)" method="delete" enctype="multipart/form-data">
+						<button  id="btn-delete" class="delete">Delete</button>
 				</form>
 			</div>
 		</div>
 		
+
+<script type="text/javascript">
+
+function submitForm(e) 
+{
+  e.preventDefault(); // Prevent form from submitting normally
+  
+  // Send AJAX request to CGI script
+  let CGIdelete = new XMLHttpRequest();
+  CGIdelete.open('POST', '/cgi-bin/delete.cgi');
+  CGIdelete.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  CGIdelete.onload = () => {
+    // Redirect to HTML page
+    window.location.href = '/workspaces/WServer/docs/www/website/userDeleted.html';
+  };
+
+  CGIdelete.send(new FormData(e.target));
+}
+
+
+	function getCookieValue(cookieName)
+	{
+		const cookies = document.cookie.split('; ');
+		console.log(cookies);
+		  for (let i = 0; i < cookies.length; i++) 
+		{
+			const cookie = cookies[i].split('=');
+			if (cookie[0] === cookieName) 
+			{
+				  return cookie[1];
+			}
+		  }
+		return null;
+	}
+		
+		
+	const username = getCookieValue('session');
+	const btn = document.getElementById("btn-delete");
+	console.log(username);
+	if (username != null)
+	{
+		btn.innerHTML = username + " deleted";
+		btn.href = "../cgi-bin/delete.py";
+	}
+</script>
+
 </body>
 </html>
