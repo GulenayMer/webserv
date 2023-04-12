@@ -14,7 +14,25 @@
 	// "features": {},
 	
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	"forwardPorts": ["webserv:8000", "webserv2:8000"]
+	"forwardPorts": [
+		"webserv:8000",
+		"webserv2:8000"
+	],
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"gurumukhi.selected-lines-count",
+				"Gruntfuggly.todo-tree",
+				"GitHub.copilot",
+				"GitHub.copilot-labs",
+				"mhutchie.git-graph",
+				"ms-vscode.cpptools",
+				"ms-vscode.cpptools-extension-pack",
+				"panzerstadt.light-dark-toggle",
+				"ms-python.python"
+			]
+		}
+	}
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "gcc -v",
