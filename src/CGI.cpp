@@ -558,7 +558,6 @@ void CGI::addHeaderChunked()
 
 void	CGI::removeHeader(char *buffer, ssize_t received)
 {
-	std::cout << "REMOVE HEADER" << std::endl;
 	for (ssize_t i = 0; i < received; i++)
 	{
 		if (buffer[i] == '\r' && buffer[i + 1] == '\n')
@@ -566,7 +565,6 @@ void	CGI::removeHeader(char *buffer, ssize_t received)
 			if (buffer[i + 2] == '\r' && buffer[i + 3] == '\n')
 			{
 				mergeChunk(&buffer[i + 4], received - (i + 4));
-				std::cout << "REMOVE HEADER END" << std::endl;
 				break;
 			}
 		}
