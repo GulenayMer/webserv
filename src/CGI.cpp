@@ -71,7 +71,7 @@ void	CGI::env_init()
 	_env["SERVER_SOFTWARE"] = std::string("webserv"); //  The name and version of the server software that is answering the client request.
 	_env["SERVER_PROTOCOL"] = std::string("HTTP/1.1");//  The name and revision of the information protocol the request came in with.
 	_env["SERVER_PORT"] = to_string(_response.getConfig().get_port()); //  The port number of the host on which the server is running.
-	switch (_response.getRequest().getMethod()) { //  The method with which the information request was issued.
+	switch (_response.getRequest()->getMethod()) { //  The method with which the information request was issued.
 		case POST:
 			_env["REQUEST_METHOD"] = "POST";
 			break;
@@ -86,23 +86,23 @@ void	CGI::env_init()
 	// 	_env["PATH_TRANSLATED"] = this->_response.getRequest().; // The translated version of the path given by the variable PATH_INFO.
 	// else
 	// 	_env["PATH_TRANSLATED"] = _env["PATH_INFO"];
-	_env["SCRIPT_NAME"] = remove_end(_response.getRequest().getUri(), '?'); // The virtual path (e.g., /cgi-bin/program.pl) of the script being executed.
+	_env["SCRIPT_NAME"] = remove_end(_response.getRequest()->getUri(), '?'); // The virtual path (e.g., /cgi-bin/program.pl) of the script being executed.
 	//TODO find which location to do, using servers for now.
 	_env["DOCUMENT_ROOT"] = this->_response.getConfig().get_root(); // The directory from which Web documents are served.
 	_env["QUERY_STRING"] = this->get_query(); // The query information passed to the program. It is appended to the URL with a "?".
 	// TODO Host might need to be converted
-	if (_response.getRequest().get_single_header("Referer").size() > 0)
-		_env["REMOTE_HOST"] = _response.getRequest().get_single_header("Referer"); // The remote hostname of the user making the request.
+	if (_response.getRequest()->get_single_header("Referer").size() > 0)
+		_env["REMOTE_HOST"] = _response.getRequest()->get_single_header("Referer"); // The remote hostname of the user making the request.
 	else
-		_env["REMOTE_HOST"] = _response.getRequest().get_single_header("Host");
-	_env["REMOTE_ADDR"] = _response.getRequest().get_single_header("Host");//_response.getRequest().get_single_header("Host"); // The remote IP address of the user making the request.
-	_env["CONTENT_TYPE"] = this->_response.getRequest().get_single_header("Content-Type"); // The MIME type of the query data, such as "text/html".
-	this->_content_length = atol(_response.getRequest().get_single_header("Content-Length").c_str());
-	this->_content_length += this->_response.getRequest().getHeaderLength();
+		_env["REMOTE_HOST"] = _response.getRequest()->get_single_header("Host");
+	_env["REMOTE_ADDR"] = _response.getRequest()->get_single_header("Host");//_response.getRequest().get_single_header("Host"); // The remote IP address of the user making the request.
+	_env["CONTENT_TYPE"] = this->_response.getRequest()->get_single_header("Content-Type"); // The MIME type of the query data, such as "text/html".
+	this->_content_length = atol(_response.getRequest()->get_single_header("Content-Length").c_str());
+	this->_content_length += this->_response.getRequest()->getHeaderLength();
 	_env["CONTENT_LENGTH"] = to_string(this->_content_length); // The length of the data (in bytes or the number of characters) passed to the CGI program through standard input.
 	//_env["HTTP_ACCEPT"]; // A list of the MIME types that the client can accept.
-	_env["HTTP_USER_AGENT"] = _response.getRequest().get_single_header("User-Agent");; // The browser the client is using to issue the request.
-	_env["HTTP_REFERER"] = _response.getRequest().get_single_header("Referer"); // The URL of the document that the client points to before accessing the CGI program. */
+	_env["HTTP_USER_AGENT"] = _response.getRequest()->get_single_header("User-Agent");; // The browser the client is using to issue the request.
+	_env["HTTP_REFERER"] = _response.getRequest()->get_single_header("Referer"); // The URL of the document that the client points to before accessing the CGI program. */
 }
 
 
@@ -123,7 +123,7 @@ void	CGI::env_to_char(void)
 bool	CGI::handle_cgi()
 {
     std::ifstream file;
-	std::string script_path = this->_response.getRequest().getUri();
+	std::string script_path = this->_response.getRequest()->getUri();
 	std::string shebang;
 
 	std::cout << "CGI script path: " << script_path << std::endl;
@@ -196,7 +196,7 @@ void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
 
 std::string CGI::get_path_from_map()
 {
-	std::string ext = remove_end(_response.getRequest().getUri(), '?');
+	std::string ext = remove_end(_response.getRequest()->getUri(), '?');
 	int pos = ext.find_last_of(".");
 	ext = &ext[pos] + 1;
 	std::map<std::string, std::string> paths_map = this->_response.getConfig().getIntrPath();
@@ -215,7 +215,7 @@ std::string CGI::get_path_from_map()
 
 std::string CGI::get_query()
 {
-	std::string query = this->_response.getRequest().getUri();
+	std::string query = this->_response.getRequest()->getUri();
 	if (query.find("?") != std::string::npos) {
 		int pos = query.find("?");
 		query = &query[pos] + 1;
@@ -525,7 +525,7 @@ size_t CGI::convertHex(char *buffer)
 
 void CGI::addHeaderChunked()
 {
-	std::map<std::string, std::string>::const_iterator it = this->_response.getRequest().getCompleteHeader().begin();
+	std::map<std::string, std::string>::const_iterator it = this->_response.getRequest()->getCompleteHeader().begin();
 	std::ostringstream oss;
 	oss << this->_content_length;
 	std::string len(oss.str() + "\r\n\r\n");
@@ -539,7 +539,7 @@ void CGI::addHeaderChunked()
 		this->_request_buff.insert(this->_request_buff.begin(), "Content-Length: "[i]);
 		this->_header_length++;
 	}
-	for (; it != this->_response.getRequest().getCompleteHeader().end(); it++)
+	for (; it != this->_response.getRequest()->getCompleteHeader().end(); it++)
 	{
 		if (it->first == "Transfer-Encoding")
 			continue;

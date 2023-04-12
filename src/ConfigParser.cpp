@@ -19,19 +19,6 @@ ConfigParser::ConfigParser()
 	if (this->check_server_context(in_file) == false)
 		this->exit_with_error(this->get_error_code(), in_file);
 	in_file.close();
-	// ----------------------- NOT SURE IF WE NEED THIS -------------------------
-	//																			|
-	// std::vector<Config>::iterator it = this->_configs.begin();				|
-	// while (it != this->_configs.end())										|
-	// {																		|
-	// 	std::cout << "name: " << it->get_server_name() << std::endl;			|
-	// 	std::cout << "index: " << it->get_index() << std::endl;					|
-	// 	std::cout << "root: " << it->get_root() << std::endl;					|
-	// 	std::cout << "port: " << it->get_port() << std::endl;					|
-	// 	it++;																	|
-	// }																		|
-	//																			|
-	// --------------------------------------------------------------------------
 }
 
 ConfigParser::ConfigParser(std::string config_file)
