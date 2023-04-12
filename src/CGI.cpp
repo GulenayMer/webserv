@@ -490,7 +490,7 @@ void CGI::mergeChunk(char *buffer, size_t received) //TODO need to check if \r\n
 				return;
 			}
 		}
-		if (this->_chunk_remaining >= received - pos) // TODO the logic here is wrong somehow
+		if (this->_chunk_remaining >= received - pos)
 		{
 			storeBuffer(&buffer[pos], received - pos);
 			this->_chunk_remaining -= (received - pos);
@@ -508,19 +508,17 @@ void CGI::mergeChunk(char *buffer, size_t received) //TODO need to check if \r\n
 
 size_t CGI::convertHex(char *buffer)
 {
-	std::cout << "CONVERT HEX" << std::endl;
-	std::cout << buffer << std::endl;
+	// Convert hexadecimal number to decimal
 	char *stopstr;
 	int	i = 0;
+
+	// Find the end of the hex number
 	while (buffer[i] && buffer[i] != '\r' && buffer[i] != '\n')
 		i++;
 	this->_chunk_size = std::strtoul(buffer, &stopstr, 16);
-	std::cout << "chunk size: " << this->_chunk_size;
 	this->_content_length += this->_chunk_size;
 	i += 2;
 	this->_chunk_context = true;
-	std::cout << "pos: " << i << ", stopstr: " << stopstr << std::endl;
-	std::cout << "CONVERT HEX END" << std::endl;
 	return i;
 }
 
