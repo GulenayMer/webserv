@@ -158,7 +158,6 @@ int 	Response::handle_response()
 			file.close();
 		}
 	}
-	std::cout << response_stream.str() << std::endl;
 	return (send_response(response_stream));
 }
 
