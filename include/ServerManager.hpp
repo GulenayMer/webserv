@@ -6,6 +6,7 @@
 # include "Config.hpp"
 # include "Response.hpp"
 # include "CGI.hpp"
+# include "iomanip"
 
 class ServerManager {
 	
@@ -38,6 +39,8 @@ class ServerManager {
 		std::vector<Server>	get_servers();
 		Server				get_server_at(int i);
 		bool	initCGI(Response &response, char *buffer, ssize_t received, int i);
+
+		void	server_create_error(std::logic_error &e, int i);
 };
 
 #endif

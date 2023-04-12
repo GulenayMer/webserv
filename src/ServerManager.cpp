@@ -1,28 +1,20 @@
 #include "../include/ServerManager.hpp"
 
-ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _nfds(0) {
-
-
+ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _nfds(0)
+{
     for (size_t i = 0; i < this->_configs.size(); i++)
     {
 		try {
+			std::cout << BLUE << "[---------- Server : " << i << " ----------]" << RESET << std::endl;
 			this->_configs[i].check_config();
-			std::cout << this->_configs[i].get_port() << std::endl;
-			std::cout << this->_configs[i].get_root() << std::endl;
-			std::cout << this->_configs[i].get_server_name() << std::endl;
-        	Server server = Server(this->_configs[i]);
-       		this->_servers.push_back(server);
+			std::cout << "name : " << this->_configs[i].get_server_name() << std::endl;
+			std::cout << "root : " << this->_configs[i].get_root() << std::endl;
+			std::cout << "port : " << this->_configs[i].get_port() << std::endl << std::endl;
+			Server server = Server(this->_configs[i]);
+			this->_servers.push_back(server);
 		}
 		catch (std::logic_error &e) {
-			std::cerr << std::endl;
-			std::cerr << RED << "---------------------------------------------------------------------------" << std::endl;
-			std::cerr << std::endl;
-			std::cerr << "Could not create server at index: " << i  << std::endl;
-			std::cerr << "Server name: " << this->_configs[i].get_server_name()  << std::endl;
-			std::cerr << e.what() << std::endl;
-			std::cerr << std::endl;
-			std::cerr << "---------------------------------------------------------------------------" << RESET << std::endl;
-			std::cerr << std::endl;
+			server_create_error(e, i);
 		}
     }
 	if (this->get_servers().size() > 0) {
@@ -40,9 +32,8 @@ ServerManager::~ServerManager()
 {
 	for (size_t i = 0; i < this->get_servers().size(); i++)
 		this->get_server_at(i).clean_fd();
-	if (this->get_servers().size() > 0) {
+	if (this->get_servers().size() > 0)
 		delete [] this->_fds;
-	}
 }
 
 void ServerManager::pollfd_init()
@@ -418,4 +409,17 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 		}
 	}
 	return true;
+}
+
+void	ServerManager::server_create_error(std::logic_error &e, int i)
+{
+	std::cerr << std::endl;
+	std::cerr << RED << "---------------------------------------------------------------------------" << std::endl;
+	std::cerr << std::endl;
+	std::cerr << "Could not create server at index: " << i << std::endl;
+	std::cerr << "Server name: " << this->_configs[i].get_server_name()  << std::endl;
+	std::cerr << e.what() << std::endl;
+	std::cerr << std::endl;
+	std::cerr << "---------------------------------------------------------------------------" << RESET << std::endl;
+	std::cerr << std::endl;
 }
