@@ -16,7 +16,7 @@
 				<form class="logoutForm" action="" method="post" enctype="multipart/form-data">
 					<button class="logout">Logout</button>
 				</form>
-				<form class="deleteForm" onsubmit="submitForm(e)" method="delete" enctype="multipart/form-data">
+				<form class="deleteForm" onsubmit="submitForm(event)" method="delete" enctype="multipart/form-data">
 						<button  id="btn-delete" class="delete">Delete</button>
 				</form>
 			</div>
@@ -25,9 +25,9 @@
 
 <script type="text/javascript">
 
-function submitForm(e) 
+function submitForm(event) 
 {
-  e.preventDefault(); // Prevent form from submitting normally
+  event.preventDefault(); // Prevent form from submitting normally
   
   // Send AJAX request to CGI script
   let CGIdelete = new XMLHttpRequest();
@@ -38,7 +38,7 @@ function submitForm(e)
     window.location.href = '/workspaces/WServer/docs/www/website/userDeleted.html';
   };
 
-  CGIdelete.send(new FormData(e.target));
+  CGIdelete.send(new FormData(event.target));
 }
 
 
@@ -63,7 +63,7 @@ function submitForm(e)
 	console.log(username);
 	if (username != null)
 	{
-		btn.innerHTML = username + " deleted";
+		btn.innerHTML = " delete";
 		btn.href = "../cgi-bin/delete.py";
 	}
 </script>
