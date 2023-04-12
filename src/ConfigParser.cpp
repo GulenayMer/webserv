@@ -19,15 +19,6 @@ ConfigParser::ConfigParser()
 	if (this->check_server_context(in_file) == false)
 		this->exit_with_error(this->get_error_code(), in_file);
 	in_file.close();
-	std::vector<Config>::iterator it = this->_configs.begin();
-	while (it != this->_configs.end())
-	{
-		std::cout << "name: " << it->get_server_name() << std::endl;
-		std::cout << "index: " << it->get_index() << std::endl;
-		std::cout << "root: " << it->get_root() << std::endl;
-		std::cout << "port: " << it->get_port() << std::endl;
-		it++;
-	}
 }
 
 ConfigParser::ConfigParser(std::string config_file)
@@ -101,7 +92,6 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 		else if ((line.find("server") != std::string::npos && check_def_format("server", line) && line.find("{") != std::string::npos) && context == 0) {
 			this->_n_servers++;
 			context += 1;
-			std::cout << "adding server" << std::endl;
 			this->_configs.push_back(Config());
 		}
 		else if (context == 0) {
@@ -169,7 +159,6 @@ void ConfigParser::clean_listen(std::string line)
 		this->get_config(this->_n_servers - 1).set_port(0);
 		return (this->set_error_code(3));
 	}
-	std::cout << "port: " << line.c_str() << std::endl;
 	this->get_config(this->_n_servers - 1).setHost(line);
 	this->get_config(this->_n_servers - 1).set_port(to_int(line.c_str()));
 }
@@ -272,7 +261,6 @@ void ConfigParser::clean_root(std::string line)
 		this->set_error_code(9);
 	if (line[line.size() - 1] != '/')
 		line = line + "/";
-	std::cout << "setting root: " << line << std::endl;
 	this->get_config(this->_n_servers - 1).set_root(line);
 }
 

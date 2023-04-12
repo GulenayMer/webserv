@@ -5,12 +5,8 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
     {
 		try {
 			this->_configs[i].check_config();
-			std::cout << this->_configs[i].get_port() << std::endl;
-			std::cout << this->_configs[i].get_root() << std::endl;
-			std::cout << this->_configs[i].get_server_name() << std::endl;
 			this->_default_host.insert(std::map<int, std::string>::value_type(this->_configs[i].get_port(), this->_configs[i].getHost()));
         	Server server(this->_configs[i]);
-			std::cout << server.get_sockfd() << std::endl;
 			this->_host_serv.insert(std::map<std::string, Server>::value_type(this->_configs[i].getHost(), server));
 		}
 		catch (std::logic_error &e) {
@@ -25,9 +21,7 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 			std::cerr << std::endl;
 		}
     }
-	std::cout << "after inserting all" << std::endl;
 	if (this->_host_serv.size() > 0) {
-		std::cout << "after checking size" << std::endl;
 		this->_compress_array = false;
 		this->_fds = new struct pollfd[MAX_CONN * 2];
 		this->_n_servers = this->pollfd_init();
@@ -39,7 +33,6 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 		// 	std::cout << inet_ntoa(it->get_config().get_host()) << std::endl;
 		// 	std::cout << it->get_config().get_server_name() << std::endl;
 		// }
-		std::cout << "running servers" << std::endl;
 		this->run_servers();
 	}
 	else
@@ -58,7 +51,6 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 int ServerManager::pollfd_init()
 {
 	int	i = 0;
-	std::cout << "pollfd init start" << std::endl;
 	std::map<std::string, Server>::iterator it = this->_host_serv.begin();
 	for (; it != this->_host_serv.end(); it++)
     {
@@ -66,7 +58,6 @@ int ServerManager::pollfd_init()
 		this->_fds[i].events = POLLIN;
 		i++;
     }
-	std::cout << "pollfd init end" << std::endl;
 	return i;
 }
 
@@ -76,9 +67,7 @@ int ServerManager::run_servers()
 	int		nbr_fd_ready;
 	while (SWITCH)
     {
-		std::cout << "here before poll" << std::endl;
         nbr_fd_ready = poll(this->_fds, this->_nfds, -1);
-		std::cout << "here after poll" << std::endl;
         if (nbr_fd_ready == -1)
         {
             // TODO avoid killing the server, implement test how to deal with it 
@@ -102,9 +91,6 @@ int ServerManager::run_servers()
 				// 	close(connection_fd);
 				// 	continue;
 				// }
-				std::cout << "address: " << address << std::endl;
-				// std::cout << "address data: " << addr.sa_data << std::endl;
-				std::cout << "address length: " << addr_len << std::endl;
 				this->_addr_fd.insert(std::map<std::string, int>::value_type(address, connection_fd));
 				if (connection_fd < 0)
 				{
@@ -119,10 +105,8 @@ int ServerManager::run_servers()
 					continue ;
 				}
 				std::cout << GREEN << "New Connection" << RESET << std::endl;
-				std::cout << "nfds: " << this->_nfds << std::endl;
 				this->_fds[this->_nfds].fd = connection_fd;
 				this->_fds[this->_nfds].events = POLLIN;
-				std::cout << "pollin fd: " << this->_fds[i].fd << std::endl;
 				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_fds[i].fd, this->_fds, this->_nfds, address)));
 				this->_nfds++;
 			}
