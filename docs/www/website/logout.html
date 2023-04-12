@@ -16,7 +16,7 @@
 				<form class="logoutForm" action="../cgi-bin/logout.py" method="POST" enctype="multipart/form-data">
 					<button class="logout">Logout</button>
 				</form>
-				<form class="deleteForm" onsubmit="submitForm(event)" method="delete" enctype="multipart/form-data">
+				<form class="deleteForm" action="../cgi-bin/delete.py" method="DELETE" enctype="multipart/form-data">
 						<button  id="btn-delete" class="delete">Delete</button>
 				</form>
 			</div>
@@ -31,7 +31,7 @@ function submitForm(event)
   
   // Send AJAX request to CGI script
   let CGIdelete = new XMLHttpRequest();
-  CGIdelete.open('POST', '/cgi-bin/delete.cgi');
+  CGIdelete.open('POST', '../cgi-bin/delete.py');
   CGIdelete.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
   CGIdelete.onload = () => {
     // Redirect to HTML page
@@ -63,7 +63,7 @@ function submitForm(event)
 	console.log(username);
 	if (username != null)
 	{
-		btn.innerHTML = " delete";
+		btn.innerHTML = " Delete";
 		btn.href = "../cgi-bin/delete.py";
 	}
 </script>
