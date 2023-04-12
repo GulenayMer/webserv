@@ -515,7 +515,13 @@ size_t CGI::convertHex(char *buffer)
 	// Find the end of the hex number
 	while (buffer[i] && buffer[i] != '\r' && buffer[i] != '\n')
 		i++;
+	// TODO: check if this is correct
+	// if (i == 0)
+	// 	throw std::runtime_error("CGI::convertHex: No hexadecimal number found");
 	this->_chunk_size = std::strtoul(buffer, &stopstr, 16);
+	// TODO: check if this is correct
+	// if (this->_chunk_size == 0 && std::strcmp(buffer, "0"))
+	// 	throw std::runtime_error("CGI::convertHex: Invalid hexadecimal number");
 	this->_content_length += this->_chunk_size;
 	i += 2;
 	this->_chunk_context = true;
