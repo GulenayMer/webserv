@@ -203,7 +203,7 @@ int ServerManager::run_servers()
 							httpHeader request(buffer);
 							response_it->second.new_request(request);
 							request.printHeader();
-							response_it->second.send_response();
+							response_it->second.handle_response();
 							if (response_it->second.shouldClose())
 								close_connection(response_it->second, i);
 							else if (response_it->second.is_cgi()) // init cgi
@@ -268,7 +268,7 @@ int ServerManager::run_servers()
 				if (response_it != this->_responses.end() && !response_it->second.is_cgi()) // for sending non-CGI responses
 				{
 					std::cout << "SEND RESPONSE" << std::endl;
-					response_it->second.send_response();
+					response_it->second.handle_response();
 					if (response_it->second.shouldClose())
 						close_connection(response_it->second, i);
 					else if (response_it->second.response_complete())

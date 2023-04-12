@@ -26,6 +26,7 @@ class Response
 		bool						_is_chunked;
 		bool						_is_dir;
 		bool						_list_dir;
+		bool						_is_redirect;
 		bool						_is_complete;
 		bool						_to_close;
 		int							_cgi_fd;
@@ -49,7 +50,9 @@ class Response
         Response &operator=(Response const &rhs);
         ~Response();
 
-        int 	send_response();
+        int 	handle_response();
+		int		handle_response_error(std::ostringstream& response_stream);
+		int		send_response(std::ostringstream& response_stream);
         void 	send_404(std::string root, std::ostringstream &response_stream);
 
 		bool	new_request(httpHeader &request);
@@ -83,6 +86,7 @@ class Response
 		void setChunked();
 		bool isChunked();
 		void finishChunk();
+		std::string redirect(std::string uri);
 };
 
 #endif

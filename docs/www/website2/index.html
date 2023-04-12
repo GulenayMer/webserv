@@ -12,61 +12,35 @@
 
 <body>
 	
-	<div class="header">
+<div class="wrapper">
 
+	<div class="header">
 		<div class="logo" src="">
 			<a href="/">Logo</a>
 		</div>
-
 		<nav class="navbar">
 			<ul class="nav-list">
 				<li class="list-item">
-					<a href="../about.html">About</a>
+					<a href="/contact">About</a>
 				</li>
 				<li class="list-item">
 					<a href="#project-section">Services</a>
 				</li>
 				<li class="list-item">
-					<a href="../cgi-bin/cowsay.sh">Contact</a>
+					<a href="/contact">Contact</a>
 				</li>
 				<li class="list-item">
 					<a href="../login.html" id="btn-login">Login</a>
-<!--  						<button onclick="document.getElementById('modal').style.display='block'" class="btn-login" id="btn-login">Login</button>
- -->				</li>
+				</li>
 			</ul>
 		</nav>
 	</div>
 
-	<div class="container" id="modal">
-
-		<form id="form" class="form" action="../cgi-bin/login.py" method="post" enctype="multipart/form-data">
-		  <div class="close-login">
-			  <span onclick="document.getElementById('modal').style.display='none'" class="close" title="Close Modal">&times;</span>
-			</div>
-		  
-		  <div class="form-input">
-			  <label for="text"><b>Username</b></label>
-			  <input type="username" id="username" name="username" placeholder="Enter Username" required>
-	  
-			  <label for="number"><b>Password</b></label>
-			  <input type="password" id="password" name="password" placeholder="Enter Password" required>
-	  
-			  <button type="submit" class="btn-login submit">Login</button>
-			  <label>
-				<input type="checkbox" checked="checked" name="remember"> Remember me
-			  </label>
-
-			<div class="btn-remember">
-			  <span class="password">Forgot <a href="#">password?</a></span>
-			</div>
-		  </div>
-		</form>
-  </div>
-
+	
 	<div class="intro-container">
 		<div class="intro-text">
-			<h2>Welcome to Our Slightly Different Site</h2>
-			<p>We deliver slightly different high-quality products for your business. Sign up for newsletter and stay informed!</p>
+			<h2>Welcome to Our Site</h2>
+			<p>We deliver high-quality products for your business. Sign up for newsletter and stay informed!</p>
 			<a href="./form.html">
 				<button id="btn">Sign Up</button>
 			</a>
@@ -77,7 +51,7 @@
 	</div>
 
 	<section id="project-section">
-		<h2 class="project-header">Our Slightly Different Services</h2>
+		<h2 class="project-header">Our Services</h2>
 		<div class="projects">
 			<div class="project-item">
 				<form METHOD=GET ACTION=/pokemon/pokemon_question.py>
@@ -110,22 +84,19 @@
 		</div>
 	</section>
 
+
+
 <!-- Contact Section-->
-<footer id="footer">
-	<a href="#" class="email">team@42students.com</a>
-	<p class="copyright">Copyright &#169; Team WebServer42 </p>
-</footer>
+	<footer id="footer">
+		<a href="#" class="email">team@42students.com</a>
+		<p class="copyright">Copyright &#169; Team WebServer42 </p>
+	</footer>
+
+</div>
+
 
 
 <script type="text/javascript">
-	const modal = document.getElementById('modal');
-
-	window.onclick = (e) => {
-		if (event.target == modal)
-		 {
-			modal.style.display = "none";
-		}
-	}
 
 	function getCookieValue(cookieName)
 	{

@@ -26,14 +26,14 @@ Response &Response::operator=(const Response &src)
 	{
 		_httpVersion = src._httpVersion;
 		_response_number = src._response_number;
-        _conn_fd = src._conn_fd;
-        _server_fd = src._server_fd;
+		_conn_fd = src._conn_fd;
+		_server_fd = src._server_fd;
 		_cgi_fd = src._cgi_fd;
 		_bytes_sent = src._bytes_sent;
 		_received_bytes = src._received_bytes;
 		_is_cgi = src._is_cgi;
 		_is_chunked = src._is_chunked;
-        _types = src._types;
+		_types = src._types;
 		_response_body = src._response_body;
 		_respond_path = src._respond_path;
 		_response = src._response;
@@ -48,10 +48,7 @@ Response &Response::operator=(const Response &src)
 	return *this;
 }
 
-Response::~Response()
-{
-
-}
+Response::~Response() {}
 
 void Response::getPath()
 {
@@ -73,67 +70,28 @@ void Response::getPath()
     //_respond_path = _config.get_root() + clean_response_path(_respond_path);
 }
 
-int 	Response::send_response()
+int 	Response::handle_response()
 {
-	int	sent;
 	std::ostringstream response_stream;
 	_respond_path.clear();
 	_response_body.clear();
 	_response.clear();
 	setChunked();
 	_is_cgi = false;
-	if (this->_request.isError())
+	if (_is_redirect)
 	{
-		response_stream << createError(414, &this->getConfig());
-		_to_close = true;
+		response_stream << redirect(_request.getUri());
 	}
-	else if (!_request.isHttp11())
-	{
-		response_stream << createError(505, &this->getConfig());
-		_to_close = true;
-	}
-	else if (this->getRequest().getContentLength() > this->getConfig().get_client_max_body_size())
-	{
-		std::cout << "content length too large" << std::endl;
-		response_stream << createError(413, &this->getConfig());
-		_to_close = true;
-	}
-	else if (_request.getMethod() > 2)
-	{
-		response_stream << createError(501, &this->getConfig());
-		_to_close = true;
-	}
-	else if(!this->_location.check_method_at(_request.getMethod()))
-	{
-		response_stream << createError(405, &this->getConfig());
-		_to_close = true;
-	}
-	else if (_request.getMethod() == POST && this->_request.get_single_header("Content-Length").empty() && !this->_is_chunked)
-	{
-		response_stream << createError(411, &this->getConfig());
-		_to_close = true;
-	}
-	else if (_request.getMethod() == POST && _request.getContentLength() == 0 && !this->_is_chunked)
-	{
-		response_stream << createError(400, &this->getConfig());
-		_to_close = true;
-	}
-	else if (_request.getMethod() == POST && _request.getContentLength() > _config.get_client_max_body_size())
-	{
-		response_stream << createError(413, &this->getConfig());
-		_to_close = true;
-	}
-	else
+	if (!handle_response_error(response_stream))
 	{
 		getPath();
-		size_t pos = this->_request.getUri().find_last_of(".");
-		if (!this->_is_cgi && this->_is_chunked)
+		size_t pos = _request.getUri().find_last_of(".");
+		if (!_is_cgi && _is_chunked)
 		{
 			response_stream << createError(404, &this->getConfig());
-			this->_is_cgi = false;
 			_to_close = true;
 		}
-		else if (!this->_is_dir && pos != std::string::npos && !_is_cgi && _types.get_content_type(&this->_request.getUri()[pos]).empty())
+		else if (!_is_cgi && !_is_dir && pos != std::string::npos && _types.get_content_type(&this->_request.getUri()[pos]).empty())
 		{
 			response_stream << createError(500, &this->getConfig());
 			_to_close = true;
@@ -189,16 +147,66 @@ int 	Response::send_response()
 				if (_request.getMethod() == DELETE)
 				{
 					responseToDELETE(response_stream);
-				// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A DELETE REQUEST";
+					// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A DELETE REQUEST";
 				}
 			}
 			file.close();
 		}
 	}
-/* --------------------------------------------------------------------------- */	
-	// Send the response to the client
+	return (send_response(response_stream));
+}
+
+int 	Response::handle_response_error(std::ostringstream& response_stream)
+{
+	if (_request.isError()) {
+		response_stream << createError(414, &this->getConfig());
+		_to_close = true;
+		return 1;
+	}
+	else if (!_request.isHttp11()) {
+		response_stream << createError(505, &this->getConfig());
+		_to_close = true;
+		return 1;
+	}
+	else if (_request.getContentLength() > _config.get_client_max_body_size()) {
+		std::cout << "content length too large" << std::endl;
+		response_stream << createError(413, &this->getConfig());
+		_to_close = true;
+		return 1;
+	}
+	else if (_request.getMethod() > 2) {
+		response_stream << createError(501, &this->getConfig());
+		_to_close = true;
+		return 1;
+	}
+	else if(!_location.check_method_at(_request.getMethod())) {
+		response_stream << createError(405, &this->getConfig());
+		_to_close = true;
+		return 1;
+	}
+	else if (_request.getMethod() == POST && this->_request.get_single_header("Content-Length").empty() && !this->_is_chunked) {
+		response_stream << createError(411, &this->getConfig());
+		_to_close = true;
+		return 1;
+	}
+	else if (_request.getMethod() == POST && _request.getContentLength() == 0 && !this->_is_chunked) {
+		response_stream << createError(400, &this->getConfig());
+		_to_close = true;
+		return 1;
+	}
+	else if (_request.getMethod() == POST && _request.getContentLength() > _config.get_client_max_body_size()) {
+		response_stream << createError(413, &this->getConfig());
+		_to_close = true;
+		return 1;
+	}
+	return 0;
+}
+
+
+int 	Response::send_response(std::ostringstream& response_stream)
+{
 	_response = response_stream.str();
-	sent = send(this->_conn_fd, _response.c_str(), _response.length(), MSG_DONTWAIT);
+	int	sent = send(this->_conn_fd, _response.c_str(), _response.length(), MSG_DONTWAIT);
 	if (sent > 0)
 	{
 		_bytes_sent += sent;
@@ -208,7 +216,7 @@ int 	Response::send_response()
 			_bytes_sent = 0;
 		}
 	}
-	return _error; 
+	return _error;
 }
 
 void	Response::responseToGET(std::ifstream &file, const std::string& path, std::ostringstream &response_stream)
@@ -275,6 +283,7 @@ bool	Response::new_request(httpHeader &request)
 	this->_to_close = false;
 	this->_is_complete = false;
 	this->_is_dir = false;
+	this->_is_redirect = false;
 	this->_list_dir = false;
 	this->_received_bytes = 0;
 	std::map<std::string, Location>::iterator loc_it;
@@ -297,6 +306,12 @@ bool	Response::new_request(httpHeader &request)
 		if (uri.length() > 1 && uri[uri.length() -1] == '/')
 			uri.erase(uri.length() - 1);
 		std::cout << uri << std::endl;
+		// std::map<std::string, std::string>::iterator red_it = this->getConfig().getRedirection().begin();
+		// while (red_it != this->getConfig().getRedirection().end())
+		// {
+		// 	std::cout << "REDIRECT: " << red_it->first << " -> " << red_it->second << std::endl;
+		// 	red_it++;
+		// }
 		std::map<std::string, std::string>::iterator red_it = this->getConfig().getRedirection().find(uri);
 		if (red_it != this->getConfig().getRedirection().end())
 		{
@@ -304,6 +319,13 @@ bool	Response::new_request(httpHeader &request)
 			std::cout << "SIZE: " << size << std::endl;
 			uri = red_it->second;
 			loc_it = this->getConfig().get_location().find(red_it->second);
+			if (loc_it == this->getConfig().get_location().end())
+			{
+				_is_redirect = true;
+				this->_request.setURI(red_it->second);
+				return true; 
+			}
+
 		}
 		else
 			loc_it = this->getConfig().get_location().find(uri);
@@ -371,7 +393,6 @@ void	Response::responseToDELETE(std::ostringstream &response_stream)
 		}
 		else
 		{
-			std::cout << "[ CALLED ]" << std::endl;
 			response_stream << HTTP_204 << _types.get_content_type(".txt");
 		}
 	}
@@ -692,4 +713,21 @@ void	Response::finishChunk()
 bool	Response::isChunked()
 {
 	return this->_is_chunked;
+}
+
+// bool Response::isRedirect(std::string uri)
+// {
+// 	(void )uri;
+
+
+// 	return true;
+// }
+
+std::string Response::redirect(std::string uri)
+{
+	std::ostringstream message;
+
+	message << "HTTP/1.1 307 Temporary Redirect\r\n";
+	message << "Location: " << uri << "\r\n\r\n";
+	return (message.str());
 }
