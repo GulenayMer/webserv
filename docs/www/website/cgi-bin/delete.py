@@ -14,8 +14,18 @@ def is_json_file_valid(file_path):
         except ValueError:
             return False
         return True
+
+
+cookie = http.cookies.SimpleCookie(os.environ.get("HTTP_COOKIE"))
+
 # get user name from request
-username = "bob"
+if "session" in cookie:
+    # Extract the username from the session value
+    username = cookie["session"].value
+else:
+	username = None
+	error = True
+
 user = {
 	"username": username,
 }
@@ -45,3 +55,30 @@ else:
 		
 		with open(db_path, 'w', encoding='utf-8') as db:
 			json.dump(users,db)
+
+
+# set a value for the cookie
+cookie["session"]["path"] = "/"
+cookie["session"]["max-age"] = 0
+
+#  Prepare http response
+body = "User deleted."
+body = "<body>" + body + "</body>"
+
+html = "<html>"
+html += "<head>"
+html += "<title>Redirecting...</title>"
+html += "<meta http-equiv='refresh' content='0;url=/index.html'>"
+html += "</head>"
+html += body
+html += "</html>"
+
+message = "HTTP/1.1 200 OK\r\n"
+message += cookie.output()
+message += "\n" # print a blank line to separate the headers from the body 
+message += f"Content-length: {len(html)} \r\n"
+message += "Content-type:text/html\r\n\r\n"
+
+message += html
+
+print(message)

@@ -3,7 +3,6 @@
 import cgi, os, hashlib, json, http.cookies
 from dotenv import load_dotenv
 
-
 cookie = http.cookies.SimpleCookie()
 # set a value for the cookie
 cookie['session'] = "logout"
