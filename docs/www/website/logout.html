@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="./utils/loginStyle.css">
+	<title>Logout or Delete</title>
+</head>
+
+	<body>
+
+		<div class="header">
+			<div class="logo" src="">
+				<a href="/">Logo</a>
+			</div>
+			<nav class="navbar">
+				<ul class="nav-list">
+					<li class="list-item">
+						<a href="../about.html">About</a>
+					</li>
+					<li class="list-item">
+						<a href="#project-section">Services</a>
+					</li>
+					<li class="list-item">
+						<a href="/contact">Contact</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+
+		<div class="main">
+			<h2>Logout or Delete the Account</h2>
+			<div class="btn-all">
+				<form class="logoutForm" action="../cgi-bin/logout.py" method="POST" enctype="multipart/form-data">
+					<button class="logout">Logout</button>
+				</form>
+				<form class="deleteForm" action="../cgi-bin/delete.py" method="DELETE" enctype="multipart/form-data">
+						<button  id="btn-delete" class="delete">Delete</button>
+				</form>
+			</div>
+		</div>
+		
+
+<script type="text/javascript">
+
+function submitForm(event) 
+{
+  event.preventDefault(); // Prevent form from submitting normally
+  
+  // Send AJAX request to CGI script
+  let CGIdelete = new XMLHttpRequest();
+  CGIdelete.open('POST', '../cgi-bin/delete.py');
+  CGIdelete.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  CGIdelete.onload = () => {
+    // Redirect to HTML page
+    window.location.href = '/workspaces/WServer/docs/www/website/userDeleted.html';
+  };
+
+  CGIdelete.send(new FormData(event.target));
+}
+
+
+	function getCookieValue(cookieName)
+	{
+		const cookies = document.cookie.split('; ');
+		console.log(cookies);
+		  for (let i = 0; i < cookies.length; i++) 
+		{
+			const cookie = cookies[i].split('=');
+			if (cookie[0] === cookieName) 
+			{
+				  return cookie[1];
+			}
+		  }
+		return null;
+	}
+		
+		
+	const username = getCookieValue('session');
+	const btn = document.getElementById("btn-delete");
+	console.log(username);
+	if (username != null)
+	{
+		btn.innerHTML = " Delete";
+		btn.href = "../cgi-bin/delete.py";
+	}
+</script>
+
+</body>
+</html>

@@ -103,6 +103,8 @@ void	CGI::env_init()
 	//_env["HTTP_ACCEPT"]; // A list of the MIME types that the client can accept.
 	_env["HTTP_USER_AGENT"] = _response.getRequest().get_single_header("user-agent");; // The browser the client is using to issue the request.
 	_env["HTTP_REFERER"] = _response.getRequest().get_single_header("referer"); // The URL of the document that the client points to before accessing the CGI program. */
+	if (_response.getRequest().get_single_header("cookie").size() > 0)
+		_env["HTTP_COOKIE"] = _response.getRequest().get_single_header("cookie");
 }
 
 

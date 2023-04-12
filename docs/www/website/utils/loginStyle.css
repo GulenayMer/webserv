@@ -33,6 +33,29 @@ body
 
 }
 
+.btn-all
+{
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+}
+
+.logout, .delete
+{
+	padding: 10px 20px;
+	width: 100%;
+	background-color: #ed1818;
+	color: white;
+	border: none;
+	cursor: pointer;
+
+}
+
+.logoutForm, .deleteForm
+{
+	margin-right: 10%;
+}
+
 
 .container
 {
@@ -118,4 +141,54 @@ float: right;
 .close:focus {
   color: red;
   cursor: pointer;
+}
+
+
+
+/* header: logo and navbar */
+.header
+{
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	background-color: #6492d2;
+	width: 100%;
+	padding: 20px;
+}
+
+/* styling the navigation */ 
+.navbar
+{
+	position: absolute;
+	top: 0;
+	right: 0;
+	flex: 1;
+}
+
+.nav-list
+{
+	list-style: none;
+	display: flex;
+    padding: 10px;
+	margin: 10px;
+	gap: 20px;
+	
+}
+
+.navbar a
+{
+	font-size: 18px;
+	color: #E5E7EB;
+	text-decoration: none;
+}
+
+.navbar a:hover
+{
+	color: aquamarine;
+}
+
+.logo a
+{
+	text-decoration: none;
+	color: #fff;
 }
