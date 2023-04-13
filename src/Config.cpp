@@ -190,7 +190,7 @@ void					Config::set_index(std::string index)
 void					Config::set_location(std::ifstream& config_file, std::string line)
 {
 	std::string key = get_value(line);
-	Location location(config_file, line);
+	Location location(config_file, line, this->get_root(),this->get_index(), key);
 	this->set_error_code(location.get_error_code());
 	// std::map<std::string, Location>::iterator it = this->_location.find(location.get_redirection());
 	if (!location.get_redirection().empty())
@@ -258,24 +258,24 @@ void						Config::check_config()
 
 void	Config::create_default_errors()
 {
-	this->set_default_error(400, "docs/www/default_error/400_BadRequest.html");
-	this->set_default_error(403, "docs/www/default_error/403_Forbidden.html");
-	this->set_default_error(404, "docs/www/default_error/404_NotFound.html");
-	this->set_default_error(405, "docs/www/default_error/405_MethodNotAllowed.html");
-	this->set_default_error(406, "docs/www/default_error/406_NotAcceptable.html");
-	this->set_default_error(408, "docs/www/default_error/408_RequestTimeout.html");
-	this->set_default_error(411, "docs/www/default_error/411_LengthRequired.html");
-	this->set_default_error(413, "docs/www/default_error/413_PayloadTooLarge.html");
-	this->set_default_error(414, "docs/www/default_error/414_URITooLarge.html");
-	this->set_default_error(415, "docs/www/default_error/415_UnsupportedMediaType.html");
-	this->set_default_error(418, "docs/www/default_error/418_Imateapot.html");
-	this->set_default_error(429, "docs/www/default_error/429_TooManyRequests.html");
-	this->set_default_error(500, "docs/www/default_error/500_InternalServer.html");
-	this->set_default_error(501, "docs/www/default_error/501_NotImplemented.html");
-	this->set_default_error(502, "docs/www/default_error/502_BadGateway.html");
-	this->set_default_error(503, "docs/www/default_error/503_ServiceUnavailable.html");
-	this->set_default_error(504, "docs/www/default_error/504_GatewayTimeout.html");
-	this->set_default_error(505, "docs/www/default_error/505_HTTPVersionNotSupported.html");
+	this->set_default_error(400, "error/400_BadRequest.html");
+	this->set_default_error(403, "error/403_Forbidden.html");
+	this->set_default_error(404, "error/404_NotFound.html");
+	this->set_default_error(405, "error/405_MethodNotAllowed.html");
+	this->set_default_error(406, "error/406_NotAcceptable.html");
+	this->set_default_error(408, "error/408_RequestTimeout.html");
+	this->set_default_error(411, "error/411_LengthRequired.html");
+	this->set_default_error(413, "error/413_PayloadTooLarge.html");
+	this->set_default_error(414, "error/414_URITooLarge.html");
+	this->set_default_error(415, "error/415_UnsupportedMediaType.html");
+	this->set_default_error(418, "error/418_Imateapot.html");
+	this->set_default_error(429, "error/429_TooManyRequests.html");
+	this->set_default_error(500, "error/500_InternalServer.html");
+	this->set_default_error(501, "error/501_NotImplemented.html");
+	this->set_default_error(502, "error/502_BadGateway.html");
+	this->set_default_error(503, "error/503_ServiceUnavailable.html");
+	this->set_default_error(504, "error/504_GatewayTimeout.html");
+	this->set_default_error(505, "error/505_HTTPVersionNotSupported.html");
 }
 
 std::map<std::string, std::string> &Config::getRedirection()

@@ -294,7 +294,12 @@ bool	Response::new_request(httpHeader &request)
 	std::map<std::string, Location>::iterator loc_it;
 	std::string uri = request.getUri();
 	size_t pos;
-	if (uri.find_first_of(".") == std::string::npos)
+	pos = uri.find_last_of("/");
+	if (pos == std::string::npos)
+	{
+		pos = 0;
+	}
+	if (uri.find_first_of(".", pos) == std::string::npos)
 	{
 		this->_is_dir = true;
 		if (uri.length() > 1 && uri[uri.length() - 1] == '/')

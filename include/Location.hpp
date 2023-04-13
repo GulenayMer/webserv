@@ -23,7 +23,7 @@
 			Location();
 			Location(const Location &src);
 			Location &operator=(const Location &src);
-			Location(std::ifstream &config_file, std::string line);
+			Location(std::ifstream &config_file, std::string line, std::string config_root,std::string config_index, std::string key);
 			// Setters   
 			void set_root(std::string root);
 			void set_autoindex(bool autoindex);

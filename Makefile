@@ -4,7 +4,7 @@
 
 CC =		g++
 
-CFLAGS	=	-Wall -Wextra -Werror -Wshadow -std=c++98 -O3
+CFLAGS	=	-Wall -Wextra -Werror -Wshadow -std=c++98
 
 DEBUG =		-Wall -Wextra -Werror -g -std=c++98
 
