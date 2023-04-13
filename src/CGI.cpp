@@ -162,6 +162,13 @@ bool	CGI::handle_cgi()
     if (this->_pid == 0)
 	{
 		this->env_to_char();
+		std::cout << "CGI script path: " << script_path << std::endl;
+		char cwd[PATH_MAX];
+		if (getcwd(cwd, sizeof(cwd)) != NULL) {
+			std::cout << "Current working dir: " << cwd << std::endl;
+		} else {
+			perror("getcwd() error");
+		}
         exec_script(this->_input_pipe, this->_output_pipe, script_path);
 	}
     else
@@ -178,7 +185,7 @@ bool	CGI::handle_cgi()
 
 void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
 {
-	char *args[3];
+	char *args[2];
 	if (output_pipe[0] > 0)
 		close(output_pipe[0]);
 	if (input_pipe[1] > 0)
