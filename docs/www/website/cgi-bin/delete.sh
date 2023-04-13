@@ -7,7 +7,7 @@ do
 		read line
 		read line
 		line="$(echo -e "webserv:8000${line}" | sed -e 's/[[:space:]]*$//')"
-		curl -X DELETE -i $line
+		curl -X DELETE -i $line > /dev/null
 		break
 	fi
 done < "${1:-/dev/stdin}"
