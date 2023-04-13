@@ -50,6 +50,7 @@ body input {
 
 div {
 	color: #F9FAF8;
+	text-shadow: rgb(0, 0, 0) 0px 0px 7px;
 	background-color: #c71010;
 	margin: 1px;
 	font-weight: 600;
@@ -71,13 +72,20 @@ div {
 }
 
 #d1 {
+	color: #F9FAF8;
+	background-color: #c71010;
 	position: relative;
 	right: 11%;
 }
 
-/* #d2 {
-	display: inline-block;
-} */
+#d2 {
+	background-color: #c71010;
+}
+
+#d3 {
+	text-shadow: rgb(165, 165, 165) 0px 0px 7px;
+	color: #000000;
+}
 
 body button {
 	font-family: 'Roboto', sans-serif;
