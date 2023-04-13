@@ -49,6 +49,7 @@ body input {
 }
 
 div {
+	text-shadow: black 0px 0px 5px;
 	color: #F9FAF8;
 	background-color: #c71010;
 	margin: 1px;
@@ -71,13 +72,14 @@ div {
 }
 
 #d1 {
+	background-color: #c71010;
 	position: relative;
 	right: 11%;
 }
 
-/* #d2 {
-	display: inline-block;
-} */
+#d2 {
+	background-color: #c71010;
+}
 
 body button {
 	font-family: 'Roboto', sans-serif;

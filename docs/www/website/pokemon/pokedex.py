@@ -8,11 +8,20 @@ pokemon = pokemon.lower()
 
 response = requests.get(f"https://pokeapi.co/api/v2/pokemon/{pokemon}/")
 
-body = "<!DOCTYPE html>\n<head>\n<link href=/pokemon/pstyle.css rel=stylesheet type=text/css>\n<title>Pokedex</title>\n</head>\n<body>\n"
+body = "<!DOCTYPE html>\n<head>\n<link href=/pokemon/pstyle.css rel=stylesheet type=text/css>\n"
+evolution_info = ""
 
 if response.status_code == 200:
 	data = response.json()
 	response = requests.get(f"https://pokeapi.co/api/v2/pokemon-species/{data['id']}/")
+	if response.status_code == 200:
+		evolution = response.json()
+		body += f"<style>div {{background-color: {evolution['color']['name']}}}</style>\n"
+		if evolution['evolves_from_species'] != None:
+			evolution_info += "<div>Evolves from:<br/>"
+			evolution_info += f"{evolution['evolves_from_species']['name'].capitalize()}<br/>"
+			evolution_info += "</div>"
+	body += "<title>Pokedex</title>\n</head>\n<body>\n"
 	sprite = data["sprites"]["front_default"]
 	body += f"<img src={sprite} alt=/images/pokeball width=200 height=200>"
 	body += f"<div>{pokemon.title()}</div>"
@@ -25,18 +34,13 @@ if response.status_code == 200:
 	for ability in data["abilities"]:
 		body += f"- {ability['ability']['name'].capitalize()}<br/>"
 	body += "</div>"
-	if response.status_code == 200:
-		evolution = response.json()
-		if evolution['evolves_from_species'] != None:
-			body += "<div id=d2>Evolves from:<br/>"
-			body += f"{evolution['evolves_from_species']['name'].capitalize()}<br/>"
-			body += "</div>"
-
+	body += evolution_info
 else:
+	body += "<title>Pokedex</title>\n</head>\n<body>\n"
 	body += f"<div>{pokemon.title()} not found.</div>"
 body += "</div>"
 body += f"<div id=d1>Search again:</div>"
-body += "<div><form id=form action=/pokemon/pokedex.py method=post enctype=multipart/form-data>"
+body += "<div id=d2><form id=form action=/pokemon/pokedex.py method=post enctype=multipart/form-data>"
 body += "<label for=pokemon>Enter a Pokemon:</label>"
 body += "<input id=pokemon type=text name=pokemon required></input>"
 body += "<button id=button class=button type=submit value=Submit>Submit</button>"
