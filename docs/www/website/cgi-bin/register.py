@@ -75,7 +75,7 @@ html += "</head>"
 html += body
 html += "</html>"
 
-message = "HTTP/1.1 200 OK\r\n"
+message = "HTTP/1.1 201 OK\r\n"
 message += f"Content-length: {len(html)} \r\n"
 message += "Content-type:text/html\r\n\r\n"
 message += html
