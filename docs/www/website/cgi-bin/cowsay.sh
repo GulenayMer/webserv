@@ -24,9 +24,6 @@ fi
 message="<html>
 <head>
 <meta charset="UTF-8">
-<style>
-body {background-color: palepink;}
-</style>
 <title>Fortune</title>
 </head>
 <body>
@@ -38,6 +35,10 @@ $cow
 </pre>
 <form METHOD=GET ACTION=\"/\">
 <button type=\"submit\">Homepage</button>
+</form>
+<form METHOD=POST ACTION=\"/cgi-bin/delete.sh\" enctype=multipart/form-data>
+<button type=\"submit\">Purge the cow from this Earth</button>
+<input type=hidden value=/cgi-bin/cowsay.sh name=file-to-delete>
 </form>
 </body>
 </html>

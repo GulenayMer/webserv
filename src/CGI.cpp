@@ -546,8 +546,9 @@ void CGI::addHeaderChunked()
 	}
 	for (; it != this->_response.getRequest().getCompleteHeader().end(); it++)
 	{
-		if (it->first == "Transfer-Encoding")
+		if (it->first == "transfer-encoding")
 			continue;
+		this->_request_buff.insert(this->_request_buff.begin(), '\n');
 		this->_request_buff.insert(this->_request_buff.begin(), it->second.begin(), it->second.end());
 		this->_request_buff.insert(this->_request_buff.begin(), ' ');
 		this->_request_buff.insert(this->_request_buff.begin(), ':');
