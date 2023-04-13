@@ -190,7 +190,7 @@ void					Config::set_index(std::string index)
 void					Config::set_location(std::ifstream& config_file, std::string line)
 {
 	std::string key = get_value(line);
-	Location location(config_file, line);
+	Location location(config_file, line, this->get_root(),this->get_index(), key);
 	this->set_error_code(location.get_error_code());
 	// std::map<std::string, Location>::iterator it = this->_location.find(location.get_redirection());
 	if (!location.get_redirection().empty())

@@ -10,7 +10,7 @@ Location::Location()
 	this->_redirection = "";
 }
 
-Location::Location(std::ifstream &config_file, std::string line)
+Location::Location(std::ifstream &config_file, std::string line, std::string config_root, std::string config_index, std::string key)
 {
 	int	exit_context = 0;
 	this->_autoindex = false;
@@ -35,8 +35,18 @@ Location::Location(std::ifstream &config_file, std::string line)
 		if ((line.find(RETURN) != std::string::npos)  && check_def_format(RETURN, line))
 			this->set_redirection(get_value(line));
 	}	
-	if (exit_context != 1 || this->get_root().empty())
+	if (exit_context != 1) 
 		set_error_code(11);
+	if (this->get_root().empty()) {
+		if (key != "/")
+			this->set_root(config_root + key);
+		else
+			this->set_root(config_root);
+	}
+	if (this->get_index().empty()) {
+		if (key == "/")
+			this->set_index(config_index);
+	}
 	this->set_error_code(0);
 }
 
