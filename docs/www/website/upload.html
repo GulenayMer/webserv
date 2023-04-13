@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="./utils/formStyle.css">
+	<title>Upload a File</title>
+</head>
+<body>
+	<div class="header">
+
+		<div class="logo" src="">
+			<a href="/">Logo</a>
+		</div>
+
+		<nav class="navbar">
+			<ul class="nav-list">
+				<li class="list-item">
+					<a href="../about.html">About</a>
+				</li>
+				<li class="list-item">
+					<a href="#project-section">Services</a>
+				</li>
+				<li class="list-item">
+					<a href="../cgi-bin/cowsay.sh">Contact</a>
+				</li>
+			</ul>
+		</nav>
+	</div>
+	<div class="container">
+
+		<h2>Upload a file</h2>
+
+		<form id="form" action="../cgi-bin/upload.py" method="post" enctype="multipart/form-data">
+			<div class="form-item">
+				<input type="file" id="myFile"  name="data" required>
+			</div>
+			<div>
+				<input id="button" class="button" type="submit" value="Upload">
+			</div>
+		</form>
+	</div>
+
+</body>
+</html>
