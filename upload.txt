@@ -1,1 +1,1 @@
-curl -H "Transfer-Encoding: chunked" -d @4132.png http://127.0.0.1:8000/cgi-bin/chunked.py
+curl -H "Transfer-Encoding: chunked" -d @upload.txt http://127.0.0.1:8000/cgi-bin/chunked.py
