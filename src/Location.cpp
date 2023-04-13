@@ -39,7 +39,7 @@ Location::Location(std::ifstream &config_file, std::string line, std::string con
 		set_error_code(11);
 	if (this->get_root().empty()) {
 		if (key != "/")
-			this->set_root(config_root + key);
+			this->set_root(config_root + &key[1]);
 		else
 			this->set_root(config_root);
 	}
