@@ -94,32 +94,32 @@ int 	Response::handle_response()
 		size_t ext_pos = _request->getUri().find_last_of(".");
 		if (!_is_cgi && _is_chunked)
 		{
-			response_stream << createError(404, &this->getConfig());
+			response_stream << createError(404);
 			_to_close = true;
 		}
 		else if (!_is_cgi && !_is_dir && ext_pos != std::string::npos && _types.get_content_type(&this->_request->getUri()[ext_pos]).empty())
 		{
-			response_stream << createError(415, &this->getConfig());
+			response_stream << createError(415);
 			_to_close = true;
 		}
-		else if(this->_is_dir && _request->getMethod() == GET)
+		else if (this->_list_dir && _request->getMethod() == GET)
 		{
-			if (this->_location.get_autoindex() && this->_list_dir)
+			if (this->_location.get_autoindex())
 				response_stream << directoryListing(_respond_path);
 			else
-				response_stream << createError(404, &this->getConfig());
+				response_stream << createError(404);
 		}
 		else if (_is_cgi)
 		{
 			size_t pos = this->_request->getUri().find_last_of("/");
 			if (pos != std::string::npos && !dir_exists(this->_request->getUri().substr(0, pos)))
 			{
-				response_stream << createError(404, &this->getConfig());
+				response_stream << createError(404);
 				this->_is_cgi = false;
 			}
 			else if (!this->_location.allow_cgi())
 			{
-				response_stream << createError(403, &this->getConfig());
+				response_stream << createError(403);
 				this->_is_cgi = false;
 			}
 			else
@@ -128,11 +128,9 @@ int 	Response::handle_response()
 		else
 		{
 			std::ifstream file(_respond_path.c_str());
-			// std::cout << RED << _respond_path << RESET << std::endl;
 			if (!file.is_open())
 			{
-				// std::cout << std::endl << RED << "Unable to open requested file." << RESET << std::endl << std::endl;
-				response_stream << createError(404, &this->getConfig());
+				response_stream << createError(404);
 				_to_close = true;
 			}
 			else
@@ -141,7 +139,7 @@ int 	Response::handle_response()
 					responseToGET(file, ext_pos, response_stream);
 				else if (_request->getMethod() == POST)
 				{
-					// responseToPOST(_request, response_stream);
+					// responseToPOST(_request, response_stream); TODO
 					// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A POST REQUEST";
 				}
 				else if (_request->getMethod() == DELETE)
@@ -159,43 +157,42 @@ int 	Response::handle_response()
 int 	Response::handle_response_error(std::ostringstream& response_stream)
 {
 	if (_request->isError()) {
-		response_stream << createError(414, &this->getConfig());
+		response_stream << createError(414);
 		_to_close = true;
 		return 1;
 	}
 	else if (!_request->isHttp11()) {
-		response_stream << createError(505, &this->getConfig());
+		response_stream << createError(505);
 		_to_close = true;
 		return 1;
 	}
 	else if (_request->getContentLength() > _config.get_client_max_body_size()) {
-		std::cout << "content length too large" << std::endl;
-		response_stream << createError(413, &this->getConfig());
+		response_stream << createError(413);
 		_to_close = true;
 		return 1;
 	}
 	else if (_request->getMethod() > 2) {
-		response_stream << createError(501, &this->getConfig());
+		response_stream << createError(501);
 		_to_close = true;
 		return 1;
 	}
 	else if(!_location.check_method_at(_request->getMethod())) {
-		response_stream << createError(405, &this->getConfig());
+		response_stream << createError(405);
 		_to_close = true;
 		return 1;
 	}
 	else if (_request->getMethod() == POST && this->_request->get_single_header("content-length").empty() && !this->_is_chunked) {
-		response_stream << createError(411, &this->getConfig());
+		response_stream << createError(411);
 		_to_close = true;
 		return 1;
 	}
 	else if (_request->getMethod() == POST && _request->getContentLength() == 0 && !this->_is_chunked) {
-		response_stream << createError(400, &this->getConfig());
+		response_stream << createError(400);
 		_to_close = true;
 		return 1;
 	}
 	else if (_request->getMethod() == POST && _request->getContentLength() > _config.get_client_max_body_size()) {
-		response_stream << createError(413, &this->getConfig());
+		response_stream << createError(413);
 		_to_close = true;
 		return 1;
 	}
@@ -222,7 +219,6 @@ int 	Response::send_response(std::ostringstream& response_stream)
 
 void	Response::responseToGET(std::ifstream &file, size_t &pos, std::ostringstream &response_stream)
 {
-	// std::cout << std::endl << RED << path << RESET << std::endl;
 	std::stringstream	file_buffer;
 	std::string	type;
 
@@ -244,25 +240,25 @@ void	Response::responseToGET(std::ifstream &file, size_t &pos, std::ostringstrea
 // 	// 		send_404(this->_config.get_root(), response_stream);
 // }
 
-void 	Response::send_404(std::string root, std::ostringstream &response_stream)
-{
-	std::string response_body;
+// void 	Response::send_404(std::string root, std::ostringstream &response_stream)
+// {
+// 	std::string response_body;
 
-	// if the file cannot be opened, send a 404 error
-	_request->setStatusCode(404);
-    std::ifstream error404((root + this->_config.get_error_path(404)).c_str());
-    if (!error404.is_open())
-        std::cerr << RED << _404_ERROR << RESET << std::endl;
-	else
-	{
-		std::stringstream	file_buffer;
-		file_buffer << error404.rdbuf();
-		response_body = file_buffer.str();
-		response_stream << "HTTP/1.1 404 Not Found\r\n\r\n";
-		response_stream << response_body;
-		error404.close();
-	}
-}
+// 	// if the file cannot be opened, send a 404 error
+// 	_request->setStatusCode(404);
+//     std::ifstream error404((root + this->_config.get_error_path(404)).c_str());
+//     if (!error404.is_open())
+//         std::cerr << RED << _404_ERROR << RESET << std::endl;
+// 	else
+// 	{
+// 		std::stringstream	file_buffer;
+// 		file_buffer << error404.rdbuf();
+// 		response_body = file_buffer.str();
+// 		response_stream << "HTTP/1.1 404 Not Found\r\n\r\n";
+// 		response_stream << response_body;
+// 		error404.close();
+// 	}
+// }
 
 bool	Response::new_request(httpHeader *request)
 {
@@ -275,12 +271,9 @@ bool	Response::new_request(httpHeader *request)
 	this->_received_bytes = 0;
 	std::map<std::string, Location>::iterator loc_it;
 	std::string uri = request->getUri();
-	size_t pos;
-	pos = uri.find_last_of("/");
+	size_t pos = uri.find_last_of("/");
 	if (pos == std::string::npos)
-	{
 		pos = 0;
-	}
 	if (uri.find_first_of(".", pos) == std::string::npos)
 	{
 		this->_is_dir = true;
@@ -292,23 +285,14 @@ bool	Response::new_request(httpHeader *request)
 	}
 	size_t size = uri.size();
 	pos = uri.length() - 1;
-	// std::cout << "new request: " << uri << std::endl;
 	while (!uri.empty())
 	{
 		if (uri.length() > 1 && uri[uri.length() -1] == '/')
 			uri.erase(uri.length() - 1);
-		std::cout << uri << std::endl;
-		// std::map<std::string, std::string>::iterator red_it = this->getConfig().getRedirection().begin();
-		// while (red_it != this->getConfig().getRedirection().end())
-		// {
-		// 	std::cout << "REDIRECT: " << red_it->first << " -> " << red_it->second << std::endl;
-		// 	red_it++;
-		// }
 		std::map<std::string, std::string>::iterator red_it = this->getConfig().getRedirection().find(uri);
 		if (red_it != this->getConfig().getRedirection().end())
 		{
 			size += red_it->second.size() - uri.size();
-			// std::cout << "SIZE: " << size << std::endl;
 			uri = red_it->second;
 			loc_it = this->getConfig().get_location().find(red_it->second);
 			if (loc_it == this->getConfig().get_location().end())
@@ -324,10 +308,9 @@ bool	Response::new_request(httpHeader *request)
 		if (loc_it != this->getConfig().get_location().end())
 		{
 			this->_location = loc_it->second;
-			// std::cout << "OLD URI: " << this->_request.getUri() << std::endl;
 			if (this->_is_dir)
 			{
-				if (!this->_location.get_index().empty() && uri.size() == size)
+				if (!this->_list_dir && !this->_location.get_index().empty() && uri.size() == size)
 				{
 					this->_request->setURI(this->_location.get_root() + this->_location.get_index());
 					this->_is_dir = false;
@@ -338,7 +321,6 @@ bool	Response::new_request(httpHeader *request)
 			}
 			else
 				this->_request->setURI(this->_location.get_root() + &request->getUri()[pos + 1]);
-			// std::cout << "NEW URI: " << this->_request.getUri() << std::endl;
 			return true;
 		}
 		if (pos > 0)
@@ -370,24 +352,12 @@ void	Response::responseToDELETE(std::ostringstream &response_stream)
 	*/
 	// std::cout << RED << "PATH : " << _respond_path << RESET << std::endl;
 	std::ifstream	pathTest(_respond_path.c_str());
-	if (!pathTest.is_open())
-	{
-		// std::cout << RED << "this 404" << RESET << std::endl;
-		send_404(this->_config.get_root(), response_stream);
-	}
+	if (!pathTest.fail() || remove(_respond_path.c_str()) == -1)
+		response_stream << createError(404);
 	else
 	{
-		// delete file
-		if (remove(_respond_path.c_str()) == -1)
-		{
-			// std::cout << RED << "next 404" << RESET << std::endl;
-			send_404(this->_config.get_root(), response_stream);
-		}
-		else
-		{
-			response_stream << HTTP_204 << _types.get_content_type(".txt");
-			_request->setStatusCode(204);
-		}
+		response_stream << HTTP_204 << _types.get_content_type(".txt");
+		_request->setStatusCode(204);
 	}
 	pathTest.close();
 }
@@ -434,17 +404,17 @@ int	Response::getCGIFd()
  * @param config Needs a config to access paths, should be NULL if error is pre-config creation
  * @return std::string 
  */
-std::string	Response::createError(int errorNumber, Config* config)
+std::string	Response::createError(int errorNumber)
 {
 	std::string			response_body;
 	std::string			errorName;
 	std::ostringstream	response_stream;
-	std::string			error_body = getErrorPath(errorNumber, errorName, config);
-	std::ifstream error(error_body.c_str());
+	std::string			error_path = getErrorPath(errorNumber, errorName);
+	std::ifstream error(error_path.c_str());
 
 	_request->setStatusCode(errorNumber);
 	if(!error.is_open())
-		std::cerr << RED << "error opening " << errorNumber << " file at " << error_body << RESET << std::endl;
+		std::cerr << RED << "error opening " << errorNumber << " file at " << error_path << RESET << std::endl;
 	else
 	{
 		std::stringstream	file_buffer;
@@ -457,11 +427,10 @@ std::string	Response::createError(int errorNumber, Config* config)
 	return (response_stream.str());
 }
 
-std::string Response::getErrorPath(int &errorNumber, std::string& errorName, Config* config)
+std::string Response::getErrorPath(int &errorNumber, std::string& errorName)
 {
 	std::string			error_path;
 
-	
 	switch (errorNumber)
 	{
 		case 400:
@@ -526,7 +495,7 @@ std::string Response::getErrorPath(int &errorNumber, std::string& errorName, Con
 			errorNumber = 418;
 			break;
 	}
-	error_path = config->get_error_path(errorNumber);
+	error_path = this->_config.get_error_path(errorNumber);
 	return (error_path);
 }
 
@@ -612,7 +581,7 @@ std::string Response::directoryListing(std::string uri)
     struct dirent *ent;
 
 	if (!directoryExists(uri.c_str()))
-		return (Response::createError(404, &this->getConfig()));
+		return (Response::createError(404));
 	
 	std::ostringstream outfile;
 

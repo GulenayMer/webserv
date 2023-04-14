@@ -130,7 +130,6 @@ bool	CGI::handle_cgi()
 	std::string script_path = this->_response.getRequest()->getUri();
 	std::string shebang;
 
-	// std::cout << "CGI script path: " << script_path << std::endl;
 	std::map<std::string, std::string>::const_iterator path_it = this->_response.getConfig().getIntrPath().find(this->_response.getExt());
 	if (!file_exists(script_path))
 	{
@@ -147,24 +146,6 @@ bool	CGI::handle_cgi()
 		this->_errno = 2;
 		return false;
 	}
-	// file.open(new_path.c_str(), std::ios::in);
-	// if (file.fail() == true) {
-	// 	std::cout << "CGI FILE OPEN FAIL: " << new_path << std::endl;
-	// 	this->_errno = 1;
-	// 	return false;
-	// }
-	// getline(file, shebang);
-	// // TODO invalid file, no shebang
-	// if (shebang.find("#!") == std::string::npos)
-	// {
-	// 	std::cout << "CGI NO SHEBANG FAIL: " << std::endl;
-	// 	this->_errno = 2;
-	// 	file.close();
-	// 	return false;
-	// }
-	// size_t pos = shebang.find_last_of("/");
-	// shebang = &shebang[pos] + 1;
-	// file.close();
 	this->_pid = fork();
     if (this->_pid == 0)
 	{
@@ -262,6 +243,7 @@ int	CGI::initOutputPipe()
     if (pipe(this->_output_pipe) < 0)
     {
         std::cout << "Error opening pipe" << std::endl;
+		this->_errno = 2;
         return -1;
     }
 	if (fcntl(this->_output_pipe[0], F_SETFL, O_NONBLOCK) == -1)
@@ -273,6 +255,7 @@ int	CGI::initOutputPipe()
 		if (this->_output_pipe[1] > 0)
 			close(this->_output_pipe[1]);
 		this->_output_pipe[1] = -1;
+		this->_errno = 2;
 		return -1;
 	}
 	return this->_output_pipe[0];
@@ -289,6 +272,7 @@ int	CGI::initInputPipe()
 		if (this->_output_pipe[1] > 0)
 			close(this->_output_pipe[1]);
 		this->_output_pipe[1] = -1;
+		this->_errno = 2;
 		return -1;
 	}
 	if (fcntl(this->_input_pipe[1], F_SETFL, O_NONBLOCK) == -1)
@@ -306,6 +290,7 @@ int	CGI::initInputPipe()
 		if (this->_input_pipe[1] > 0)
 			close(this->_input_pipe[1]);
 		this->_input_pipe[1] = -1;
+		this->_errno = 2;
 		return -1;
 	}
 	return this->_input_pipe[1];
@@ -315,36 +300,28 @@ bool	CGI::sendResponse()
 {
 	ssize_t	sent;
 	std::ostringstream response_stream;
-	std::string response_string;
 	std::string content;
 	if (this->_errno == 1)
 	{
-		response_string = this->getResponse().createError(404, &this->getResponse().getConfig());
-		std::cout << "ERROR 404 sending" << std::endl;
-		_content_length = response_string.size();
-		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
-		std::cout << response_string << std::endl;
-		_response_string = response_string;
+		_response_string = this->getResponse().createError(404);
+		std::cout << "ERROR 404" << std::endl;
+		_content_length = _response_string.size();
+		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
 		_size_sent = sent;
 	}
 	else if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
 	{
-		response_string = this->getResponse().createError(500, &this->getResponse().getConfig());
-		std::cout << "ERROR 505 sending" << std::endl;
-		_content_length = response_string.size();
-		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
-		// std::cout << response_string << std::endl;
-		_response_string = response_string;
+		_response_string = this->getResponse().createError(500);
+		std::cout << "ERROR 500" << std::endl;
+		_content_length = _response_string.size();
+		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
 		_size_sent = sent;
 	}
 	else if (_content_length == 0)
 	{
-		response_string = "HTTP/1.1 204 OK\r\nConnection: Keep-Alive\r\n\r\n";
-		// std::cout << "CGI complete - nothing to send" << std::endl;
-		_content_length = response_string.size();
-		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
-		// std::cout << response_string << std::endl;
-		_response_string = response_string;
+		_response_string = "HTTP/1.1 204 OK\r\nConnection: Keep-Alive\r\n\r\n";
+		_content_length = _response_string.size();
+		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
 		_size_sent = sent;
 	}
 	else if (this->_response.getExt() == ".php")
@@ -371,9 +348,6 @@ bool	CGI::sendResponse()
 			}
 			_content_length = this->_response_buff.size();
 		}
-		// for (size_t i = 0; i < _response_buff.size(); i++)
-		// 	std::cout << BLUE << _response_buff[i];
-		// std::cout << RESET << std::endl;
 		sent = send(this->_response.getConnFd(), &_response_buff[this->_bytes_sent], _response_buff.size() - this->_bytes_sent, MSG_DONTWAIT);
 		std::string temp(_response_buff.begin(), _response_buff.end());
 		_response_string = temp;
@@ -381,22 +355,16 @@ bool	CGI::sendResponse()
 	}
 	else
 	{
-		// std::cout << RED << "Sending response..." << RESET << std::endl;
-		// for (size_t i = 0; i < _response_buff.size(); i++)
-		// 	std::cout << BLUE << _response_buff[i];
-		// std::cout << RESET << std::endl;
 		sent = send(this->_response.getConnFd(), &_response_buff[this->_bytes_sent], _response_buff.size() - this->_bytes_sent, MSG_DONTWAIT);
 		std::string temp(_response_buff.begin(), _response_buff.end());
 		_response_string = temp;
 		_size_sent = sent;
 	}
-	// std::cout << "sent: " << _bytes_sent << ", content length: " << _content_length << std::endl;
 	if (sent >= 0)
 	{
 		this->_bytes_sent += sent;
 		if (this->_bytes_sent == this->_content_length)
 		{
-			// std::cout << "SEND COMPLETE" << std::endl;
 			exit_status.erase(this->_pid);
 			_response_buff.clear();
 			this->_done_reading = false;

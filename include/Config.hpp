@@ -45,7 +45,6 @@
   			std::string							&get_root();
   			std::string							get_index();
 			std::map<std::string, Location>		&get_location();
-			// Location							&find_location(std::string location);
 			std::map<std::string, std::string>	&getRedirection();
 			int									get_error_code();
 			std::map<std::string, std::string>	&getIntrPath();

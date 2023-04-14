@@ -70,7 +70,6 @@ std::map<int, std::string>	&Config::get_default_error()
 
 std::string							&Config::get_error_path(int error)
 {
-	
 	return this->get_default_error().at(error);
 }
 
@@ -98,14 +97,6 @@ std::map<std::string, Location>		&Config::get_location()
 {
 	return this->_location;
 }
-
-// Location							&Config::find_location(std::string location)
-// {
-// 	std::map<std::string, Location>::iterator it = _location.find(location);
-// 	if (it != _location.end())
-// 		return (&it->second);
-// 	return (NULL);
-// }
 
 int 								Config::get_error_code()
 {
@@ -152,19 +143,6 @@ void					Config::set_server_name(std::string server_name)
 void					Config::set_default_error(int i, std::string default_error)
 {
 	this->_default_error[i] = default_error;
-	// if (this->_default_error.find(i) != this->_default_error.end()) {
-	// 	std::cout << i << std::endl;
-	// 	std::cout << default_error << std::endl;
-	// 	std::cout << "found" << std::endl;
-	// 	this->_default_error.find(i)->second = this->get_root() + default_error;
-	// }
-	// else {
-	// 	std::cout << i << std::endl;
-	// 	std::cout << default_error << std::endl;
-	// 	std::cout << "not found" << std::endl;
-	// 	std::pair<int, std::string> p = std::make_pair(i, default_error);
-	// 	this->_default_error.insert(p);
-	// }
 }
 
 void 					Config::set_client_max_body_size(int clien_max_body_size)
@@ -191,12 +169,11 @@ void					Config::set_location(std::ifstream& config_file, std::string line)
 {
 	std::string key = get_value(line);
 	Location location(config_file, line, this->get_root(),this->get_index(), key);
+	if (location.get_error_code() == 11)
+		throw std::runtime_error("Invalid configuration file context.");
 	this->set_error_code(location.get_error_code());
-	// std::map<std::string, Location>::iterator it = this->_location.find(location.get_redirection());
 	if (!location.get_redirection().empty())
-	{
 		this->_redirection.insert(std::make_pair(key, location.get_redirection()));
-	}
 	else
 		this->_location.insert(std::make_pair(key, location));
 }
@@ -258,6 +235,42 @@ void						Config::check_config()
 
 void	Config::create_default_errors()
 {
+	if (!file_exists("error/400_BadRequest.html"))
+		throw std::runtime_error("Webserv default error file [error/400_BadRequest.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/403_Forbidden.html"))
+		throw std::runtime_error("Webserv default error file [error/403_Forbidden.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/404_NotFound.html"))
+		throw std::runtime_error("Webserv default error file [error/404_NotFound.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/405_MethodNotAllowed.html"))
+		throw std::runtime_error("Webserv default error file [error/405_MethodNotAllowed.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/406_NotAcceptable.html"))
+		throw std::runtime_error("Webserv default error file [error/406_NotAcceptable.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/408_RequestTimeout.html"))
+		throw std::runtime_error("Webserv default error file [error/408_RequestTimeout.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/411_LengthRequired.html"))
+		throw std::runtime_error("Webserv default error file [error/411_LengthRequired.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/413_PayloadTooLarge.html"))
+		throw std::runtime_error("Webserv default error file [error/413_PayloadTooLarge.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/414_URITooLarge.html"))
+		throw std::runtime_error("Webserv default error file [error/414_URITooLarge.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/415_UnsupportedMediaType.html"))
+		throw std::runtime_error("Webserv default error file [error/415_UnsupportedMediaType.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/418_Imateapot.html"))
+		throw std::runtime_error("Webserv default error file [error/418_Imateapot.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/429_TooManyRequests.html"))
+		throw std::runtime_error("Webserv default error file [error/429_TooManyRequests.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/500_InternalServer.html"))
+		throw std::runtime_error("Webserv default error file [error/500_InternalServer.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/501_NotImplemented.html"))
+		throw std::runtime_error("Webserv default error file [error/501_NotImplemented.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/502_BadGateway.html"))
+		throw std::runtime_error("Webserv default error file [error/502_BadGateway.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/503_ServiceUnavailable.html"))
+		throw std::runtime_error("Webserv default error file [error/503_ServiceUnavailable.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/504_GatewayTimeout.html"))
+		throw std::runtime_error("Webserv default error file [error/504_GatewayTimeout.html] has been moved or deleted. Please restore it and try again.");
+	if (!file_exists("error/505_HTTPVersionNotSupported.html"))
+		throw std::runtime_error("Webserv default error file [error/505_HTTPVersionNotSupported.html] has been moved or deleted. Please restore it and try again.");
 	this->set_default_error(400, "error/400_BadRequest.html");
 	this->set_default_error(403, "error/403_Forbidden.html");
 	this->set_default_error(404, "error/404_NotFound.html");

@@ -87,20 +87,18 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 		if (line.find_first_not_of(" \r\t\b\f") == std::string::npos)
 			continue;
 		if ((line.find("server") != std::string::npos && check_def_format("server", line) && line.find("{") != std::string::npos) && line.find("}") != std::string::npos)
-			return false;
+			throw std::runtime_error("Server context is empty.");
 		else if ((line.find("server") != std::string::npos && check_def_format("server", line) && line.find("{") != std::string::npos) && context == 0) {
 			this->_n_servers++;
 			context += 1;
 			this->_configs.push_back(Config());
+			continue;
 		}
 		else if (context == 0) {
-			this->set_error_code(2);
-			return false;
+			throw std::runtime_error("Line outside of server context is not comment or empty line.");
 		}
 		if ((context && line.find(LISTEN) != std::string::npos) && check_def_format(LISTEN, line))
 			this->clean_listen(line);
-		// else if ((context && line.find(HOST) != std::string::npos) && check_def_format(HOST, line))
-		// 	this->clean_host(line);
 		else if ((context && line.find(ROOT) != std::string::npos) && check_def_format(ROOT, line))
 			this->clean_root(line);
 		else if ((context && line.find(INDEX) != std::string::npos) && check_def_format(INDEX, line))
@@ -123,14 +121,10 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 			keep track of context
 		
 		*/
-		if (line.find("location") != std::string::npos && line.find("{") != std::string::npos) {
-			context += 1;
+		if (line.find("location") != std::string::npos && line.find("{") != std::string::npos)
 			this->get_config(this->get_n_servers() - 1).set_location(config_file, line);
-			this->set_error_code(this->get_config(this->get_n_servers() - 1).get_error_code());
-			if (this->get_error_code() != 0)
-				return false;
-			context -= 1;
-		}
+		else if (line.find("{") != std::string::npos)
+			throw std::runtime_error("Invalid configuration file context.");
         if (line.find("}") != std::string::npos)
         {
             context -= 1;
@@ -140,10 +134,7 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
                 this->get_config(this->_n_servers - 1).combineHost();
             }
             else if (context < 0)
-            {
-                // TODO throw or break
-				// throw std::runtime_error("Invalid configuration file");
-            }
+				throw std::runtime_error("Invalid configuration file context.");
         }
 	}
 	// std::map<int, std::string>::iterator it = this->get_config(this->get_n_servers() - 1).get_default_error().begin();
@@ -232,7 +223,11 @@ void ConfigParser::clean_error_page(std::string line)
 		pos += 1;
 	if (pos2 != std::string::npos)
 		line.erase(pos2);
-	this->get_config(this->get_n_servers() - 1).set_default_error(to_int(error), this->get_config(this->get_n_servers() - 1).get_root() + &line[pos]);
+	std::string path(this->get_config(this->get_n_servers() - 1).get_root() + &line[pos]);
+	if (file_exists(path))
+		this->get_config(this->get_n_servers() - 1).set_default_error(to_int(error), path);
+	else
+		std::cout << RED << "Provided error page [" << path << "] does not exist, falling back to default." << RESET << std::endl;
 }
 
 // void ConfigParser::clean_server_name(std::string line)
@@ -329,37 +324,37 @@ void	ConfigParser::addToExtMap()
 int ConfigParser::exit_with_error(int err_code, std::ifstream& in_file)
 {
 	if (err_code == 1)
-		std::cerr << RED << NO_DEFAULT_CONFIG << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- Could not find default configuration file at: ./webserver.config ---" << RESET << std::endl;
 	else if (err_code == 2)
-		std::cerr << RED << NO_VALID_SERVER << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- Could not find a valid ** server {} ** context in the provided configuration file ---" << RESET << std::endl;
 	else if (err_code == 3)
-		std::cerr << RED << NO_VALID_PORT << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- Could not find a valid ** port ** configuration ---" << RESET << std::endl;
 	else if (err_code == 4)
-		std::cerr << RED << NO_VALID_HOST << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- Could not find a valid ** host ** configuration ---" << RESET << std::endl;
 	else if (err_code == 5)
-		std::cerr << RED << NO_VALID_ERROR_PAGE << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- Could not find a valid ** error_page ** configuration ---" << RESET << std::endl;
 	else if (err_code == 6)
-		std::cerr << RED << NO_VALID_SERVER_NAME << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- An empty ** server_name ** was provided ---" << RESET << std::endl;
 	else if (err_code == 7)
-		std::cerr << RED << NO_VALID_CLIENT_MAX_BODY_SIZE << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- Could not find a valid ** client_max_body_size ** configuration ---" << RESET << std::endl;
 	else if (err_code == 8)
-		std::cerr << RED << NO_VALID_AUTOINDEX << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- Could not find a valid ** autoindex ** configuration ---" << RESET << std::endl;
 	else if (err_code == 9)
-		std::cerr << RED << NO_VALID_ROOT << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- Could not find a valid ** root ** configuration ---" << RESET << std::endl;
 	else if (err_code == 10)
-		std::cerr << RED << NO_VALID_INDEX << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- Could not find a valid ** index ** configuration ---" << RESET << std::endl;
 	else if (err_code == 11)
-		std::cerr << RED << NO_VALID_LOCATION << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- An invalid ** location ** context was provided ---" << RESET << std::endl;
 	else if (err_code == 12)
-		std::cerr << RED << NO_VALID_CGI << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- An invalid ** CGI ** context was provided ---" << RESET << std::endl;
 	else if (err_code == 13)
-		std::cerr << RED << NO_VALID_METHODS<< RESET << std::endl;
+		std::cerr << RED << "ERROR: --- Could not find a valid ** allowed_methods ** configuration ---" << RESET << std::endl;
 	else if (err_code == 14)
-		std::cerr << RED << NO_VALID_CGI_PATH << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- Could not find a valid ** cgi_path ** configuration ---" << RESET << std::endl;
 	else if (err_code == 15)
-		std::cerr << RED << NO_VALID_CGI_EXT << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- Could not find a valid ** cgi_ext ** configuration ---" << RESET << std::endl;
 	else if (err_code == 28)
-		std::cerr << RED << NO_VALID_CONFIG_FILE << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- Could not open provided configuration file ---" << RESET << std::endl;
 	in_file.close();
 	this->set_error_code(err_code);
 	return(err_code);

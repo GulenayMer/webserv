@@ -42,8 +42,7 @@ class Response
 		size_t						_received_bytes;
     
         Response();
-		static std::string getErrorPath(int &errorNumber, std::string& errorName, Config* config);
-
+		std::string getErrorPath(int &errorNumber, std::string& errorName);
     public:
 		Response(int conn_fd, int server_fd, struct pollfd* fds, int nfds, std::string addr);
         Response(Response const &cpy);
@@ -72,7 +71,7 @@ class Response
 		int		getCGIFd();
 		std::string &getExt();
 
-		std::string	createError(int errorNumber, Config* config);
+		std::string	createError(int errorNumber);
 		void getPath();
 		bool directoryExists(const char* path);
 		std::string directoryListing(std::string uri);

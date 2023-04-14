@@ -13,6 +13,7 @@ Location::Location()
 Location::Location(std::ifstream &config_file, std::string line, std::string config_root, std::string config_index, std::string key)
 {
 	int	exit_context = 0;
+	this->_error_code = 0;
 	this->_autoindex = false;
 	this->_allow_cgi = false;
 	this->init_methods();
@@ -47,7 +48,6 @@ Location::Location(std::ifstream &config_file, std::string line, std::string con
 		if (key == "/")
 			this->set_index(config_index);
 	}
-	this->set_error_code(0);
 }
 
 Location::Location(const Location &src)

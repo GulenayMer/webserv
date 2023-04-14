@@ -14,16 +14,31 @@ int main(int argc, char** argv)
 	signal(SIGINT, signal_callback_handler);
 	signal(SIGTSTP, signal_callback_handler);
 	signal(SIGCHLD, grim_reaper);
-	if (argc == 2) {
-		ConfigParser configs(argv[1]);
-		if (configs.get_error_code() != 0)
+	if (argc == 2)
+	{
+		try
+		{
+			ConfigParser configs(argv[1]);
+			ServerManager manager(configs.get_configs());
+		} 
+		catch (std::exception &e)
+		{
+			std::cerr << RED << e.what() << RESET << std::endl;
 			return EXIT_FAILURE;
-		ServerManager manager(configs.get_configs());
+		}
 	}
 	else
 	{
-		ConfigParser configs;
-		ServerManager manager(configs.get_configs());
+		try
+		{
+			ConfigParser configs;
+			ServerManager manager(configs.get_configs());
+		}
+		catch (std::exception &e)
+		{
+			std::cerr << RED << e.what() << RESET << std::endl;
+			return EXIT_FAILURE;
+		}
 	}
     return EXIT_SUCCESS;
 }

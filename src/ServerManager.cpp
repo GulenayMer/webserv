@@ -32,7 +32,7 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 		this->run_servers();
 	}
 	else
-		std::cerr << RED << NO_VALID_SERVERS << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- No valid configurations provided to create servers ---" << RESET << std::endl;
 }
 
 // ServerManager::~ServerManager()
@@ -198,30 +198,22 @@ int ServerManager::run_servers()
 							// }
 							httpHeader *request = new httpHeader(buffer);
 							std::map<std::string, Server>::iterator serv_it = this->_host_serv.find(request->get_single_header("host"));
-							std::cout << "HERE2" << std::endl;
 							if (serv_it != this->_host_serv.end())
-							{
-								std::cout << "HERE3" << std::endl;
 								response_it->second.newConfig(serv_it->second.get_config());
-							}
 							else
 							{
-								std::cout << "HERE4" << std::endl;
 								std::map<int, std::string>::iterator def_it = this->_default_host.find(request->getPort());
 								if (def_it != this->_default_host.end())
 								{
-									std::cout << "HERE5" << std::endl;
-									std::cout << "default: " << def_it->second << std::endl;
+									std::cout << BLUE << "Using default server for IP/Port: " << def_it->second << RESET << std::endl;
 									response_it->second.newConfig(this->_host_serv.find(def_it->second)->second.get_config());
 								}
 								else
 								{
-									std::cout << "HERE6" << std::endl;
 									close_connection(response_it->second, i);
 									continue;
 								}
 							}
-							//this->_addr_fd.insert(std::map<std::string, int>::value_type(address, connection_fd));
 							response_it->second.new_request(request);
 							response_it->second.handle_response();
 							if (response_it->second.is_cgi() == false)
@@ -234,9 +226,6 @@ int ServerManager::run_servers()
 								{
 									this->_fds[i].events = POLLIN | POLLOUT;
 									response_it->second.setCompletion(false);
-								}
-								else {
-									// FAILED initCGI comes out here after error 500
 								}
 							}
 						}
@@ -398,16 +387,16 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 	int in_fd = cgi.initInputPipe();
 	if (out_fd < 0 || in_fd < 0)
 	{
-		std::cout << RED << "pipe: internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500
-		response.getRequest()->setStatusCode(500);
+		cgi.sendResponse();
+		close_connection(cgi.getResponse(), i);
 		return false;
 	}
 	else
 	{
 		std::pair<std::map<int, CGI>::iterator, bool> ret_pair = this->_cgis.insert(std::map<int, CGI>::value_type(out_fd, cgi));
-		// std::cout << RED << ret_pair.second << std::endl;
+		std::cout << RED << "Could insert into CGI map: " << ret_pair.second << "\n";
 		std::pair<std::map<int, int>::iterator, bool> cgi_ret_pair = this->_cgi_fds.insert(std::map<int, int>::value_type(in_fd, out_fd));
-		// std::cout << cgi_ret_pair.second << RESET << std::endl;
+		std::cout << "Could insert into CGI-FD map: " << cgi_ret_pair.second << RESET << std::endl;
 		std::map<int, CGI>::iterator cgi_it = ret_pair.first;
 		this->_fds[_nfds].fd = out_fd;
 		this->_fds[_nfds].events = POLLIN;
@@ -425,7 +414,6 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 			this->_fds[_nfds].fd = -1;
 			this->_compress_array = true;
 			cgi_it->second.closePipes();
-			// std::cout << RED << "handle_cgi: internal server error -> send 500" << RESET << std::endl;
 			cgi_it->second.sendResponse();
 			cgi_it->second.getResponse().getRequest()->printHeader();
 			close_connection(cgi_it->second.getResponse(), i);
@@ -435,10 +423,7 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 		}
 		response.setCGIFd(out_fd);
 		if (response.isChunked())
-		{
 			cgi_it->second.removeHeader(buffer, received);
-			std::cout << "Chunked" << std::endl; //TODO separate header from body
-		}
 		else
 		{
 			cgi_it->second.storeBuffer(buffer, received);

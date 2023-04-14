@@ -49,7 +49,7 @@ httpHeader::httpHeader(std::string header)
 				name = line.substr(0, separator);
 			std::string value = line.substr(separator + 2);
 			name = toLowerCase(name);
-			std::cout << RED << "name: " << name << " value: " << value << RESET << std::endl;
+			std::cout << GREEN << name << ": " << value << RESET << std::endl;
 			this->setHeader(name, value);
 		}
 		else
