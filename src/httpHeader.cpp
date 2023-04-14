@@ -237,7 +237,7 @@ void httpHeader::printHeader()
 	std::cout << YELLOW << "\"" << method << " " << _uri << " " << _version << "\" ";
 	std::cout << PURPLE << _statusCode << " " << _sentSize << " " << RESET;
 	std::map<std::string, std::string>::iterator itr = _header.begin();
-	while (itr != _header.end() && itr->first != "User-Agent") 
+	while (itr != _header.end() && itr->first != "user-agent") 
 		itr++;
 	if (itr != _header.end())
 		std::cout << YELLOW << "\"" << itr->second << "\"" << RESET;
