@@ -7,6 +7,9 @@ httpHeader::httpHeader()
 
 httpHeader::httpHeader(std::string header)
 {
+	_statusCode = 0;
+	_sentSize = 0;
+	_requestTime = get_current_time();
 	size_t start = 0, end = 0;
 	this->_header_length = header.find("\r\n\r\n") + 4;
 	end = header.find(" ");
@@ -68,11 +71,16 @@ httpHeader &httpHeader::operator=(const httpHeader& rhs)
 		this->_header = rhs._header;
 		this->_method = rhs._method;
 		this->_uri = rhs._uri;
+		this->_query = rhs._query;
 		this->_version = rhs._version;
 		this->_header_length = rhs._header_length;
 		this->_content_length = rhs._content_length;
 		this->_cookie = rhs._cookie;
 		this->_error = rhs._error;
+		this->_requestTime = rhs._requestTime;
+		this->_statusCode = rhs._statusCode;
+		this->_sentSize = rhs._sentSize;
+		this->_userIP = rhs._userIP;
 	}
 	return *this;
 }
@@ -105,6 +113,31 @@ const std::string httpHeader::get_single_header(std::string entry)
 		return it->second;
 	}
 	return empty;
+}
+
+void httpHeader::setSentSize(int size)
+{
+	this->_sentSize = size;
+}
+
+void httpHeader::setStatusCode(int code)
+{
+	this->_statusCode = code;
+}
+
+void httpHeader::setUserIP(std::string address)
+{
+	this->_userIP = address;
+}
+
+int httpHeader::getSentSize()
+{
+	return this->_sentSize;
+}
+
+int httpHeader::getStatusCode()
+{
+	return this->_statusCode;
 }
 
 void httpHeader::setHeader(std::string name, std::string value)
@@ -198,25 +231,38 @@ void httpHeader::printHeader()
 			method = "NONE";
 			break;				
 	}
-	std::cout << GREEN <<"Method: " << YELLOW << method << RESET << std::endl;
-    std::cout << GREEN << "URI: " << YELLOW << _uri << RESET << std::endl;
-    std::cout << GREEN << "HTTP Version: " << YELLOW << _version << RESET << std::endl;
+ 
+	std::cout << PURPLE << "[" << _userIP << "]" << " " << RESET;
+	std::cout << "[" << PURPLE << _requestTime << RESET << "] ";
+	std::cout << YELLOW << "\"" << method << " " << _uri << " " << _version << "\" ";
+	std::cout << PURPLE << _statusCode << " " << _sentSize << " " << RESET;
+	std::map<std::string, std::string>::iterator itr = _header.begin();
+	while (itr != _header.end() && itr->first != "User-Agent") 
+		itr++;
+	if (itr != _header.end())
+		std::cout << YELLOW << "\"" << itr->second << "\"" << RESET;
+	std::cout << std::endl << std::endl;
+	
 
-	std::cout << "map Contains:\n";
-	for ( std::map<std::string, std::string>::iterator itr = _header.begin(); itr != _header.end(); ++itr)
-	{
-		std::cout << GREEN << itr->first << RESET << ": " << YELLOW << itr->second.c_str() << RESET << std::endl;
-	}
+	// std::cout << GREEN <<"Method: " << YELLOW << method << RESET << std::endl;
+    // std::cout << GREEN << "URI: " << YELLOW << _uri << RESET << std::endl;
+    // std::cout << GREEN << "HTTP Version: " << YELLOW << _version << RESET << std::endl;
+
+	// std::cout << "map Contains:\n";
+	// for ( std::map<std::string, std::string>::iterator itr = _header.begin(); itr != _header.end(); ++itr)
+	// {
+	// 	std::cout << GREEN << itr->first << RESET << ": " << YELLOW << itr->second.c_str() << RESET << std::endl;
+	// }
 }
 
 /* check if header is http 1.1 protocol */
 bool httpHeader::isHttp11()
 {
-	std::cout << "VERSION: " << this->_version << std::endl;
+	//std::cout << "VERSION: " << this->_version << std::endl;
 	if ((this->_version == "HTTP/1.1" || this->_version == "http/1.1" || this->_version == "Http/1.1") \
 		&& !get_single_header("host").empty())
 		return true;
-	std::cout << "HERE INVALID HTTP" << std::endl;
+	//std::cout << "HERE INVALID HTTP" << std::endl;
 	return false;
 }
 
@@ -254,4 +300,15 @@ int httpHeader::getPort()
 		}
 	}
 	return -1;
+}
+
+std::string	httpHeader::get_current_time()
+{
+  	time_t now = time(NULL);
+  	struct tm *tm_now = localtime(&now);
+
+  	char time_str[128];
+  	strftime(time_str, sizeof(time_str), "%d/%b/%Y:%H:%M:%S %z", tm_now);
+
+  	return std::string(time_str);
 }
