@@ -38,7 +38,6 @@ bool		file_exists(std::string file)
 	
 	in_file.open(file.c_str(), std::ios::in);
 	if (in_file.fail() == true) {
-		in_file.close();
 		return false;
 	}
 	in_file.close();

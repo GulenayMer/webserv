@@ -130,14 +130,19 @@ bool	CGI::handle_cgi()
 
 	std::cout << "CGI script path: " << script_path << std::endl;
 	std::map<std::string, std::string>::const_iterator path_it = this->_response.getConfig().getIntrPath().find(this->_response.getExt());
-	if (path_it == this->_response.getConfig().getIntrPath().end())
+	if (!file_exists(script_path))
+	{
+		this->_errno = 1;
+		return false;
+	}
+	else if (path_it == this->_response.getConfig().getIntrPath().end())
 	{
 		std::cout << "CGI Script interpreter path not found for:" << this->_response.getExt() << std::endl;
 		std::cout << "Known interpreters: ";
 		for (path_it = this->_response.getConfig().getIntrPath().begin(); path_it != this->_response.getConfig().getIntrPath().end(); path_it++)
 			std::cout << path_it->second << " ";
 		std::cout << std::endl;
-		this->_errno = 1;
+		this->_errno = 2;
 		return false;
 	}
 	// file.open(new_path.c_str(), std::ios::in);
@@ -294,7 +299,15 @@ bool	CGI::sendResponse()
 	std::ostringstream response_stream;
 	std::string response_string;
 	std::string content;
-	if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
+	if (this->_errno == 1)
+	{
+		response_string = this->getResponse().createError(404, &this->getResponse().getConfig());
+		std::cout << "ERROR 404 sending" << std::endl;
+		_content_length = response_string.size();
+		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
+		std::cout << response_string << std::endl;
+	}
+	else if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
 	{
 		response_string = this->getResponse().createError(500, &this->getResponse().getConfig());
 		std::cout << "ERROR 505 sending" << std::endl;
