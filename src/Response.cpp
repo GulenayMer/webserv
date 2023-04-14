@@ -64,7 +64,7 @@ void Response::getPath()
 	std::cout << "INDEX: " << _config.get_index() << std::endl;
 	// if (_request.getUri() == "/")
 	// 	_respond_path = _config.get_index();
-	if (this->checkCGI())
+	if (this->_request.getMethod() != DELETE && this->checkCGI())
 	{
 		_is_cgi = true;
 		return;
