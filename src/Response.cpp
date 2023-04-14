@@ -88,18 +88,18 @@ int 	Response::handle_response()
 	{
 		response_stream << redirect(_request->getUri());
 	}
-	if (!handle_response_error(response_stream))
+	else if (!handle_response_error(response_stream))
 	{
 		getPath();
-		size_t pos = _request->getUri().find_last_of(".");
+		size_t ext_pos = _request->getUri().find_last_of(".");
 		if (!_is_cgi && _is_chunked)
 		{
 			response_stream << createError(404, &this->getConfig());
 			_to_close = true;
 		}
-		else if (!_is_cgi && !_is_dir && pos != std::string::npos && _types.get_content_type(&this->_request->getUri()[pos]).empty())
+		else if (!_is_cgi && !_is_dir && ext_pos != std::string::npos && _types.get_content_type(&this->_request->getUri()[ext_pos]).empty())
 		{
-			response_stream << createError(500, &this->getConfig());
+			response_stream << createError(415, &this->getConfig());
 			_to_close = true;
 		}
 		else if(this->_is_dir && _request->getMethod() == GET)
@@ -111,7 +111,7 @@ int 	Response::handle_response()
 		}
 		else if (_is_cgi)
 		{
-			pos = this->_request->getUri().find_last_of("/");
+			size_t pos = this->_request->getUri().find_last_of("/");
 			if (pos != std::string::npos && !dir_exists(this->_request->getUri().substr(0, pos)))
 			{
 				response_stream << createError(404, &this->getConfig());
@@ -138,19 +138,13 @@ int 	Response::handle_response()
 			else
 			{
 				if (_request->getMethod() == GET)
+					responseToGET(file, ext_pos, response_stream);
+				else if (_request->getMethod() == POST)
 				{
-					if (_is_cgi)
-						return 0;
-					responseToGET(file, _request->getUri(), response_stream);
-				}
-				if (_request->getMethod() == POST)
-				{
-					if (_is_cgi)
-						return 0;
 					// responseToPOST(_request, response_stream);
 					// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A POST REQUEST";
 				}
-				if (_request->getMethod() == DELETE)
+				else if (_request->getMethod() == DELETE)
 				{
 					responseToDELETE(response_stream);
 					// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A DELETE REQUEST";
@@ -190,7 +184,7 @@ int 	Response::handle_response_error(std::ostringstream& response_stream)
 		_to_close = true;
 		return 1;
 	}
-	else if (_request->getMethod() == POST && this->_request->get_single_header("Content-Length").empty() && !this->_is_chunked) {
+	else if (_request->getMethod() == POST && this->_request->get_single_header("content-length").empty() && !this->_is_chunked) {
 		response_stream << createError(411, &this->getConfig());
 		_to_close = true;
 		return 1;
@@ -226,30 +220,13 @@ int 	Response::send_response(std::ostringstream& response_stream)
 	return _error;
 }
 
-void	Response::responseToGET(std::ifstream &file, const std::string& path, std::ostringstream &response_stream)
+void	Response::responseToGET(std::ifstream &file, size_t &pos, std::ostringstream &response_stream)
 {
-	(void)path;
 	// std::cout << std::endl << RED << path << RESET << std::endl;
 	std::stringstream	file_buffer;
 	std::string	type;
 
-	size_t pos;
-
-	pos = _respond_path.find_last_of(".");
-	if (pos != std::string::npos)
-	{
-		type = _types.get_content_type(&_respond_path[pos]);
-		if (type.empty())
-		{
-			std::cout << RED << "Unsupported media type" << RESET << std::endl;
-			response_stream << createError(415, &this->getConfig());
-			return ;
-		}
-	}
-	else
-	{
-		type = "Content-Type: text/plain\r\n\r\n";
-	}
+	type = _types.get_content_type(&_respond_path[pos]);
 	file_buffer << file.rdbuf();
 	_response_body = file_buffer.str();
 	_request->setStatusCode(200);

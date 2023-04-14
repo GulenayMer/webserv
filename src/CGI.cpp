@@ -193,11 +193,27 @@ bool	CGI::handle_cgi()
 void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
 {
 	char *args[2];
+	std::string script_name;
+	size_t pos = path.find_last_of("/");
+	if (pos != std::string::npos)
+	{
+		script_name = path.substr(pos + 1);
+		std::cout << "CGI script name: " << script_name << std::endl;
+		std::string cwd = path.substr(0, path.find_last_of("/"));
+		std::cout << "CGI cwd: " << cwd << std::endl;
+		chdir(cwd.c_str());
+	}
+	else
+	{
+		script_name = path;
+		std::cout << "CGI script name: " << path << std::endl;
+		std::cout << "CGI cwd: " << std::endl;
+	}
 	if (output_pipe[0] > 0)
 		close(output_pipe[0]);
 	if (input_pipe[1] > 0)
 		close(input_pipe[1]);
-    args[0] = strdup(path.c_str());
+    args[0] = strdup(script_name.c_str());
 	args[1] = NULL;
 	dup2(output_pipe[1], STDOUT_FILENO);
 	if (output_pipe[1] > 0)

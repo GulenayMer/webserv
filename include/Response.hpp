@@ -58,7 +58,7 @@ class Response
 
 		bool	new_request(httpHeader *request);
 
-		void	responseToGET(std::ifstream &file, const std::string& path, std::ostringstream &response_stream);
+		void	responseToGET(std::ifstream &file, size_t &pos, std::ostringstream &response_stream);
 		void	responseToPOST(const httpHeader request, std::ostringstream &response_stream);
 		void	responseToDELETE(std::ostringstream &response_stream);
 		bool	response_complete() const;
