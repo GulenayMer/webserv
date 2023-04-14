@@ -47,7 +47,6 @@ void ServerManager::pollfd_init()
 
 int ServerManager::run_servers()
 {
-	// This whole thing probably has memory leaks
 	int		nbr_fd_ready;
 	while (SWITCH)
     {
@@ -123,7 +122,7 @@ int ServerManager::run_servers()
 						// nbr_fd_ready--;
 						// continue;
 						this->close_connection(response_it->second, i);
-						printf("Connection closed\n");
+						// printf("Connection closed\n");
 					}
 					else
 					{
@@ -191,15 +190,17 @@ int ServerManager::run_servers()
 							// 	this->_cgis.erase(cgi_it);
 							// 	this->_compress_array = true;
 							// }
-							httpHeader request(buffer);
-							response_it->second.new_request(&request);
+							httpHeader *request = new httpHeader(buffer);
+							//this->_addr_fd.insert(std::map<std::string, int>::value_type(address, connection_fd));
+							response_it->second.new_request(request);
 							response_it->second.handle_response();
-							request.printHeader();
+							if (response_it->second.is_cgi() == false)
+								response_it->second.getRequest()->printHeader();
 							if (response_it->second.shouldClose())
 								close_connection(response_it->second, i);
 							else if (response_it->second.is_cgi()) // init cgi
 							{
-								if (this->initCGI(response_it->second, buffer, received, i))
+								if (this->initCGI(response_it->second, buffer, received, i, request))
 								{
 									this->_fds[i].events = POLLIN | POLLOUT;
 									response_it->second.setCompletion(false);
@@ -270,6 +271,10 @@ int ServerManager::run_servers()
 					//std::cout << "CGI COMPLETE SEND" << std::endl;
 					if (cgi_it->second.sendResponse())
 					{
+						cgi_it->second.getResponse().getRequest()->setStatusCode(get_cgi_response(cgi_it->second.get_response_string()));
+						cgi_it->second.getResponse().getRequest()->setSentSize(cgi_it->second.get_size_sent());
+						cgi_it->second.getResponse().getRequest()->printHeader();
+						// cgi_it->second.getResponse().getRequest()->printHeader();
 						//std::cout << "ALL COMPLETE, CLOSE" << std::endl;
 						this->_cgis.erase(cgi_it);
 						this->_compress_array = true;
@@ -356,22 +361,23 @@ void	ServerManager::close_connection(Response &response, int i)
 	}
 }
 
-bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, int i)
+bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, int i, httpHeader *request)
 {
-	CGI cgi(response);
+	CGI cgi(response, request);
 	int out_fd = cgi.initOutputPipe();
 	int in_fd = cgi.initInputPipe();
 	if (out_fd < 0 || in_fd < 0)
 	{
 		std::cout << RED << "pipe: internal server error -> send 500" << RESET << std::endl; //TODO internal server error - 500
+		response.getRequest()->setStatusCode(500);
 		return false;
 	}
 	else
 	{
 		std::pair<std::map<int, CGI>::iterator, bool> ret_pair = this->_cgis.insert(std::map<int, CGI>::value_type(out_fd, cgi));
-		std::cout << RED << ret_pair.second << std::endl;
+		// std::cout << RED << ret_pair.second << std::endl;
 		std::pair<std::map<int, int>::iterator, bool> cgi_ret_pair = this->_cgi_fds.insert(std::map<int, int>::value_type(in_fd, out_fd));
-		std::cout << cgi_ret_pair.second << RESET << std::endl;
+		// std::cout << cgi_ret_pair.second << RESET << std::endl;
 		std::map<int, CGI>::iterator cgi_it = ret_pair.first;
 		this->_fds[_nfds].fd = out_fd;
 		this->_fds[_nfds].events = POLLIN;
@@ -389,8 +395,9 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 			this->_fds[_nfds].fd = -1;
 			this->_compress_array = true;
 			cgi_it->second.closePipes();
-			std::cout << RED << "handle_cgi: internal server error -> send 500" << RESET << std::endl;
+			// std::cout << RED << "handle_cgi: internal server error -> send 500" << RESET << std::endl;
 			cgi_it->second.sendResponse();
+			cgi_it->second.getResponse().getRequest()->printHeader();
 			close_connection(cgi_it->second.getResponse(), i);
 			this->_cgis.erase(ret_pair.first);
 			this->_cgi_fds.erase(cgi_ret_pair.first);
@@ -422,4 +429,20 @@ void	ServerManager::server_create_error(std::logic_error &e, int i)
 	std::cerr << std::endl;
 	std::cerr << "---------------------------------------------------------------------------" << RESET << std::endl;
 	std::cerr << std::endl;
+}
+
+int		ServerManager::get_cgi_response(std::string header)
+{
+	size_t				start, end;
+	int					result;
+
+	start = header.find_first_not_of(" \r\t\b\f");
+	start = header.find_first_of(" \r\t\b\f", start);
+	start = header.find_first_not_of(" \r\t\b\f", start);
+	end = header.find_first_of(" \r\t\b\f", start);
+	header = header.substr(start, end - start);
+  	std::stringstream	ss(header);
+  	ss >> result;
+
+	return result;
 }

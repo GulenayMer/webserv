@@ -56,11 +56,13 @@ class httpHeader
 		void setMethod(std::string tmp_method);
 		void setVersion(std::string version);
 		void setURI(std::string str);
-		void setSentSize(int size);
-		void setStatusCode(int code);
 		size_t getHeaderLength();
 		size_t getContentLength();
 		bool isHttp11();
+
+		void setSentSize(int size);
+		void setStatusCode(int code);
+		void setUserIP(std::string address);
 
 		int	getSentSize();
 		int	getStatusCode();

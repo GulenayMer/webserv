@@ -70,6 +70,7 @@ httpHeader &httpHeader::operator=(const httpHeader& rhs)
 		this->_header = rhs._header;
 		this->_method = rhs._method;
 		this->_uri = rhs._uri;
+		this->_query = rhs._query;
 		this->_version = rhs._version;
 		this->_header_length = rhs._header_length;
 		this->_content_length = rhs._content_length;
@@ -78,6 +79,7 @@ httpHeader &httpHeader::operator=(const httpHeader& rhs)
 		this->_requestTime = rhs._requestTime;
 		this->_statusCode = rhs._statusCode;
 		this->_sentSize = rhs._sentSize;
+		this->_userIP = rhs._userIP;
 	}
 	return *this;
 }
@@ -120,6 +122,11 @@ void httpHeader::setSentSize(int size)
 void httpHeader::setStatusCode(int code)
 {
 	this->_statusCode = code;
+}
+
+void httpHeader::setUserIP(std::string address)
+{
+	this->_userIP = address;
 }
 
 int httpHeader::getSentSize()
@@ -224,7 +231,7 @@ void httpHeader::printHeader()
 			break;				
 	}
  
-	std::cout << PURPLE << "[USER IP]" << " " << RESET;
+	std::cout << PURPLE << "[" << _userIP << "]" << " " << RESET;
 	std::cout << "[" << PURPLE << _requestTime << RESET << "] ";
 	std::cout << YELLOW << "\"" << method << " " << _uri << " " << _version << "\" ";
 	std::cout << PURPLE << _statusCode << " " << _sentSize << " " << RESET;
@@ -234,6 +241,7 @@ void httpHeader::printHeader()
 	if (itr != _header.end())
 		std::cout << YELLOW << "\"" << itr->second << "\"" << RESET;
 	std::cout << std::endl << std::endl;
+	
 
 	// std::cout << GREEN <<"Method: " << YELLOW << method << RESET << std::endl;
     // std::cout << GREEN << "URI: " << YELLOW << _uri << RESET << std::endl;

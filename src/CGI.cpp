@@ -2,7 +2,7 @@
 
 std::map<int, int> exit_status;
 
-CGI::CGI(Response &response): _response(response)
+CGI::CGI(Response &response, httpHeader *header): _response(response), _header(header)
 {
 	this->_done_reading = false;
 	this->_body_complete = false;
@@ -19,6 +19,7 @@ CGI::CGI(Response &response): _response(response)
 	this->_chunk_context = false;
 	this->_chunk_size = 0;
 	this->_chunk_remaining = 0;
+	this->_size_sent = 0;
 }
 
 CGI::CGI(const CGI& obj): _response(obj._response)
@@ -54,6 +55,7 @@ CGI& CGI::operator=(const CGI& obj)
 		this->_chunk_context = obj._chunk_context;
 		this->_chunk_size = obj._chunk_size;
 		this->_chunk_remaining = obj._chunk_remaining;
+		this->_response = obj._response;
 	}
 	return *this;
 }
@@ -126,7 +128,7 @@ bool	CGI::handle_cgi()
 	std::string script_path = this->_response.getRequest()->getUri();
 	std::string shebang;
 
-	std::cout << "CGI script path: " << script_path << std::endl;
+	// std::cout << "CGI script path: " << script_path << std::endl;
 	std::map<std::string, std::string>::const_iterator path_it = this->_response.getConfig().getIntrPath().find(this->_response.getExt());
 	if (path_it == this->_response.getConfig().getIntrPath().end())
 	{
@@ -291,15 +293,19 @@ bool	CGI::sendResponse()
 		std::cout << "ERROR 505 sending" << std::endl;
 		_content_length = response_string.size();
 		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
-		std::cout << response_string << std::endl;
+		// std::cout << response_string << std::endl;
+		_response_string = response_string;
+		_size_sent = sent;
 	}
 	else if (_content_length == 0)
 	{
 		response_string = "HTTP/1.1 204 OK\r\nConnection: Keep-Alive\r\n\r\n";
-		std::cout << "CGI complete - nothing to send" << std::endl;
+		// std::cout << "CGI complete - nothing to send" << std::endl;
 		_content_length = response_string.size();
 		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
-		std::cout << response_string << std::endl;
+		// std::cout << response_string << std::endl;
+		_response_string = response_string;
+		_size_sent = sent;
 	}
 	else if (this->_response.getExt() == ".php")
 	{
@@ -325,26 +331,32 @@ bool	CGI::sendResponse()
 			}
 			_content_length = this->_response_buff.size();
 		}
-		for (size_t i = 0; i < _response_buff.size(); i++)
-			std::cout << BLUE << _response_buff[i];
-		std::cout << RESET << std::endl;
+		// for (size_t i = 0; i < _response_buff.size(); i++)
+		// 	std::cout << BLUE << _response_buff[i];
+		// std::cout << RESET << std::endl;
 		sent = send(this->_response.getConnFd(), &_response_buff[this->_bytes_sent], _response_buff.size() - this->_bytes_sent, MSG_DONTWAIT);
+		std::string temp(_response_buff.begin(), _response_buff.end());
+		_response_string = temp;
+		_size_sent = sent;
 	}
 	else
 	{
-		std::cout << RED << "Sending response..." << RESET << std::endl;
-		for (size_t i = 0; i < _response_buff.size(); i++)
-			std::cout << BLUE << _response_buff[i];
-		std::cout << RESET << std::endl;
+		// std::cout << RED << "Sending response..." << RESET << std::endl;
+		// for (size_t i = 0; i < _response_buff.size(); i++)
+		// 	std::cout << BLUE << _response_buff[i];
+		// std::cout << RESET << std::endl;
 		sent = send(this->_response.getConnFd(), &_response_buff[this->_bytes_sent], _response_buff.size() - this->_bytes_sent, MSG_DONTWAIT);
+		std::string temp(_response_buff.begin(), _response_buff.end());
+		_response_string = temp;
+		_size_sent = sent;
 	}
-	std::cout << "sent: " << _bytes_sent << ", content length: " << _content_length << std::endl;
+	// std::cout << "sent: " << _bytes_sent << ", content length: " << _content_length << std::endl;
 	if (sent >= 0)
 	{
 		this->_bytes_sent += sent;
 		if (this->_bytes_sent == this->_content_length)
 		{
-			std::cout << "SEND COMPLETE" << std::endl;
+			// std::cout << "SEND COMPLETE" << std::endl;
 			exit_status.erase(this->_pid);
 			_response_buff.clear();
 			this->_done_reading = false;
@@ -398,10 +410,10 @@ void	CGI::set_boundary()
 
 void	CGI::storeBuffer(char *buffer, size_t received)
 {
-	std::cout << "STORE BUFFER" << std::endl;
+	// std::cout << "STORE BUFFER" << std::endl;
 	for (size_t i = 0; i < received; i++)
 		this->_request_buff.push_back(buffer[i]);
-	std::cout << "STORE BUFFER END" << std::endl;
+	// std::cout << "STORE BUFFER END" << std::endl;
 }
 
 int		CGI::getOutFd()
@@ -431,10 +443,10 @@ void	CGI::writeToCGI()
 			this->_request_buff.clear();
 		}
 		this->_bytes_sent += sent;
-		std::cout << "total bytes sent: " << this->_bytes_sent << ", content_length: " << this->_content_length << std::endl;
+		// std::cout << "total bytes sent: " << this->_bytes_sent << ", content_length: " << this->_content_length << std::endl;
 		if (this->_bytes_sent >= this->_content_length)
 		{
-			std::cout << "DONE" << std::endl;
+			// std::cout << "DONE" << std::endl;
 			this->_body_complete = true;
 			this->_bytes_sent = 0;
 			this->_content_length = 0;
@@ -566,4 +578,14 @@ void	CGI::removeHeader(char *buffer, ssize_t received)
 			}
 		}
 	}
+}
+
+std::string	CGI::get_response_string()
+{
+	return this->_response_string;
+}
+
+int			CGI::get_size_sent()
+{
+	return this->_size_sent;
 }

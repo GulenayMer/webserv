@@ -77,6 +77,7 @@ int 	Response::handle_response()
 	_response_body.clear();
 	_response.clear();
 	setChunked();
+	_request->setUserIP(_addr);
 	_is_cgi = false;
 	if (!handle_response_error(response_stream))
 	{
@@ -635,7 +636,8 @@ std::string Response::directoryListing(std::string uri)
     outfile << "</body>\n";
     outfile << "</html>\n";
 	std::string body(outfile.str());
-	std::ostringstream message; 
+	std::ostringstream message;
+	_request->setStatusCode(200);
 	message << HTTP_OK << "Content-Length: " << body.length() << "\n" << _types.get_content_type(".html") << "\r\n\r\n" << body;
 	return (message.str());
 }
