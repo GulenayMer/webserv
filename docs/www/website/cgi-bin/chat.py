@@ -5,10 +5,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-form = cgi.FieldStorage()
+try:
+	form = cgi.FieldStorage()
 
-message = form["message"].file.read()
+	message = form["message"].file.read()
 
+except KeyError:
+	message = "Hello"
+	
 url = "https://openai80.p.rapidapi.com/chat/completions"
 
 payload = {

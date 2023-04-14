@@ -4,10 +4,8 @@ import cgi, os, hashlib, json, http.cookies
 from dotenv import load_dotenv
 
 load_dotenv()
-try:
-	form = cgi.FieldStorage()
 
-	def is_json_file_valid(file_path):
+def is_json_file_valid(file_path):
 		with open(file_path, 'r') as f:
 			contents = f.read()
 			if len(contents) == 0:
@@ -18,17 +16,44 @@ try:
 				return False
 			return True
 
+def print_message(body, user_exists, is_error):
+	message = ""
+	html = ""
+	if is_error == True:
+		body = "No user provided for login"
+		user_exists = False
+	body = "<body>" + body + "</body>"
+	html = "<html>"
+	html += "<head>"
+	html += "<title>Redirecting...</title>"
+	if user_exists == True:
+		html += "<meta http-equiv='refresh' content='0;url=/index.html'>"
+	else:
+		html += "<meta http-equiv='refresh' content='0;url=/failedLogin.html'>"
+	html += "</head>"
+	html += body
+	html += "</html>"
+	message = "HTTP/1.1 200 OK\r\n"
+	if user_exists == True:
+		message += cookie.output()
+		message += "\n" # print a blank line to separate the headers from the body 
+	message += f"Content-length:{len(html)}\r\n"
+	message += "Content-type:text/html\r\n\r\n"
+	message += html
+	print(message)
 
+body = ""
+user_exists = False
+try:
+	form = cgi.FieldStorage()
 	username = form["username"].file.read()
 	password = form["password"].file.read()
-	body = ""
 	user = {
 		"username": username,
 		"hash": str(hashlib.sha256(password.encode('utf-8')).hexdigest()),
 	}
 	# check if db file exists, if not create it
 	db_path = os.environ["DB_PATH"]
-	user_exists = False
 	if os.path.exists(db_path):
 		user_exists = False
 		if is_json_file_valid(db_path) == False:
@@ -52,30 +77,7 @@ try:
 			# if user does not exist create user
 			else:
 				body = "There was a problem accessing this account"
+			print_message(body, user_exists, False)
 except KeyError:
-	body = "No user provided for login"
-	user_exists = False
+	print_message(body, user_exists, True)
 
-body = "<body>" + body + "</body>"
-
-html = "<html>"
-html += "<head>"
-html += "<title>Redirecting...</title>"
-if user_exists == True:
-	html += "<meta http-equiv='refresh' content='0;url=/index.html'>"
-else:
-	html += "<meta http-equiv='refresh' content='0;url=/failedLogin.html'>"
-html += "</head>"
-html += body
-html += "</html>"
-
-if user_exists == True:
-	message = "HTTP/1.1 200 OK\r\n"
-	message += cookie.output()
-	message += "\n" # print a blank line to separate the headers from the body 
-message += f"Content-length:{len(html)}\r\n"
-message += "Content-type:text/html\r\n\r\n"
-
-message += html
-
-print(message)
