@@ -18,6 +18,7 @@ enum CGIerrors
 class CGI {
 	private:
 		Response							_response;
+		httpHeader							*_header;
 		bool								_done_reading;
 		bool								_body_complete;
 		bool								_header_removed;
@@ -38,15 +39,19 @@ class CGI {
 		bool								_chunk_context;
 		size_t								_chunk_size;
 		size_t								_chunk_remaining;
+		std::string							_response_string;
+		int									_size_sent;
 
 	public:
-		CGI(Response &response);
+		CGI(Response &response, httpHeader *header);
 		CGI(const CGI& obj);
 		CGI& operator=(const CGI& obj);
 		~CGI();
 
 		// getters
 		std::string	get_response_body();
+		std::string	get_response_string();
+		int			get_size_sent();
 
 		void		env_init(void);
 		void		env_to_char(void);

@@ -35,7 +35,7 @@ class Response
 		std::string			        _respond_path;
 		std::string			        _response;
 		Config      	   			_config;
-		httpHeader	 				_request;
+		httpHeader	 				*_request;
 		std::string					_ext;
 		bool						_error;
 		Location					_location;
@@ -56,7 +56,7 @@ class Response
 		int		send_response(std::ostringstream& response_stream);
         void 	send_404(std::string root, std::ostringstream &response_stream);
 
-		bool	new_request(httpHeader &request);
+		bool	new_request(httpHeader *request);
 
 		void	responseToGET(std::ifstream &file, const std::string& path, std::ostringstream &response_stream);
 		void	responseToPOST(const httpHeader request, std::ostringstream &response_stream);
@@ -66,13 +66,13 @@ class Response
 		bool	is_cgi();
 		int		getConnFd();
 		Config &getConfig();
-		httpHeader &getRequest();
+		httpHeader *getRequest();
 		MIME	&getTypes();
 		void	setCGIFd(int fd);
 		int		getCGIFd();
 		std::string &getExt();
 
-		static std::string	createError(int errorNumber, Config* config);
+		std::string	createError(int errorNumber, Config* config);
 		void getPath();
 		bool directoryExists(const char* path);
 		std::string directoryListing(std::string uri);

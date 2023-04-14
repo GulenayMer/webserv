@@ -2,7 +2,7 @@
 
 std::map<int, int> exit_status;
 
-CGI::CGI(Response &response): _response(response)
+CGI::CGI(Response &response, httpHeader *header): _response(response), _header(header)
 {
 	this->_done_reading = false;
 	this->_body_complete = false;
@@ -19,6 +19,7 @@ CGI::CGI(Response &response): _response(response)
 	this->_chunk_context = false;
 	this->_chunk_size = 0;
 	this->_chunk_remaining = 0;
+	this->_size_sent = 0;
 }
 
 CGI::CGI(const CGI& obj): _response(obj._response)
@@ -54,6 +55,7 @@ CGI& CGI::operator=(const CGI& obj)
 		this->_chunk_context = obj._chunk_context;
 		this->_chunk_size = obj._chunk_size;
 		this->_chunk_remaining = obj._chunk_remaining;
+		this->_response = obj._response;
 	}
 	return *this;
 }
@@ -71,7 +73,7 @@ void	CGI::env_init()
 	_env["SERVER_SOFTWARE"] = std::string("webserv"); //  The name and version of the server software that is answering the client request.
 	_env["SERVER_PROTOCOL"] = std::string("HTTP/1.1");//  The name and revision of the information protocol the request came in with.
 	_env["SERVER_PORT"] = to_string(_response.getConfig().get_port()); //  The port number of the host on which the server is running.
-	switch (_response.getRequest().getMethod()) { //  The method with which the information request was issued.
+	switch (_response.getRequest()->getMethod()) { //  The method with which the information request was issued.
 		case POST:
 			_env["REQUEST_METHOD"] = "POST";
 			break;
@@ -86,25 +88,25 @@ void	CGI::env_init()
 	// 	_env["PATH_TRANSLATED"] = this->_response.getRequest().; // The translated version of the path given by the variable PATH_INFO.
 	// else
 	// 	_env["PATH_TRANSLATED"] = _env["PATH_INFO"];
-	_env["SCRIPT_NAME"] = remove_end(_response.getRequest().getUri(), '?'); // The virtual path (e.g., /cgi-bin/program.pl) of the script being executed.
+	_env["SCRIPT_NAME"] = remove_end(_response.getRequest()->getUri(), '?'); // The virtual path (e.g., /cgi-bin/program.pl) of the script being executed.
 	//TODO find which location to do, using servers for now.
 	_env["DOCUMENT_ROOT"] = this->_response.getConfig().get_root(); // The directory from which Web documents are served.
 	_env["QUERY_STRING"] = this->get_query(); // The query information passed to the program. It is appended to the URL with a "?".
 	// TODO Host might need to be converted
-	if (_response.getRequest().get_single_header("referer").size() > 0)
-		_env["REMOTE_HOST"] = _response.getRequest().get_single_header("referer"); // The remote hostname of the user making the request.
+	if (_response.getRequest()->get_single_header("referer").size() > 0)
+		_env["REMOTE_HOST"] = _response.getRequest()->get_single_header("referer"); // The remote hostname of the user making the request.
 	else
-		_env["REMOTE_HOST"] = _response.getRequest().get_single_header("host");
-	_env["REMOTE_ADDR"] = _response.getRequest().get_single_header("host");//_response.getRequest().get_single_header("Host"); // The remote IP address of the user making the request.
-	_env["CONTENT_TYPE"] = this->_response.getRequest().get_single_header("content-type"); // The MIME type of the query data, such as "text/html".
-	this->_content_length = atol(_response.getRequest().get_single_header("content-length").c_str());
-	this->_content_length += this->_response.getRequest().getHeaderLength();
+		_env["REMOTE_HOST"] = _response.getRequest()->get_single_header("host");
+	_env["REMOTE_ADDR"] = _response.getRequest()->get_single_header("host");//_response.getRequest().get_single_header("Host"); // The remote IP address of the user making the request.
+	_env["CONTENT_TYPE"] = this->_response.getRequest()->get_single_header("content-type"); // The MIME type of the query data, such as "text/html".
+	this->_content_length = atol(_response.getRequest()->get_single_header("content-length").c_str());
+	this->_content_length += this->_response.getRequest()->getHeaderLength();
 	_env["CONTENT_LENGTH"] = to_string(this->_content_length); // The length of the data (in bytes or the number of characters) passed to the CGI program through standard input.
 	//_env["HTTP_ACCEPT"]; // A list of the MIME types that the client can accept.
-	_env["HTTP_USER_AGENT"] = _response.getRequest().get_single_header("user-agent");; // The browser the client is using to issue the request.
-	_env["HTTP_REFERER"] = _response.getRequest().get_single_header("referer"); // The URL of the document that the client points to before accessing the CGI program. */
-	if (_response.getRequest().get_single_header("cookie").size() > 0)
-		_env["HTTP_COOKIE"] = _response.getRequest().get_single_header("cookie");
+	_env["HTTP_USER_AGENT"] = _response.getRequest()->get_single_header("user-agent");; // The browser the client is using to issue the request.
+	_env["HTTP_REFERER"] = _response.getRequest()->get_single_header("referer"); // The URL of the document that the client points to before accessing the CGI program. */
+	if (_response.getRequest()->get_single_header("cookie").size() > 0)
+		_env["HTTP_COOKIE"] = _response.getRequest()->get_single_header("cookie");
 }
 
 
@@ -125,10 +127,10 @@ void	CGI::env_to_char(void)
 bool	CGI::handle_cgi()
 {
     std::ifstream file;
-	std::string script_path = this->_response.getRequest().getUri();
+	std::string script_path = this->_response.getRequest()->getUri();
 	std::string shebang;
 
-	std::cout << "CGI script path: " << script_path << std::endl;
+	// std::cout << "CGI script path: " << script_path << std::endl;
 	std::map<std::string, std::string>::const_iterator path_it = this->_response.getConfig().getIntrPath().find(this->_response.getExt());
 	if (!file_exists(script_path))
 	{
@@ -210,7 +212,7 @@ void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
 
 std::string CGI::get_path_from_map()
 {
-	std::string ext = remove_end(_response.getRequest().getUri(), '?');
+	std::string ext = remove_end(_response.getRequest()->getUri(), '?');
 	int pos = ext.find_last_of(".");
 	ext = &ext[pos] + 1;
 	std::map<std::string, std::string> paths_map = this->_response.getConfig().getIntrPath();
@@ -229,7 +231,7 @@ std::string CGI::get_path_from_map()
 
 std::string CGI::get_query()
 {
-	std::string query = this->_response.getRequest().getUri();
+	std::string query = this->_response.getRequest()->getUri();
 	if (query.find("?") != std::string::npos) {
 		int pos = query.find("?");
 		query = &query[pos] + 1;
@@ -306,6 +308,8 @@ bool	CGI::sendResponse()
 		_content_length = response_string.size();
 		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
 		std::cout << response_string << std::endl;
+		_response_string = response_string;
+		_size_sent = sent;
 	}
 	else if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
 	{
@@ -313,15 +317,19 @@ bool	CGI::sendResponse()
 		std::cout << "ERROR 505 sending" << std::endl;
 		_content_length = response_string.size();
 		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
-		std::cout << response_string << std::endl;
+		// std::cout << response_string << std::endl;
+		_response_string = response_string;
+		_size_sent = sent;
 	}
 	else if (_content_length == 0)
 	{
 		response_string = "HTTP/1.1 204 OK\r\nConnection: Keep-Alive\r\n\r\n";
-		std::cout << "CGI complete - nothing to send" << std::endl;
+		// std::cout << "CGI complete - nothing to send" << std::endl;
 		_content_length = response_string.size();
 		sent = send(this->_response.getConnFd(), &response_string[0], response_string.size(), MSG_DONTWAIT);
-		std::cout << response_string << std::endl;
+		// std::cout << response_string << std::endl;
+		_response_string = response_string;
+		_size_sent = sent;
 	}
 	else if (this->_response.getExt() == ".php")
 	{
@@ -347,26 +355,32 @@ bool	CGI::sendResponse()
 			}
 			_content_length = this->_response_buff.size();
 		}
-		for (size_t i = 0; i < _response_buff.size(); i++)
-			std::cout << BLUE << _response_buff[i];
-		std::cout << RESET << std::endl;
+		// for (size_t i = 0; i < _response_buff.size(); i++)
+		// 	std::cout << BLUE << _response_buff[i];
+		// std::cout << RESET << std::endl;
 		sent = send(this->_response.getConnFd(), &_response_buff[this->_bytes_sent], _response_buff.size() - this->_bytes_sent, MSG_DONTWAIT);
+		std::string temp(_response_buff.begin(), _response_buff.end());
+		_response_string = temp;
+		_size_sent = sent;
 	}
 	else
 	{
-		std::cout << RED << "Sending response..." << RESET << std::endl;
-		for (size_t i = 0; i < _response_buff.size(); i++)
-			std::cout << BLUE << _response_buff[i];
-		std::cout << RESET << std::endl;
+		// std::cout << RED << "Sending response..." << RESET << std::endl;
+		// for (size_t i = 0; i < _response_buff.size(); i++)
+		// 	std::cout << BLUE << _response_buff[i];
+		// std::cout << RESET << std::endl;
 		sent = send(this->_response.getConnFd(), &_response_buff[this->_bytes_sent], _response_buff.size() - this->_bytes_sent, MSG_DONTWAIT);
+		std::string temp(_response_buff.begin(), _response_buff.end());
+		_response_string = temp;
+		_size_sent = sent;
 	}
-	std::cout << "sent: " << _bytes_sent << ", content length: " << _content_length << std::endl;
+	// std::cout << "sent: " << _bytes_sent << ", content length: " << _content_length << std::endl;
 	if (sent >= 0)
 	{
 		this->_bytes_sent += sent;
 		if (this->_bytes_sent == this->_content_length)
 		{
-			std::cout << "SEND COMPLETE" << std::endl;
+			// std::cout << "SEND COMPLETE" << std::endl;
 			exit_status.erase(this->_pid);
 			_response_buff.clear();
 			this->_done_reading = false;
@@ -420,10 +434,10 @@ void	CGI::set_boundary()
 
 void	CGI::storeBuffer(char *buffer, size_t received)
 {
-	std::cout << "STORE BUFFER" << std::endl;
+	// std::cout << "STORE BUFFER" << std::endl;
 	for (size_t i = 0; i < received; i++)
 		this->_request_buff.push_back(buffer[i]);
-	std::cout << "STORE BUFFER END" << std::endl;
+	// std::cout << "STORE BUFFER END" << std::endl;
 }
 
 int		CGI::getOutFd()
@@ -453,10 +467,10 @@ void	CGI::writeToCGI()
 			this->_request_buff.clear();
 		}
 		this->_bytes_sent += sent;
-		std::cout << "total bytes sent: " << this->_bytes_sent << ", content_length: " << this->_content_length << std::endl;
+		// std::cout << "total bytes sent: " << this->_bytes_sent << ", content_length: " << this->_content_length << std::endl;
 		if (this->_bytes_sent >= this->_content_length)
 		{
-			std::cout << "DONE" << std::endl;
+			// std::cout << "DONE" << std::endl;
 			this->_body_complete = true;
 			this->_bytes_sent = 0;
 			this->_content_length = 0;
@@ -552,7 +566,7 @@ size_t CGI::convertHex(char *buffer)
 
 void CGI::addHeaderChunked()
 {
-	std::map<std::string, std::string>::const_iterator it = this->_response.getRequest().getCompleteHeader().begin();
+	std::map<std::string, std::string>::const_iterator it = this->_response.getRequest()->getCompleteHeader().begin();
 	std::ostringstream oss;
 	oss << this->_content_length;
 	std::string len(oss.str() + "\r\n\r\n");
@@ -567,7 +581,7 @@ void CGI::addHeaderChunked()
 		this->_request_buff.insert(this->_request_buff.begin(), "Content-Length: "[i]);
 		this->_header_length++;
 	}
-	for (; it != this->_response.getRequest().getCompleteHeader().end(); it++)
+	for (; it != this->_response.getRequest()->getCompleteHeader().end(); it++)
 	{
 		if (it->first == "transfer-encoding")
 			continue;
@@ -594,4 +608,14 @@ void	CGI::removeHeader(char *buffer, ssize_t received)
 			}
 		}
 	}
+}
+
+std::string	CGI::get_response_string()
+{
+	return this->_response_string;
+}
+
+int			CGI::get_size_sent()
+{
+	return this->_size_sent;
 }

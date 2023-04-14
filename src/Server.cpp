@@ -16,28 +16,13 @@ Server::~Server() {}
 
 int	Server::init_socket()
 {
-	if ((this->_sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-		throw std::logic_error("Could not create socket.");
-	    // std::cerr << RED << SOCK_ERROR << RESET << std::endl;
-        // this->_error = 16;
-		// return 16;
-    }
 	int optval = 1;
+	if ((this->_sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		throw std::logic_error("Could not create socket.");
 	if (setsockopt(this->_sockfd, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval)) < 0)
-    {
         throw std::logic_error("Could not set socket options.");
-		// std::cerr << RED << SOCK_OPT_ERROR << RESET << std::endl;
-		// this->_error = 17;
-        // return 17;
-    }
 	if (fcntl(this->_sockfd, F_SETFL, O_NONBLOCK) == -1)
-	{
 		throw std::logic_error("Could not set socket flags.");
-		// std::cerr << RED << FCNTL_ERROR << RESET << std::endl;
-		// this->_error = 29;
-		// return 29;
-	}
 	return EXIT_SUCCESS;
 }
 
@@ -49,25 +34,16 @@ int	Server::bind_socket()
     if (bind(this->_sockfd, (struct sockaddr *)&this->_serv_addr, sizeof(this->_serv_addr)) < 0)
     {
         throw std::logic_error("Could not bind socket to address.");
-		// std::cerr << RED << BIND_ERROR << RESET << std::endl;
-		// this->_error = 18;
-        // return 18;
-    }
+	}
 	return EXIT_SUCCESS;
 }
 
 int	Server::listen_socket()
 {
 	if (listen(_sockfd, MAX_CONN) < 0)
-    {
-    	throw std::logic_error("Listen failed.");
-		// std::cerr << RED << LISTEN_ERROR << RESET << std::endl;
-		// this->_error = 19;
-        // return 19;
-    }
+		throw std::logic_error("Listen failed.");
 	return EXIT_SUCCESS;
 }
-
 
 /* ---------- GETTERS ---------- */
 int	Server::getError() const

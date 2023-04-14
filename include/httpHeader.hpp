@@ -32,6 +32,12 @@ class httpHeader
 		size_t		_content_length;
 		std::string	_cookie;
 		uint8_t		_error;
+
+		// Log info
+		std::string	_userIP;
+		std::string	_requestTime;
+		int			_statusCode;
+		int			_sentSize;
 		
 	public:
 		httpHeader();
@@ -55,7 +61,15 @@ class httpHeader
 		size_t getContentLength();
 		bool isHttp11();
 
+		void setSentSize(int size);
+		void setStatusCode(int code);
+		void setUserIP(std::string address);
+
+		int	getSentSize();
+		int	getStatusCode();
+
 		void printHeader();
+		std::string	get_current_time();
 };
 
 #endif
