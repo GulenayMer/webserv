@@ -488,7 +488,7 @@ void	CGI::closePipes()
 		close(this->_output_pipe[1]);
 }
 
-void CGI::mergeChunk(char *buffer, size_t received) //TODO need to check if \r\n removed from output
+void CGI::mergeChunk(char *buffer, size_t received) //TODO this is removing newline characters
 {
 	size_t	pos = 0;
 	while (pos < received)
@@ -502,11 +502,12 @@ void CGI::mergeChunk(char *buffer, size_t received) //TODO need to check if \r\n
 				addHeaderChunked();
 				this->_content_length += this->_header_length;
 				this->_response.finishChunk();
-				std::cout << "Complete message:" << std::endl;
+				std::cout << RED << "Complete message:" << std::endl;
 				for (size_t i = 0; i < this->_request_buff.size(); i++)
 					std::cout << this->_request_buff[i];
-				std::cout << std::endl;
+				std::cout << RESET << std::endl;
 				std::cout << "Message end." << std::endl;
+				std::cout << "Content length: " << this->_content_length << std::endl;
 				return;
 			}
 		}
@@ -543,6 +544,7 @@ size_t CGI::convertHex(char *buffer)
 	// if (this->_chunk_size == 0 && std::strcmp(buffer, "0"))
 	// 	throw std::runtime_error("CGI::convertHex: Invalid hexadecimal number");
 	this->_content_length += this->_chunk_size;
+	std::cout << "chunk size: " << this->_chunk_size << std::endl;
 	i += 2;
 	this->_chunk_context = true;
 	return i;
@@ -554,12 +556,13 @@ void CGI::addHeaderChunked()
 	std::ostringstream oss;
 	oss << this->_content_length;
 	std::string len(oss.str() + "\r\n\r\n");
-	for (int i = len.length() - 1; i > 0; i--)
+	std::cout << "content-length: " << len << std::endl;
+	for (int i = len.length() - 1; i >= 0; i--)
 	{
 		this->_request_buff.insert(this->_request_buff.begin(), len[i]);
 		this->_header_length++;
 	}
-	for (int i = 16; i >= 0; i--)
+	for (int i = 15; i >= 0; i--)
 	{
 		this->_request_buff.insert(this->_request_buff.begin(), "Content-Length: "[i]);
 		this->_header_length++;
@@ -579,6 +582,7 @@ void CGI::addHeaderChunked()
 
 void	CGI::removeHeader(char *buffer, ssize_t received)
 {
+	this->_content_length = 0;
 	for (ssize_t i = 0; i < received; i++)
 	{
 		if (buffer[i] == '\r' && buffer[i + 1] == '\n')
