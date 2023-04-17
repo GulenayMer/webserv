@@ -19,7 +19,7 @@ def is_json_file_valid(file_path):
 error = False
 # File does not exist, or file is empty
 # then user to delete does not exist, error is set to True
-db_path = os.environ["DB_PATH"]
+db_path = os.environ["DB_PATH_WEBSITE"]
 if not os.path.exists(db_path[:-10]):
 	error = True
 if not os.path.exists(db_path) or is_json_file_valid(db_path) == False:
