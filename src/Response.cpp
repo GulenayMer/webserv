@@ -269,7 +269,6 @@ bool	Response::new_request(httpHeader *request)
 	this->_is_redirect = false;
 	this->_list_dir = false;
 	this->_received_bytes = 0;
-	int num_loops = 0;
 	std::map<std::string, Location>::iterator loc_it;
 	std::string uri = request->getUri();
 	size_t pos = uri.find_last_of("/");
@@ -311,17 +310,16 @@ bool	Response::new_request(httpHeader *request)
 			this->_location = loc_it->second;
 			if (this->_is_dir)
 			{
-				if (!this->_list_dir && !this->_location.get_index().empty() && uri.size() == size)
+				if (!this->_list_dir && uri.size() == size)
 				{
-					this->_request->setURI(this->_location.get_root() + this->_location.get_index());
-					this->_is_dir = false;
+					if (!this->_location.get_index().empty())
+					{
+						this->_request->setURI(this->_location.get_root() + this->_location.get_index());
+						this->_is_dir = false;
+					}
 				}
-				else {
-					if (num_loops > 0) 
-						this->_request->setURI(this->_location.get_root() + &request->getUri()[pos + 1]);
-					else
-						this->_request->setURI(this->_location.get_root());
-				}
+				else
+					this->_request->setURI(this->_location.get_root() + &request->getUri()[pos + 1]);
 			}
 			else
 				this->_request->setURI(this->_location.get_root() + &request->getUri()[pos + 1]);
@@ -332,7 +330,6 @@ bool	Response::new_request(httpHeader *request)
 		if (pos == std::string::npos)
 			break;
 		uri.erase(pos + 1);
-		num_loops++;
 	}
 	return false;
 }
