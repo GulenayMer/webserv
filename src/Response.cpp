@@ -97,6 +97,11 @@ int 	Response::handle_response()
 			response_stream << createError(404);
 			_to_close = true;
 		}
+		else if (_is_dir && !this->_list_dir)
+		{
+			response_stream << createError(404);
+			_to_close = true;
+		}
 		else if (!_is_cgi && !_is_dir && ext_pos != std::string::npos && _types.get_content_type(&this->_request->getUri()[ext_pos]).empty())
 		{
 			response_stream << createError(415);
