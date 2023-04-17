@@ -152,6 +152,8 @@ int			get_method_num(std::string method)
 		return 6;
 	else if (method == "CONNECT")
 		return 7;
+	else if (method == "NONE")
+		return 8;
 	else
 		return -1;
 }

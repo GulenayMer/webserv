@@ -4,14 +4,12 @@ import cgi, os
 try:
 	# TODO update path
 	form = cgi.FieldStorage()
-	path = os.getcwd()
-	
 	fileitem = form["data"]
 	if fileitem.filename:
-		if os.path.exists(os.getcwd() + '/docs/www/website/storage/') == False:
-			os.mkdir(os.getcwd() + '/docs/www/website/storage/')
-		open(os.getcwd() + '/docs/www/website2/storage/' + os.path.basename(fileitem.filename), 'wb').write(fileitem.file.read())
-		message = 'The file "' + os.path.basename(fileitem.filename) + '" was uploaded to ' + os.getcwd() + '/docs/www/website2/cgi-bin/tmp/'
+		if os.path.exists(os.getcwd() + '/storage/') == False:
+			os.mkdir(os.getcwd() + '/storage/')
+		open(os.getcwd() + '/storage/' + os.path.basename(fileitem.filename), 'wb').write(fileitem.file.read())
+		message = 'The file "' + os.path.basename(fileitem.filename) + '" was uploaded to ' + os.getcwd() + '/storage/'
 	else:
 		message = 'Uploading Failed'
 		message = "<H1> " + message + " </H1>"
