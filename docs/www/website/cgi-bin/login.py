@@ -53,7 +53,7 @@ try:
 		"hash": str(hashlib.sha256(password.encode('utf-8')).hexdigest()),
 	}
 	# check if db file exists, if not create it
-	db_path = os.environ["DB_PATH"]
+	db_path = os.environ["DB_PATH_WEBSITE"]
 	if os.path.exists(db_path):
 		user_exists = False
 		if is_json_file_valid(db_path) == False:

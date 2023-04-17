@@ -50,7 +50,7 @@ try:
 	}
 	body = ""
 	user_exists = False
-	db_path = os.environ["DB_PATH"]
+	db_path = os.environ["DB_PATH_WEBSITE"]
 	# File does not exist, create it with a list and add first user
 	if not os.path.exists(db_path[:-10]):
 		os.mkdir(db_path[:-10])
