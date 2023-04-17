@@ -88,7 +88,7 @@ int 	Response::handle_response()
 	{
 		response_stream << redirect(_request->getUri());
 	}
-	else if (!handle_response_error(response_stream))
+	if (!handle_response_error(response_stream))
 	{
 		getPath();
 		size_t ext_pos = _request->getUri().find_last_of(".");
@@ -689,6 +689,7 @@ std::string Response::redirect(std::string uri)
 {
 	std::ostringstream message;
 
+	_request->setStatusCode(307);
 	message << "HTTP/1.1 307 Temporary Redirect\r\n";
 	message << "Location: " << uri << "\r\n\r\n";
 	return (message.str());
