@@ -2,8 +2,10 @@
 
 import cgi, os
 try:
+	# TODO update path
 	form = cgi.FieldStorage()
-
+	path = os.getcwd()
+	
 	fileitem = form["data"]
 	if fileitem.filename:
 		if os.path.exists(os.getcwd() + '/docs/www/website/storage/') == False:
