@@ -115,6 +115,8 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 			this->clean_path(line);
 		else if ((line.find(CGI_EXT) != std::string::npos) && check_def_format(CGI_EXT, line))
 			this->clean_ext(line);
+		else if ((line.find(UPLOAD_STORE) != std::string::npos) && check_def_format(UPLOAD_STORE, line))
+			this->clean_upload_store(line);
 		/*
 		
 			go into function and separate location config
@@ -303,6 +305,16 @@ void			ConfigParser::clean_ext(std::string line)
 		this->_ext.push_back(line.substr(pos, pos2 - pos));
 		pos = pos2;
 	}
+}
+
+void	ConfigParser::clean_upload_store(std::string line)
+{
+	line = get_value(line);
+	if (line.size() == 0)
+		this->set_error_code(9);
+	if (line[line.size() - 1] != '/')
+		line = line + "/";
+	this->get_config(this->_n_servers - 1).set_upload_store(line);
 }
 
 void	ConfigParser::addToExtMap()

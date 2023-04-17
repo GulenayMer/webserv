@@ -32,6 +32,7 @@ Config &Config::operator=(const Config &obj)
 		this->_location = obj._location;
 		this->_redirection = obj._redirection;
 		this->_intr_paths = obj._intr_paths;
+		this->_upload_store = obj._upload_store;
 	}
 	return *this;
 }
@@ -86,6 +87,11 @@ bool						&Config::get_autoindex()
 std::string					&Config::get_root()
 {
 	return this->_root;
+}
+
+std::string					&Config::get_upload_store()
+{
+	return this->_upload_store;
 }
 
 std::string					Config::get_index()
@@ -160,6 +166,11 @@ void					Config::set_root(std::string root)
 	this->_root = root;
 }
 
+void					Config::set_upload_store(std::string upload_store)
+{
+	this->_upload_store = upload_store;
+}
+
 void					Config::set_index(std::string index)
 {
 	this->_index = index;
@@ -193,6 +204,11 @@ void						Config::check_config()
 		throw std::logic_error(INVALID_INDEX);
 	}
 	
+	if (this->get_upload_store().size() > 0 && !dir_exists(this->get_root() + this->get_upload_store())) {
+		this->set_error_code(30);
+		throw std::logic_error(INVALID_UPLOAD_STORE);
+	}
+
 	// default error check - files provided by paths exist 
 	// if (this->get_default_error().size() == 0)
 	// 	this->get_default_error().insert(std::make_pair(404, "/error/404_NotFound.html"));

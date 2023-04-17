@@ -107,6 +107,8 @@ void	CGI::env_init()
 	_env["HTTP_REFERER"] = _response.getRequest()->get_single_header("referer"); // The URL of the document that the client points to before accessing the CGI program. */
 	if (_response.getRequest()->get_single_header("cookie").size() > 0)
 		_env["HTTP_COOKIE"] = _response.getRequest()->get_single_header("cookie");
+	_env["UPLOAD_PATH"] = _response.getConfig().get_upload_store();
+	_env["DOCUMENT_ROOT"] = _response.getConfig().get_root();
 }
 
 
