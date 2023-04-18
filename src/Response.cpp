@@ -218,7 +218,8 @@ int 	Response::handle_response_error(std::ostringstream& response_stream)
 
 int 	Response::send_response(std::ostringstream& response_stream)
 {
-	_response = response_stream.str();
+	_response.clear();
+	this->_response = response_stream.str();
 	int	sent = send(this->_conn_fd, _response.c_str(), _response.length(), MSG_DONTWAIT);
 	_request->setSentSize(sent);
 	if (sent > 0)
@@ -226,7 +227,6 @@ int 	Response::send_response(std::ostringstream& response_stream)
 		_bytes_sent += sent;
 		if (_bytes_sent == _response.length())
 		{
-			_response.clear();
 			_bytes_sent = 0;
 		}
 	}
@@ -241,7 +241,6 @@ void	Response::responseToGET(std::ifstream &file, size_t &pos, std::ostringstrea
 	type = _types.get_content_type(&_respond_path[pos]);
 	file_buffer << file.rdbuf();
 	_response_body = file_buffer.str();
-	_request->setStatusCode(200);
 	response_stream << HTTP_OK << "Content-Length: " << _response_body.length() << "\nConnection: Keep-Alive\n";
 	response_stream << type << _response_body;
 }
@@ -261,7 +260,6 @@ void	Response::responseToGET(std::ifstream &file, size_t &pos, std::ostringstrea
 // 	std::string response_body;
 
 // 	// if the file cannot be opened, send a 404 error
-// 	_request->setStatusCode(404);
 //     std::ifstream error404((root + this->_config.get_error_path(404)).c_str());
 //     if (!error404.is_open())
 //         std::cerr << RED << _404_ERROR << RESET << std::endl;
@@ -375,7 +373,6 @@ void	Response::responseToDELETE(std::ostringstream &response_stream)
 	else
 	{
 		response_stream << HTTP_204 << _types.get_content_type(".txt");
-		_request->setStatusCode(204);
 	}
 	pathTest.close();
 }
@@ -430,7 +427,6 @@ std::string	Response::createError(int errorNumber)
 	std::string			error_path = getErrorPath(errorNumber, errorName);
 	std::ifstream error(error_path.c_str());
 
-	_request->setStatusCode(errorNumber);
 	if(!error.is_open())
 		std::cerr << RED << "error opening " << errorNumber << " file at " << error_path << RESET << std::endl;
 	else
@@ -629,7 +625,6 @@ std::string Response::directoryListing(std::string uri)
     outfile << "</html>\n";
 	std::string body(outfile.str());
 	std::ostringstream message;
-	_request->setStatusCode(200);
 	message << HTTP_OK << "Content-Length: " << body.length() << "\n" << _types.get_content_type(".html") << "\r\n\r\n" << body;
 	return (message.str());
 }
@@ -707,8 +702,12 @@ std::string Response::redirect(std::string uri)
 {
 	std::ostringstream message;
 
-	_request->setStatusCode(307);
 	message << "HTTP/1.1 307 Temporary Redirect\r\n";
 	message << "Location: " << uri << "\r\n\r\n";
 	return (message.str());
+}
+
+std::string	Response::get_response()
+{
+	return (_response);
 }
