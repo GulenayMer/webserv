@@ -280,6 +280,7 @@ int ServerManager::run_servers()
 				{
 					std::cout << "SEND RESPONSE" << std::endl;
 					response_it->second.handle_response();
+					response_it->second.getRequest()->printHeader();
 					if (response_it->second.shouldClose())
 						close_connection(response_it->second, i);
 					else if (response_it->second.response_complete())

@@ -87,8 +87,9 @@ int 	Response::handle_response()
 	if (_is_redirect)
 	{
 		response_stream << redirect(_request->getUri());
+		_to_close = true;
 	}
-	if (!handle_response_error(response_stream))
+	else if (!handle_response_error(response_stream))
 	{
 		getPath();
 		size_t ext_pos = _request->getUri().find_last_of(".");
