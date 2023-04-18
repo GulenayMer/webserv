@@ -64,6 +64,16 @@ void Response::getPath()
 	// std::cout << "INDEX: " << _config.get_index() << std::endl;
 	// if (_request.getUri() == "/")
 	// 	_respond_path = _config.get_index();
+	
+	/* 
+		1. which server block?
+		2. check location blocks to see if there is a match
+			- if there is a match, check if the location block has a root
+			- if it does, set the root to the location block root
+			- if it doesn't, set the root to the server root
+			- if there is no match, set the root to the server root
+ 	*/
+
 	if (this->_request->getMethod() != DELETE && this->checkCGI())
 	{
 		_is_cgi = true;
