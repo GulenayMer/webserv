@@ -98,6 +98,11 @@ int 	Response::handle_response()
 			response_stream << createError(404);
 			_to_close = true;
 		}
+		else if (_is_dir && !this->_list_dir)
+		{
+			response_stream << createError(404);
+			_to_close = true;
+		}
 		else if (!_is_cgi && !_is_dir && ext_pos != std::string::npos && _types.get_content_type(&this->_request->getUri()[ext_pos]).empty())
 		{
 			response_stream << createError(415);
@@ -311,14 +316,16 @@ bool	Response::new_request(httpHeader *request)
 			this->_location = loc_it->second;
 			if (this->_is_dir)
 			{
-				if (!this->_list_dir && !this->_location.get_index().empty() && uri.size() == size)
+				if (!this->_list_dir && uri.size() == size)
 				{
-					this->_request->setURI(this->_location.get_root() + this->_location.get_index());
-					this->_is_dir = false;
+					if (!this->_location.get_index().empty())
+					{
+						this->_request->setURI(this->_location.get_root() + this->_location.get_index());
+						this->_is_dir = false;
+					}
 				}
 				else
 					this->_request->setURI(this->_location.get_root() + &request->getUri()[pos + 1]);
-
 			}
 			else
 				this->_request->setURI(this->_location.get_root() + &request->getUri()[pos + 1]);

@@ -191,7 +191,8 @@ int								Location::check_location()
 			method_check = 1;
 	}
 	if (method_check == 0)
-		return 26;
+	//TODO allow GET by defualt
+		this->set_methods(get_method_num("GET"), true);
 	return EXIT_SUCCESS;
 }
 
@@ -225,7 +226,7 @@ void				Location::clean_methods(std::string line)
 
 void							Location::init_methods()
 {
-	this->_methods.insert(std::make_pair(0, true));
+	this->_methods.insert(std::make_pair(0, false));
 	this->_methods.insert(std::make_pair(1, false));
 	this->_methods.insert(std::make_pair(2, false));
 	this->_methods.insert(std::make_pair(3, false));
@@ -233,6 +234,7 @@ void							Location::init_methods()
 	this->_methods.insert(std::make_pair(5, false));
 	this->_methods.insert(std::make_pair(6, false));
 	this->_methods.insert(std::make_pair(7, false));
+	this->_methods.insert(std::make_pair(8, false));
 }
 
 std::ostream &operator<<(std::ostream &os, Location &location)
@@ -281,6 +283,9 @@ std::ostream &operator<<(std::ostream &os, Location &location)
 				break;
 			case 7:
 				method = "CONNECT";
+				break;
+			case 8:
+				method = "NONE";
 				break;
 		}
 		os << method << " : " << status << std::endl;

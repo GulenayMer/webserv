@@ -19,7 +19,7 @@ MIME::MIME()
     this->_mime_types[".mp3"] = "Content-Type: audio/mp3\r\n\r\n";
     this->_mime_types[".pdf"] = "Content-Type: application/pdf\r\n\r\n";
 	//TODO
-    this->_mime_types["default"] = "Content-Type: text/html\r\n\r\n";
+    this->_mime_types["default"] = "Content-Type: text/plain\r\n\r\n";
     // this->_mime_types["Unsupported media"] = "";
 }
 

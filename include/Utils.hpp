@@ -48,21 +48,22 @@ extern int SWITCH;
 
 */
 
-# define LISTEN "listen"
-# define HOST "host"
-# define SERVER_NAME "server_name"
-# define ERROR_PAGE	"error_page"
-# define ALLOW_METHODS "allow_methods"
-# define CLIENT_MAX_BODY "client_max_body_size"									  
-# define ROOT "root"
-# define INDEX "index"
-# define ALIAS "alias"
-# define ALLOW_CGI "allow_cgi"
-# define AUTOINDEX "autoindex"
-# define RETURN "return"
-# define CGI_EXT "cgi_ext"
-# define CGI_PATH "cgi_path"
-# define REDIR    "redirection"
+# define LISTEN 			"listen"
+# define HOST 				"host"
+# define SERVER_NAME 		"server_name"
+# define ERROR_PAGE			"error_page"
+# define ALLOW_METHODS 		"allow_methods"
+# define CLIENT_MAX_BODY	"client_max_body_size"									  
+# define ROOT 				"root"
+# define INDEX 				"index"
+# define ALIAS 				"alias"
+# define ALLOW_CGI 			"allow_cgi"
+# define AUTOINDEX 			"autoindex"
+# define RETURN 			"return"
+# define CGI_EXT 			"cgi_ext"
+# define CGI_PATH 			"cgi_path"
+# define REDIR    			"redirection"
+# define UPLOAD_STORE 		"upload_store"
 
 
 /*
@@ -169,6 +170,9 @@ extern int SWITCH;
 
 // error_code 29
 # define FCNTL_ERROR "ERROR: --- Could not make socket non-blocking ---"
+
+// error_code 30
+# define INVALID_UPLOAD_STORE "ERROR: --- Could not find a valid ** upload_store ** in configuration ---"
 
 // error_code 
 # define NO_VALID_SERVERS "ERROR: --- No valid configurations provided to create servers ---"
