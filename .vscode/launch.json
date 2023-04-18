@@ -17,7 +17,7 @@
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "/workspaces/webserv/webserv",
-			"args": [],
+			"args": ["/workspaces/webserv/webserv_tester-master/conf2.conf"],
 			"cwd": "/workspaces/webserv/",
 			"stopAtEntry": false,
 			"environment": [],
