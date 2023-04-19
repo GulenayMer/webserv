@@ -18,7 +18,7 @@ class ServerManager {
 		std::map<int, CGI>		_cgis;
 		std::map<int, int>		_cgi_fds;
 		std::map<std::string, int>	_addr_fd;
-		std::map<int, std::string> _default_host;
+		std::map<std::string, std::string> _default_host;
 		int					_nfds;
 		struct pollfd*		_fds;
 		int					_nbr_fd_ready;
@@ -44,6 +44,7 @@ class ServerManager {
 
 		void	server_create_error(std::logic_error &e, int i);
 		int		get_cgi_response(std::string header);
+		std::string	getDefPort(std::string &host);
 };
 
 #endif

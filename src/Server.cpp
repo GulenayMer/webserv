@@ -4,15 +4,19 @@ Server::Server(Config config): _config(config), _error(0)
 {
 	bzero(&_serv_addr, sizeof(sockaddr_in));
 	this->_port = this->_config.get_port();
-	if (this->init_socket() != 0)
-		return;
-	if (this->bind_socket() != 0)
-		return;
-	if (this->listen_socket() != 0)
-		return;
+	this->_serv_addr.sin_family = AF_INET;
+    this->_serv_addr.sin_port = htons(_port);
+    this->_serv_addr.sin_addr = this->_config.get_addr();
 }
 
 Server::~Server() {}
+
+void	Server::initServer()
+{
+	this->init_socket();
+	this->bind_socket();
+	this->listen_socket();
+}
 
 int	Server::init_socket()
 {
@@ -28,13 +32,8 @@ int	Server::init_socket()
 
 int	Server::bind_socket()
 {
-	this->_serv_addr.sin_family = AF_INET;
-    this->_serv_addr.sin_port = htons(_port);
-    this->_serv_addr.sin_addr = this->_config.get_addr();
     if (bind(this->_sockfd, (struct sockaddr *)&this->_serv_addr, sizeof(this->_serv_addr)) < 0)
-    {
-        throw std::logic_error("Could not bind socket to address.");
-	}
+		throw std::logic_error("Could not bind socket to address.");
 	return EXIT_SUCCESS;
 }
 

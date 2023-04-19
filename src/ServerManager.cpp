@@ -9,9 +9,14 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 			std::cout << "name : " << this->_configs[i].get_server_name() << std::endl;
 			std::cout << "root : " << this->_configs[i].get_root() << std::endl;
 			std::cout << "port : " << this->_configs[i].get_port() << std::endl << std::endl;
-			this->_default_host.insert(std::map<int, std::string>::value_type(this->_configs[i].get_port(), this->_configs[i].getHost()));
-        	Server server(this->_configs[i]);
-			this->_host_serv.insert(std::map<std::string, Server>::value_type(this->_configs[i].getHost(), server));
+			Server server(this->_configs[i]);
+			std::map<std::string, std::string>::iterator it = this->_default_host.find(this->_configs[i].getHost());
+			if (it == this->_default_host.end())
+			{
+				server.initServer();
+				this->_default_host.insert(std::map<std::string, std::string>::value_type(this->_configs[i].getHost(), this->_configs[i].getNamePort()));
+			}
+			this->_host_serv.insert(std::map<std::string, Server>::value_type(this->_configs[i].getNamePort(), server));
 		}
 		catch (std::logic_error &e) {
 			server_create_error(e, i);
@@ -197,12 +202,16 @@ int ServerManager::run_servers()
 							// 	this->_compress_array = true;
 							// }
 							httpHeader *request = new httpHeader(buffer);
-							std::map<std::string, Server>::iterator serv_it = this->_host_serv.find(request->get_single_header("host"));
+							std::string host(request->get_single_header("host"));
+							std::map<std::string, Server>::iterator serv_it = this->_host_serv.find(host);
 							if (serv_it != this->_host_serv.end())
+							{
+								std::cout << serv_it->second.get_config().getNamePort() << std::endl;
 								response_it->second.newConfig(serv_it->second.get_config());
+							}
 							else
 							{
-								std::map<int, std::string>::iterator def_it = this->_default_host.find(request->getPort());
+								std::map<std::string, std::string>::iterator def_it = this->_default_host.find(host);
 								if (def_it != this->_default_host.end())
 								{
 									std::cout << BLUE << "Using default server for IP/Port: " << def_it->second << RESET << std::endl;
@@ -210,8 +219,16 @@ int ServerManager::run_servers()
 								}
 								else
 								{
-									close_connection(response_it->second, i);
-									continue;
+									std::cout << BLUE << "Finding default server for port" << RESET << std::endl;
+									host = getDefPort(host);
+									if (host.empty())
+									{
+										std::cout << RED << "No default server found for port" << RESET << std::endl;
+										close_connection(response_it->second, i);
+										continue;
+									}
+									std::cout << BLUE << "Using default server for port: " << host << RESET << std::endl;
+									response_it->second.newConfig(this->_host_serv.find(host)->second.get_config());
 								}
 							}
 							response_it->second.new_request(request);
@@ -247,7 +264,6 @@ int ServerManager::run_servers()
 			}
 			if (this->_fds[i].revents & POLLHUP) // if CGI and CGI out remote end closed -> read remaining to internal buffer, close local end
 			{
-				//std::cout << "POLLHUP" << std::endl;
 				std::map<int, CGI>::iterator cgi_it = this->_cgis.find(this->_fds[i].fd);
 				if (cgi_it != this->_cgis.end())
 				{
@@ -464,4 +480,22 @@ int		ServerManager::get_cgi_response(std::string header)
 	// return result;
 	(void)header;
 	return (0);
+}
+
+std::string	ServerManager::getDefPort(std::string &host)
+{
+	size_t pos = host.find_first_of(':');
+	if (pos != std::string::npos && pos != host.size() - 1)
+	{
+		host.erase(0, pos);
+		std::map<std::string, std::string>::iterator it = this->_default_host.begin();
+		while (it != this->_default_host.end())
+		{
+			pos = it->first.find(host);
+			if (pos != std::string::npos && pos == it->first.size() - host.size())
+				return it->second;
+			it++;
+		}
+	}
+	return "";
 }

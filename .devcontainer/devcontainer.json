@@ -8,7 +8,7 @@
 	"features": {
 		"ghcr.io/devcontainers/features/github-cli:1": {}
 	},
-	"runArgs": ["--add-host=webserv:127.0.0.2", "--add-host=webserv2:127.130.0.1" ],
+	"runArgs": ["--add-host=webserv:127.0.0.2", "--add-host=webserv2:127.0.0.2" ],
 	
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
@@ -16,9 +16,7 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"forwardPorts": [
 		"webserv:8000",
-		"webserv2:8000",
-		"webserv:8001",
-		"webserv2:8001"
+		"webserv2:8000"
 	],
 	"customizations": {
 		"vscode": {

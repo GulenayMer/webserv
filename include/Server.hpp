@@ -24,14 +24,13 @@ class Server
 		int					_error;
 		MIME				_types;
 
-	
-		/* Server();
-		Server(const Server& copy); */
-		// Server& operator=(const Server& rhs);
     public:
 		Server(Config config);
+		// Server(const Server& copy);
+		// Server& operator=(const Server& rhs);
 		~Server();
 
+		void	initServer();
 		int		init_socket();
 		int		bind_socket();
 		int		listen_socket();

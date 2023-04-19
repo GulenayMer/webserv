@@ -22,6 +22,7 @@ Config &Config::operator=(const Config &obj)
 		this->_port = obj._port;
 		this->_addr = obj._addr;
 		this->_server_name = obj._server_name;
+		this->_name_port = obj._name_port;
 		this->_host = obj._host;
 		this->_default_error = obj._default_error;
 		this->_client_max_body_size = obj._client_max_body_size;
@@ -136,7 +137,7 @@ void					Config::set_addr(in_addr_t addr)
 	this->_addr.s_addr = addr;
 }
 
-void	Config::setHost(std::string &host)
+void	Config::setHost(std::string host)
 {
 	this->_host = host;
 }
@@ -312,8 +313,12 @@ std::map<std::string, std::string> &Config::getRedirection()
 	return this->_redirection;
 }
 
-void	Config::combineHost()
+std::string &Config::getNamePort()
 {
-	this->_host.insert(0, ":");
-	this->_host.insert(0, this->_server_name);
+	return this->_name_port;
+}
+
+void	Config::setNamePort(std::string name_port)
+{
+	this->_name_port = name_port;
 }
