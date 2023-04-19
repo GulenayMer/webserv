@@ -450,16 +450,18 @@ void	ServerManager::server_create_error(std::logic_error &e, int i)
 
 int		ServerManager::get_cgi_response(std::string header)
 {
-	size_t				start, end;
-	int					result;
+	// size_t				start, end;
+	// int					result;
 
-	start = header.find_first_not_of(" \r\t\b\f");
-	start = header.find_first_of(" \r\t\b\f", start);
-	start = header.find_first_not_of(" \r\t\b\f", start);
-	end = header.find_first_of(" \r\t\b\f", start);
-	header = header.substr(start, end - start);
-  	std::stringstream	ss(header);
-  	ss >> result;
+	// start = header.find_first_not_of(" \r\t\b\f");
+	// start = header.find_first_of(" \r\t\b\f", start);
+	// start = header.find_first_not_of(" \r\t\b\f", start);
+	// end = header.find_first_of(" \r\t\b\f", start);
+	// header = header.substr(start, end - start);
+  	// std::stringstream	ss(header);
+  	// ss >> result;
 
-	return result;
+	// return result;
+	(void)header;
+	return (0);
 }

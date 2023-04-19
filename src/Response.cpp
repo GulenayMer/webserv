@@ -92,7 +92,6 @@ void Response::getPath()
 			// Right now it only accept index.html or <dir_name>.html
 			std::string dir_name = tmp_path.substr(pos, tmp_path.size() - pos);
 			std::map<std::string, Location>::iterator location_it = _config.get_location().begin();
-			std::cout << "Dir name : "<< dir_name << std::endl;
 
 			while (location_it != _config.get_location().end())
 			{
@@ -111,6 +110,31 @@ void Response::getPath()
 					std::ifstream	index((_respond_path + "/index.html").c_str());
 					if (index.good())
 						_respond_path = _respond_path + "/index.html";
+					else
+						_is_dir = true;
+				}
+			}
+			else if (location_it->second.get_index().empty())
+			{
+				_is_dir = false;
+				_list_dir = false;
+				_respond_path = location_it->second.get_root();
+				if (dir_name[0] == '/')
+					dir_name = dir_name.substr(1, dir_name.length() - 1);
+				std::ifstream	name((_respond_path + dir_name + ".html").c_str());
+				if (name.good())
+				{
+					_respond_path = _respond_path + dir_name + ".html";
+					location_it->second.set_index(dir_name);
+				}
+				else
+				{
+					std::ifstream	index((_respond_path + "index.html").c_str());
+					if (index.good())
+					{
+						_respond_path = _respond_path + "index.html";
+						location_it->second.set_index("index.html");
+					}
 					else
 						_is_dir = true;
 				}
@@ -254,6 +278,9 @@ int 	Response::send_response(std::ostringstream& response_stream)
 {
 	_response.clear();
 	this->_response = response_stream.str();
+	// std::cout << BLUE << std::endl << "--------------------------------------------------------" << RESET << std::endl;
+	// std::cout << BLUE << _response << RESET << std::endl;
+	// std::cout << BLUE << "--------------------------------------------------------" << RESET << std::endl << std::endl;
 	int	sent = send(this->_conn_fd, _response.c_str(), _response.length(), MSG_DONTWAIT);
 	_request->setSentSize(sent);
 	if (sent > 0)
