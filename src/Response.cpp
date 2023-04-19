@@ -160,7 +160,8 @@ int 	Response::handle_response()
 	else if (!handle_response_error(response_stream))
 	{
 		getPath();
-		_request->setURI(_respond_path);
+		if (!_is_cgi)
+			_request->setURI(_respond_path);
 		size_t ext_pos = _request->getUri().find_last_of(".");
 		if (!_is_cgi && _is_chunked)
 		{

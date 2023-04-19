@@ -466,19 +466,22 @@ void	ServerManager::server_create_error(std::logic_error &e, int i)
 
 int		ServerManager::get_cgi_response(std::string header)
 {
-	// size_t				start, end;
-	// int					result;
+	if (!header.empty())
+	{
+		size_t				start, end;
+		int					result;
 
-	// start = header.find_first_not_of(" \r\t\b\f");
-	// start = header.find_first_of(" \r\t\b\f", start);
-	// start = header.find_first_not_of(" \r\t\b\f", start);
-	// end = header.find_first_of(" \r\t\b\f", start);
-	// header = header.substr(start, end - start);
-  	// std::stringstream	ss(header);
-  	// ss >> result;
+		start = header.find_first_not_of(" \r\t\b\f");
+		start = header.find_first_of(" \r\t\b\f", start);
+		start = header.find_first_not_of(" \r\t\b\f", start);
+		end = header.find_first_of(" \r\t\b\f", start);
+		header = header.substr(start, end - start);
+		std::stringstream	ss(header);
+		ss >> result;
 
-	// return result;
-	(void)header;
+		return result;
+	}
+	std::cout << RED << "ERROR : something wrong with logs" << RESET << std::endl;
 	return (0);
 }
 
