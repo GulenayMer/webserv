@@ -160,6 +160,7 @@ int 	Response::handle_response()
 	else if (!handle_response_error(response_stream))
 	{
 		getPath();
+		_request->setURI(_respond_path);
 		size_t ext_pos = _request->getUri().find_last_of(".");
 		if (!_is_cgi && _is_chunked)
 		{
@@ -278,9 +279,6 @@ int 	Response::send_response(std::ostringstream& response_stream)
 {
 	_response.clear();
 	this->_response = response_stream.str();
-	// std::cout << BLUE << std::endl << "--------------------------------------------------------" << RESET << std::endl;
-	// std::cout << BLUE << _response << RESET << std::endl;
-	// std::cout << BLUE << "--------------------------------------------------------" << RESET << std::endl << std::endl;
 	int	sent = send(this->_conn_fd, _response.c_str(), _response.length(), MSG_DONTWAIT);
 	_request->setSentSize(sent);
 	if (sent > 0)
