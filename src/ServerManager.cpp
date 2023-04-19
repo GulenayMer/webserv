@@ -226,6 +226,7 @@ int ServerManager::run_servers()
 							}
 							response_it->second.new_request(request);
 							response_it->second.handle_response();
+							response_it->second.getRequest()->setStatusCode(get_cgi_response(response_it->second.get_response()));
 							if (response_it->second.is_cgi() == false)
 								response_it->second.getRequest()->printHeader();
 							if (response_it->second.shouldClose())
@@ -290,6 +291,7 @@ int ServerManager::run_servers()
 				{
 					std::cout << "SEND RESPONSE" << std::endl;
 					response_it->second.handle_response();
+					response_it->second.getRequest()->printHeader();
 					if (response_it->second.shouldClose())
 						close_connection(response_it->second, i);
 					else if (response_it->second.response_complete())
@@ -458,16 +460,18 @@ void	ServerManager::server_create_error(std::logic_error &e, int i)
 
 int		ServerManager::get_cgi_response(std::string header)
 {
-	size_t				start, end;
-	int					result;
+	// size_t				start, end;
+	// int					result;
 
-	start = header.find_first_not_of(" \r\t\b\f");
-	start = header.find_first_of(" \r\t\b\f", start);
-	start = header.find_first_not_of(" \r\t\b\f", start);
-	end = header.find_first_of(" \r\t\b\f", start);
-	header = header.substr(start, end - start);
-  	std::stringstream	ss(header);
-  	ss >> result;
+	// start = header.find_first_not_of(" \r\t\b\f");
+	// start = header.find_first_of(" \r\t\b\f", start);
+	// start = header.find_first_not_of(" \r\t\b\f", start);
+	// end = header.find_first_of(" \r\t\b\f", start);
+	// header = header.substr(start, end - start);
+  	// std::stringstream	ss(header);
+  	// ss >> result;
 
-	return result;
+	// return result;
+	(void)header;
+	return (0);
 }

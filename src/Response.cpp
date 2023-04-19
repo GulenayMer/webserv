@@ -61,18 +61,86 @@ void Response::getPath()
 	_response_body.clear();
 	_response.clear();
 	_is_cgi = false;
-	// std::cout << "INDEX: " << _config.get_index() << std::endl;
-	// if (_request.getUri() == "/")
-	// 	_respond_path = _config.get_index();
+
+	/* 
+		1. which server block?
+		2. check location blocks to see if there is a match
+			- if there is a match, check if the location block has a root
+			- if it does, set the root to the location block root
+			- if it doesn't, set the root to the server root
+			- if there is no match, set the root to the server root
+ 	*/
+
 	if (this->_request->getMethod() != DELETE && this->checkCGI())
 	{
 		_is_cgi = true;
 		return;
 	}
     else
-		_respond_path = _request->getUri();
-	// std::cout << "GETPATH RESPOND PATH: " << this->_request.getUri() << std::endl;
-    //_respond_path = _config.get_root() + clean_response_path(_respond_path);
+	{
+		// TODO Find where the extra '/' is being added to the end of uri and fix it
+		std::string	tmp_path = _request->getUri();
+		_respond_path = tmp_path;
+		while (tmp_path.length() > 1 && tmp_path[tmp_path.length() - 1] == '/')
+			tmp_path.erase(tmp_path.length() - 1);
+		size_t pos = tmp_path.find_last_of("/");
+		if (pos == std::string::npos)
+			pos = 0;
+		if (tmp_path.find_first_of(".", pos) == std::string::npos)
+		{
+			// I'm assuming that we won't allow directory listing for directories that are not specified in the config file
+			// Right now it only accept index.html or <dir_name>.html
+			std::string dir_name = tmp_path.substr(pos, tmp_path.size() - pos);
+			std::map<std::string, Location>::iterator location_it = _config.get_location().begin();
+
+			while (location_it != _config.get_location().end())
+			{
+				if (location_it->first == dir_name)
+					break;
+				location_it++;
+			}
+			if (location_it == _config.get_location().end())
+			{
+				_is_dir = false;
+				_list_dir = false;
+				std::ifstream	name((_respond_path + "/" + dir_name + ".html").c_str());
+				if (name.good())
+					_respond_path = _respond_path + "/" + dir_name + ".html";
+				else {
+					std::ifstream	index((_respond_path + "/index.html").c_str());
+					if (index.good())
+						_respond_path = _respond_path + "/index.html";
+					else
+						_is_dir = true;
+				}
+			}
+			else if (location_it->second.get_index().empty())
+			{
+				_is_dir = false;
+				_list_dir = false;
+				_respond_path = location_it->second.get_root();
+				if (dir_name[0] == '/')
+					dir_name = dir_name.substr(1, dir_name.length() - 1);
+				std::ifstream	name((_respond_path + dir_name + ".html").c_str());
+				if (name.good())
+				{
+					_respond_path = _respond_path + dir_name + ".html";
+					location_it->second.set_index(dir_name);
+				}
+				else
+				{
+					std::ifstream	index((_respond_path + "index.html").c_str());
+					if (index.good())
+					{
+						_respond_path = _respond_path + "index.html";
+						location_it->second.set_index("index.html");
+					}
+					else
+						_is_dir = true;
+				}
+			}
+		}
+	}
 }
 
 int 	Response::handle_response()
@@ -87,8 +155,9 @@ int 	Response::handle_response()
 	if (_is_redirect)
 	{
 		response_stream << redirect(_request->getUri());
+		_to_close = true;
 	}
-	if (!handle_response_error(response_stream))
+	else if (!handle_response_error(response_stream))
 	{
 		getPath();
 		size_t ext_pos = _request->getUri().find_last_of(".");
@@ -207,7 +276,11 @@ int 	Response::handle_response_error(std::ostringstream& response_stream)
 
 int 	Response::send_response(std::ostringstream& response_stream)
 {
-	_response = response_stream.str();
+	_response.clear();
+	this->_response = response_stream.str();
+	// std::cout << BLUE << std::endl << "--------------------------------------------------------" << RESET << std::endl;
+	// std::cout << BLUE << _response << RESET << std::endl;
+	// std::cout << BLUE << "--------------------------------------------------------" << RESET << std::endl << std::endl;
 	int	sent = send(this->_conn_fd, _response.c_str(), _response.length(), MSG_DONTWAIT);
 	_request->setSentSize(sent);
 	if (sent > 0)
@@ -215,7 +288,6 @@ int 	Response::send_response(std::ostringstream& response_stream)
 		_bytes_sent += sent;
 		if (_bytes_sent == _response.length())
 		{
-			_response.clear();
 			_bytes_sent = 0;
 		}
 	}
@@ -230,7 +302,6 @@ void	Response::responseToGET(std::ifstream &file, size_t &pos, std::ostringstrea
 	type = _types.get_content_type(&_respond_path[pos]);
 	file_buffer << file.rdbuf();
 	_response_body = file_buffer.str();
-	_request->setStatusCode(200);
 	response_stream << HTTP_OK << "Content-Length: " << _response_body.length() << "\nConnection: Keep-Alive\n";
 	response_stream << type << _response_body;
 }
@@ -250,7 +321,6 @@ void	Response::responseToGET(std::ifstream &file, size_t &pos, std::ostringstrea
 // 	std::string response_body;
 
 // 	// if the file cannot be opened, send a 404 error
-// 	_request->setStatusCode(404);
 //     std::ifstream error404((root + this->_config.get_error_path(404)).c_str());
 //     if (!error404.is_open())
 //         std::cerr << RED << _404_ERROR << RESET << std::endl;
@@ -292,7 +362,7 @@ bool	Response::new_request(httpHeader *request)
 	pos = uri.length() - 1;
 	while (!uri.empty())
 	{
-		if (uri.length() > 1 && uri[uri.length() -1] == '/')
+		if (uri.length() > 1 && uri[uri.length() - 1] == '/')
 			uri.erase(uri.length() - 1);
 		std::map<std::string, std::string>::iterator red_it = this->getConfig().getRedirection().find(uri);
 		if (red_it != this->getConfig().getRedirection().end())
@@ -364,7 +434,6 @@ void	Response::responseToDELETE(std::ostringstream &response_stream)
 	else
 	{
 		response_stream << HTTP_204 << _types.get_content_type(".txt");
-		_request->setStatusCode(204);
 	}
 	pathTest.close();
 }
@@ -419,7 +488,6 @@ std::string	Response::createError(int errorNumber)
 	std::string			error_path = getErrorPath(errorNumber, errorName);
 	std::ifstream error(error_path.c_str());
 
-	_request->setStatusCode(errorNumber);
 	if(!error.is_open())
 		std::cerr << RED << "error opening " << errorNumber << " file at " << error_path << RESET << std::endl;
 	else
@@ -618,7 +686,6 @@ std::string Response::directoryListing(std::string uri)
     outfile << "</html>\n";
 	std::string body(outfile.str());
 	std::ostringstream message;
-	_request->setStatusCode(200);
 	message << HTTP_OK << "Content-Length: " << body.length() << "\n" << _types.get_content_type(".html") << "\r\n\r\n" << body;
 	return (message.str());
 }
@@ -696,8 +763,12 @@ std::string Response::redirect(std::string uri)
 {
 	std::ostringstream message;
 
-	_request->setStatusCode(307);
 	message << "HTTP/1.1 307 Temporary Redirect\r\n";
 	message << "Location: " << uri << "\r\n\r\n";
 	return (message.str());
+}
+
+std::string	Response::get_response()
+{
+	return (_response);
 }
