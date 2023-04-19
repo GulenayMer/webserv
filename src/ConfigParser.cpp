@@ -185,11 +185,9 @@ void ConfigParser::clean_server_name(std::string line)
         if (!isdigit(ip[i]) && ip[i] != '.')
         {
             is_ip = false;
-            if (name.empty())
-			{
-				name = ip;
+			name.swap(ip);
+            if (ip.empty())
                 ip = findIP(name);
-			}
             break;
         }
     }
