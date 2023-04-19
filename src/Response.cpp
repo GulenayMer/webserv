@@ -61,10 +61,7 @@ void Response::getPath()
 	_response_body.clear();
 	_response.clear();
 	_is_cgi = false;
-	// std::cout << "INDEX: " << _config.get_index() << std::endl;
-	// if (_request.getUri() == "/")
-	// 	_respond_path = _config.get_index();
-	
+
 	/* 
 		1. which server block?
 		2. check location blocks to see if there is a match
@@ -80,9 +77,46 @@ void Response::getPath()
 		return;
 	}
     else
-		_respond_path = _request->getUri();
-	// std::cout << "GETPATH RESPOND PATH: " << this->_request.getUri() << std::endl;
-    //_respond_path = _config.get_root() + clean_response_path(_respond_path);
+	{
+		// TODO Find where the extra '/' is being added to the end of uri and fix it
+		std::string	tmp_path = _request->getUri();
+		_respond_path = tmp_path;
+		while (tmp_path.length() > 1 && tmp_path[tmp_path.length() - 1] == '/')
+			tmp_path.erase(tmp_path.length() - 1);
+		size_t pos = tmp_path.find_last_of("/");
+		if (pos == std::string::npos)
+			pos = 0;
+		if (tmp_path.find_first_of(".", pos) == std::string::npos)
+		{
+			// I'm assuming that we won't allow directory listing for directories that are not specified in the config file
+			// Right now it only accept index.html or <dir_name>.html
+			std::string dir_name = tmp_path.substr(pos, tmp_path.size() - pos);
+			std::map<std::string, Location>::iterator location_it = _config.get_location().begin();
+			std::cout << "Dir name : "<< dir_name << std::endl;
+
+			while (location_it != _config.get_location().end())
+			{
+				if (location_it->first == dir_name)
+					break;
+				location_it++;
+			}
+			if (location_it == _config.get_location().end())
+			{
+				_is_dir = false;
+				_list_dir = false;
+				std::ifstream	name((_respond_path + "/" + dir_name + ".html").c_str());
+				if (name.good())
+					_respond_path = _respond_path + "/" + dir_name + ".html";
+				else {
+					std::ifstream	index((_respond_path + "/index.html").c_str());
+					if (index.good())
+						_respond_path = _respond_path + "/index.html";
+					else
+						_is_dir = true;
+				}
+			}
+		}
+	}
 }
 
 int 	Response::handle_response()
@@ -301,7 +335,7 @@ bool	Response::new_request(httpHeader *request)
 	pos = uri.length() - 1;
 	while (!uri.empty())
 	{
-		if (uri.length() > 1 && uri[uri.length() -1] == '/')
+		if (uri.length() > 1 && uri[uri.length() - 1] == '/')
 			uri.erase(uri.length() - 1);
 		std::map<std::string, std::string>::iterator red_it = this->getConfig().getRedirection().find(uri);
 		if (red_it != this->getConfig().getRedirection().end())
