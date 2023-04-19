@@ -216,6 +216,7 @@ int ServerManager::run_servers()
 							}
 							response_it->second.new_request(request);
 							response_it->second.handle_response();
+							response_it->second.getRequest()->setStatusCode(get_cgi_response(response_it->second.get_response()));
 							if (response_it->second.is_cgi() == false)
 								response_it->second.getRequest()->printHeader();
 							if (response_it->second.shouldClose())
@@ -280,6 +281,7 @@ int ServerManager::run_servers()
 				{
 					std::cout << "SEND RESPONSE" << std::endl;
 					response_it->second.handle_response();
+					response_it->second.getRequest()->printHeader();
 					if (response_it->second.shouldClose())
 						close_connection(response_it->second, i);
 					else if (response_it->second.response_complete())

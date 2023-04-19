@@ -40,6 +40,8 @@ class Response
 		bool						_error;
 		Location					_location;
 		size_t						_received_bytes;
+
+		// Log files
     
         Response();
 		std::string getErrorPath(int &errorNumber, std::string& errorName);
@@ -87,6 +89,8 @@ class Response
 		bool isChunked();
 		void finishChunk();
 		std::string redirect(std::string uri);
+
+		std::string	get_response();
 };
 
 #endif

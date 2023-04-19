@@ -37,3 +37,4 @@ vgcore.*
 .env
 .vscode/
 cgi-bin/tmp
+*.cpython-39.pyc
