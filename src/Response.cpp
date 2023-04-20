@@ -428,8 +428,10 @@ void	Response::responseToDELETE(std::ostringstream &response_stream)
 	*/
 	// std::cout << RED << "PATH : " << _respond_path << RESET << std::endl;
 	std::ifstream	pathTest(_respond_path.c_str());
-	if (!pathTest.fail() || remove(_respond_path.c_str()) == -1)
+	if (pathTest.fail() == true)
 		response_stream << createError(404);
+	if  (remove(_respond_path.c_str()) == -1)
+		response_stream << createError(403);
 	else
 	{
 		response_stream << HTTP_204 << _types.get_content_type(".txt");
