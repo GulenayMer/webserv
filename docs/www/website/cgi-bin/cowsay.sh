@@ -24,15 +24,16 @@ fi
 message="<html>
 <head>
 <meta charset="UTF-8">
+<link href=/utils/cowstyle.css rel=stylesheet type=text/css>
 <title>Fortune</title>
 </head>
 <body>
 <pre>
 $cow
+</pre>
 <form METHOD=GET ACTION=\"/contact\">
 <button type=\"submit\">Get new fortune.</button>
 </form>
-</pre>
 <form METHOD=GET ACTION=\"/\">
 <button type=\"submit\">Homepage</button>
 </form>
