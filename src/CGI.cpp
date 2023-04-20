@@ -10,7 +10,7 @@ CGI::CGI(Response &response, httpHeader &header): _response(response), _header(h
 	this->_vector_pos = 0;
 	this->_bytes_sent = 0;
 	this->_errno = 0;
-	for (int i = 0; i < 18; i++)
+	for (int i = 0; i < 20; i++)
 		this->_exec_env[i] = NULL;
 	this->_pid = 0;
 	this->env_init();
@@ -37,7 +37,7 @@ CGI& CGI::operator=(const CGI& obj)
 		this->_vector_pos = obj._vector_pos;
 		this->_bytes_sent = obj._bytes_sent;
 		this->_errno = obj._errno;
-		for (int i = 0; i < 18; i++)
+		for (int i = 0; i < 20; i++)
 		{
 			if (obj._exec_env[i])
 				this->_exec_env[i] = strdup(obj._exec_env[i]);
@@ -102,7 +102,7 @@ void	CGI::env_init()
 	this->_content_length = atol(_response.getRequest().get_single_header("content-length").c_str());
 	this->_content_length += this->_response.getRequest().getHeaderLength();
 	_env["CONTENT_LENGTH"] = to_string(this->_content_length); // The length of the data (in bytes or the number of characters) passed to the CGI program through standard input.
-	//_env["HTTP_ACCEPT"]; // A list of the MIME types that the client can accept.
+	_env["HTTP_ACCEPT"] = this->_response.getRequest().get_single_header("accept"); // A list of the MIME types that the client can accept.
 	_env["HTTP_USER_AGENT"] = _response.getRequest().get_single_header("user-agent");; // The browser the client is using to issue the request.
 	_env["HTTP_REFERER"] = _response.getRequest().get_single_header("referer"); // The URL of the document that the client points to before accessing the CGI program. */
 	if (_response.getRequest().get_single_header("cookie").size() > 0)
@@ -119,9 +119,8 @@ void	CGI::env_to_char(void)
 	int i = 0;
 	while (it != this->_env.end()) {
 		temp = it->first + "=" + it->second;
-		this->_exec_env[i] = strdup(temp.c_str());
+		this->_exec_env[i++] = strdup(temp.c_str());
 		it++;
-		i++;
 	}
 	this->_exec_env[i] = NULL;
 }
