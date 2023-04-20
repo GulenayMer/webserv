@@ -55,9 +55,9 @@ try:
 	# check if db file exists, if not create it
 	db_path = os.environ["DB_PATH_WEBSITE"]
 	if os.path.exists(db_path):
-		user_exists = False
 		if is_json_file_valid(db_path) == False:
-			body = "User does not exist."	
+			body = "User does not exist."
+			user_exists = False
 	# File does not exist, create it with a list and add first user
 		else:
 			with open(db_path, "r", encoding='utf-8') as db:
@@ -77,7 +77,7 @@ try:
 			# if user does not exist create user
 			else:
 				body = "There was a problem accessing this account"
-			print_message(body, user_exists, False)
+		print_message(body, user_exists, False)
 except KeyError:
 	print_message(body, user_exists, True)
 

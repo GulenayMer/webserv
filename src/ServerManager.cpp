@@ -25,6 +25,7 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 	if (this->_host_serv.size() > 0) {
 		this->_compress_array = false;
 		this->_fds = new struct pollfd[MAX_CONN * 2];
+		memset(this->_fds, 0, MAX_CONN * 2);
 		this->_n_servers = this->pollfd_init();
 		this->_nfds = this->_n_servers;
 		// std::vector<Server>::iterator it = this->get_servers().begin();
@@ -40,14 +41,10 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 		std::cerr << RED << "ERROR: --- No valid configurations provided to create servers ---" << RESET << std::endl;
 }
 
-// ServerManager::~ServerManager()
-// {
-// 	for (size_t i = 0; i < this->get_servers().size(); i++)
-// 		this->get_server_at(i).clean_fd();
-// 	if (this->get_servers().size() > 0) {
-// 		delete [] this->_fds;
-// 	}
-// }
+ServerManager::~ServerManager()
+{
+	delete [] this->_fds;
+}
 
 int ServerManager::pollfd_init()
 {

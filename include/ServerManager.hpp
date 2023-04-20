@@ -30,7 +30,7 @@ class ServerManager {
     public:
 		ServerManager(std::vector<Config> &configs);
 
-        //~ServerManager();
+        ~ServerManager();
 
 		int 	pollfd_init();
 		int		run_servers();
