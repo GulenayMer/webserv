@@ -81,14 +81,12 @@ int ServerManager::run_servers()
 				socklen_t addr_len = sizeof(sockaddr_in);
 				int	connection_fd;
 				connection_fd = accept(this->_fds[i].fd, (struct sockaddr *)&addr, &addr_len);
-				std::string address(inet_ntoa(addr.sin_addr));
 				//int port = ntohs(addr.sin_port);
 				// if (this->_addr_fd.find(address) != this->_addr_fd.end())
 				// {
 				// 	close(connection_fd);
 				// 	continue;
 				// }
-				this->_addr_fd.insert(std::map<std::string, int>::value_type(address, connection_fd));
 				if (connection_fd < 0)
 				{
 					perror("accept");
@@ -101,6 +99,8 @@ int ServerManager::run_servers()
 					close(connection_fd);
 					continue ;
 				}
+				std::string address(inet_ntoa(addr.sin_addr));
+				this->_addr_fd.insert(std::map<std::string, int>::value_type(address, connection_fd));
 				//std::cout << GREEN << "New Connection" << RESET << std::endl;
 				this->_fds[this->_nfds].fd = connection_fd;
 				this->_fds[this->_nfds].events = POLLIN;
@@ -198,8 +198,8 @@ int ServerManager::run_servers()
 							// 	this->_cgis.erase(cgi_it);
 							// 	this->_compress_array = true;
 							// }
-							httpHeader *request = new httpHeader(buffer);
-							std::string host(request->get_single_header("host"));
+							httpHeader request(buffer);
+							std::string host(request.get_single_header("host"));
 							std::map<std::string, Server>::iterator serv_it = this->_host_serv.find(host);
 							if (serv_it != this->_host_serv.end())
 							{
@@ -230,9 +230,9 @@ int ServerManager::run_servers()
 							}
 							response_it->second.new_request(request);
 							response_it->second.handle_response();
-							response_it->second.getRequest()->setStatusCode(get_cgi_response(response_it->second.get_response()));
+							response_it->second.getRequest().setStatusCode(get_cgi_response(response_it->second.get_response()));
 							if (response_it->second.is_cgi() == false)
-								response_it->second.getRequest()->printHeader();
+								response_it->second.getRequest().printHeader();
 							if (response_it->second.shouldClose())
 								close_connection(response_it->second, i);
 							else if (response_it->second.is_cgi()) // init cgi
@@ -294,7 +294,7 @@ int ServerManager::run_servers()
 				{
 					std::cout << "SEND RESPONSE" << std::endl;
 					response_it->second.handle_response();
-					response_it->second.getRequest()->printHeader();
+					response_it->second.getRequest().printHeader();
 					if (response_it->second.shouldClose())
 						close_connection(response_it->second, i);
 					else if (response_it->second.response_complete())
@@ -305,9 +305,9 @@ int ServerManager::run_servers()
 					//std::cout << "CGI COMPLETE SEND" << std::endl;
 					if (cgi_it->second.sendResponse())
 					{
-						cgi_it->second.getResponse().getRequest()->setStatusCode(get_cgi_response(cgi_it->second.get_response_string()));
-						cgi_it->second.getResponse().getRequest()->setSentSize(cgi_it->second.get_size_sent());
-						cgi_it->second.getResponse().getRequest()->printHeader();
+						cgi_it->second.getResponse().getRequest().setStatusCode(get_cgi_response(cgi_it->second.get_response_string()));
+						cgi_it->second.getResponse().getRequest().setSentSize(cgi_it->second.get_size_sent());
+						cgi_it->second.getResponse().getRequest().printHeader();
 						// cgi_it->second.getResponse().getRequest()->printHeader();
 						//std::cout << "ALL COMPLETE, CLOSE" << std::endl;
 						this->_cgis.erase(cgi_it);
@@ -395,7 +395,7 @@ void	ServerManager::close_connection(Response &response, int i)
 	}
 }
 
-bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, int i, httpHeader *request)
+bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, int i, httpHeader &request)
 {
 	CGI cgi(response, request);
 	int out_fd = cgi.initOutputPipe();
@@ -430,7 +430,7 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 			this->_compress_array = true;
 			cgi_it->second.closePipes();
 			cgi_it->second.sendResponse();
-			cgi_it->second.getResponse().getRequest()->printHeader();
+			cgi_it->second.getResponse().getRequest().printHeader();
 			close_connection(cgi_it->second.getResponse(), i);
 			this->_cgis.erase(ret_pair.first);
 			this->_cgi_fds.erase(cgi_ret_pair.first);

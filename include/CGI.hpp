@@ -18,7 +18,7 @@ enum CGIerrors
 class CGI {
 	private:
 		Response							_response;
-		httpHeader							*_header;
+		httpHeader							_header;
 		bool								_done_reading;
 		bool								_body_complete;
 		bool								_header_removed;
@@ -43,7 +43,7 @@ class CGI {
 		int									_size_sent;
 
 	public:
-		CGI(Response &response, httpHeader *header);
+		CGI(Response &response, httpHeader &header);
 		CGI(const CGI& obj);
 		CGI& operator=(const CGI& obj);
 		~CGI();
