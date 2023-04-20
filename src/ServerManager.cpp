@@ -203,7 +203,6 @@ int ServerManager::run_servers()
 							// }
 							httpHeader *request = new httpHeader(buffer);
 							std::string host(request->get_single_header("host"));
-							std::cout << "host: " << host << std::endl;
 							std::map<std::string, Server>::iterator serv_it = this->_host_serv.find(host);
 							if (serv_it != this->_host_serv.end())
 							{
@@ -220,8 +219,16 @@ int ServerManager::run_servers()
 								}
 								else
 								{
-									close_connection(response_it->second, i);
-									continue;
+									std::cout << BLUE << "Finding default server for port" << RESET << std::endl;
+									host = getDefPort(host);
+									if (host.empty())
+									{
+										std::cout << RED << "No default server found for port" << RESET << std::endl;
+										close_connection(response_it->second, i);
+										continue;
+									}
+									std::cout << BLUE << "Using default server for port: " << host << RESET << std::endl;
+									response_it->second.newConfig(this->_host_serv.find(host)->second.get_config());
 								}
 							}
 							response_it->second.new_request(request);
@@ -257,7 +264,6 @@ int ServerManager::run_servers()
 			}
 			if (this->_fds[i].revents & POLLHUP) // if CGI and CGI out remote end closed -> read remaining to internal buffer, close local end
 			{
-				//std::cout << "POLLHUP" << std::endl;
 				std::map<int, CGI>::iterator cgi_it = this->_cgis.find(this->_fds[i].fd);
 				if (cgi_it != this->_cgis.end())
 				{
@@ -460,18 +466,39 @@ void	ServerManager::server_create_error(std::logic_error &e, int i)
 
 int		ServerManager::get_cgi_response(std::string header)
 {
-	// size_t				start, end;
-	// int					result;
+	if (!header.empty())
+	{
+		size_t				start, end;
+		int					result;
 
-	// start = header.find_first_not_of(" \r\t\b\f");
-	// start = header.find_first_of(" \r\t\b\f", start);
-	// start = header.find_first_not_of(" \r\t\b\f", start);
-	// end = header.find_first_of(" \r\t\b\f", start);
-	// header = header.substr(start, end - start);
-  	// std::stringstream	ss(header);
-  	// ss >> result;
+		start = header.find_first_not_of(" \r\t\b\f");
+		start = header.find_first_of(" \r\t\b\f", start);
+		start = header.find_first_not_of(" \r\t\b\f", start);
+		end = header.find_first_of(" \r\t\b\f", start);
+		header = header.substr(start, end - start);
+		std::stringstream	ss(header);
+		ss >> result;
 
-	// return result;
-	(void)header;
+		return result;
+	}
+	std::cout << RED << "ERROR : something wrong with logs" << RESET << std::endl;
 	return (0);
+}
+
+std::string	ServerManager::getDefPort(std::string &host)
+{
+	size_t pos = host.find_first_of(':');
+	if (pos != std::string::npos && pos != host.size() - 1)
+	{
+		host.erase(0, pos);
+		std::map<std::string, std::string>::iterator it = this->_default_host.begin();
+		while (it != this->_default_host.end())
+		{
+			pos = it->first.find(host);
+			if (pos != std::string::npos && pos == it->first.size() - host.size())
+				return it->second;
+			it++;
+		}
+	}
+	return "";
 }
