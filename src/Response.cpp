@@ -103,9 +103,9 @@ void Response::getPath()
 			{
 				_is_dir = false;
 				_list_dir = false;
-				std::ifstream	name((_respond_path + "/" + dir_name + ".html").c_str());
+				std::ifstream	name((_respond_path + dir_name + ".html").c_str());
 				if (name.good())
-					_respond_path = _respond_path + "/" + dir_name + ".html";
+					_respond_path = _respond_path + dir_name + ".html";
 				else {
 					std::ifstream	index((_respond_path + "/index.html").c_str());
 					if (index.good())
