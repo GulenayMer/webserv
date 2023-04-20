@@ -71,7 +71,7 @@ void Response::getPath()
 			- if there is no match, set the root to the server root
  	*/
 
-	if (this->_request->getMethod() != DELETE && this->checkCGI())
+	if (this->_request.getMethod() != DELETE && this->checkCGI())
 	{
 		_is_cgi = true;
 		return;
@@ -79,7 +79,7 @@ void Response::getPath()
     else
 	{
 		// TODO Find where the extra '/' is being added to the end of uri and fix it
-		std::string	tmp_path = _request->getUri();
+		std::string	tmp_path = _request.getUri();
 		_respond_path = tmp_path;
 		while (tmp_path.length() > 1 && tmp_path[tmp_path.length() - 1] == '/')
 			tmp_path.erase(tmp_path.length() - 1);
@@ -150,19 +150,19 @@ int 	Response::handle_response()
 	_response_body.clear();
 	_response.clear();
 	setChunked();
-	_request->setUserIP(_addr);
+	_request.setUserIP(_addr);
 	_is_cgi = false;
 	if (_is_redirect)
 	{
-		response_stream << redirect(_request->getUri());
+		response_stream << redirect(_request.getUri());
 		_to_close = true;
 	}
 	else if (!handle_response_error(response_stream))
 	{
 		getPath();
 		if (!_is_cgi)
-			_request->setURI(_respond_path);
-		size_t ext_pos = _request->getUri().find_last_of(".");
+			_request.setURI(_respond_path);
+		size_t ext_pos = _request.getUri().find_last_of(".");
 		if (!_is_cgi && _is_chunked)
 		{
 			response_stream << createError(404);
@@ -173,12 +173,12 @@ int 	Response::handle_response()
 			response_stream << createError(404);
 			_to_close = true;
 		}
-		else if (!_is_cgi && !_is_dir && ext_pos != std::string::npos && _types.get_content_type(&this->_request->getUri()[ext_pos]).empty())
+		else if (!_is_cgi && !_is_dir && ext_pos != std::string::npos && _types.get_content_type(&this->_request.getUri()[ext_pos]).empty())
 		{
 			response_stream << createError(415);
 			_to_close = true;
 		}
-		else if (this->_list_dir && _request->getMethod() == GET)
+		else if (this->_list_dir && _request.getMethod() == GET)
 		{
 			if (this->_location.get_autoindex())
 				response_stream << directoryListing(_respond_path);
@@ -187,8 +187,8 @@ int 	Response::handle_response()
 		}
 		else if (_is_cgi)
 		{
-			size_t pos = this->_request->getUri().find_last_of("/");
-			if (pos != std::string::npos && !dir_exists(this->_request->getUri().substr(0, pos)))
+			size_t pos = this->_request.getUri().find_last_of("/");
+			if (pos != std::string::npos && !dir_exists(this->_request.getUri().substr(0, pos)))
 			{
 				response_stream << createError(404);
 				this->_is_cgi = false;
@@ -211,14 +211,14 @@ int 	Response::handle_response()
 			}
 			else
 			{
-				if (_request->getMethod() == GET)
+				if (_request.getMethod() == GET)
 					responseToGET(file, ext_pos, response_stream);
-				else if (_request->getMethod() == POST)
+				else if (_request.getMethod() == POST)
 				{
 					// responseToPOST(_request, response_stream); TODO
 					// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A POST REQUEST";
 				}
-				else if (_request->getMethod() == DELETE)
+				else if (_request.getMethod() == DELETE)
 				{
 					responseToDELETE(response_stream);
 					// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A DELETE REQUEST";
@@ -232,42 +232,42 @@ int 	Response::handle_response()
 
 int 	Response::handle_response_error(std::ostringstream& response_stream)
 {
-	if (_request->isError()) {
+	if (_request.isError()) {
 		response_stream << createError(414);
 		_to_close = true;
 		return 1;
 	}
-	else if (!_request->isHttp11()) {
+	else if (!_request.isHttp11()) {
 		response_stream << createError(505);
 		_to_close = true;
 		return 1;
 	}
-	else if (_request->getContentLength() > _config.get_client_max_body_size()) {
+	else if (_request.getContentLength() > _config.get_client_max_body_size()) {
 		response_stream << createError(413);
 		_to_close = true;
 		return 1;
 	}
-	else if (_request->getMethod() > 2) {
+	else if (_request.getMethod() > 2) {
 		response_stream << createError(501);
 		_to_close = true;
 		return 1;
 	}
-	else if(!_location.check_method_at(_request->getMethod())) {
+	else if(!_location.check_method_at(_request.getMethod())) {
 		response_stream << createError(405);
 		_to_close = true;
 		return 1;
 	}
-	else if (_request->getMethod() == POST && this->_request->get_single_header("content-length").empty() && !this->_is_chunked) {
+	else if (_request.getMethod() == POST && this->_request.get_single_header("content-length").empty() && !this->_is_chunked) {
 		response_stream << createError(411);
 		_to_close = true;
 		return 1;
 	}
-	else if (_request->getMethod() == POST && _request->getContentLength() == 0 && !this->_is_chunked) {
+	else if (_request.getMethod() == POST && _request.getContentLength() == 0 && !this->_is_chunked) {
 		response_stream << createError(400);
 		_to_close = true;
 		return 1;
 	}
-	else if (_request->getMethod() == POST && _request->getContentLength() > _config.get_client_max_body_size()) {
+	else if (_request.getMethod() == POST && _request.getContentLength() > _config.get_client_max_body_size()) {
 		response_stream << createError(413);
 		_to_close = true;
 		return 1;
@@ -281,7 +281,7 @@ int 	Response::send_response(std::ostringstream& response_stream)
 	_response.clear();
 	this->_response = response_stream.str();
 	int	sent = send(this->_conn_fd, _response.c_str(), _response.length(), MSG_DONTWAIT);
-	_request->setSentSize(sent);
+	_request.setSentSize(sent);
 	if (sent > 0)
 	{
 		_bytes_sent += sent;
@@ -334,7 +334,7 @@ void	Response::responseToGET(std::ifstream &file, size_t &pos, std::ostringstrea
 // 	}
 // }
 
-bool	Response::new_request(httpHeader *request)
+bool	Response::new_request(httpHeader &request)
 {
 	this->_request = request;
 	this->_to_close = false;
@@ -344,7 +344,7 @@ bool	Response::new_request(httpHeader *request)
 	this->_list_dir = false;
 	this->_received_bytes = 0;
 	std::map<std::string, Location>::iterator loc_it;
-	std::string uri = request->getUri();
+	std::string uri = request.getUri();
 	size_t pos = uri.find_last_of("/");
 	if (pos == std::string::npos)
 		pos = 0;
@@ -372,7 +372,7 @@ bool	Response::new_request(httpHeader *request)
 			if (loc_it == this->getConfig().get_location().end())
 			{
 				_is_redirect = true;
-				this->_request->setURI(red_it->second);
+				this->_request.setURI(red_it->second);
 				return true; 
 			}
 
@@ -388,15 +388,15 @@ bool	Response::new_request(httpHeader *request)
 				{
 					if (!this->_location.get_index().empty())
 					{
-						this->_request->setURI(this->_location.get_root() + this->_location.get_index());
+						this->_request.setURI(this->_location.get_root() + this->_location.get_index());
 						this->_is_dir = false;
 					}
 				}
 				else
-					this->_request->setURI(this->_location.get_root() + &request->getUri()[pos + 1]);
+					this->_request.setURI(this->_location.get_root() + &request.getUri()[pos + 1]);
 			}
 			else
-				this->_request->setURI(this->_location.get_root() + &request->getUri()[pos + 1]);
+				this->_request.setURI(this->_location.get_root() + &request.getUri()[pos + 1]);
 			return true;
 		}
 		if (pos > 0)
@@ -447,7 +447,7 @@ Config &Response::getConfig()
 	return this->_config;
 }
 
-httpHeader *Response::getRequest()
+httpHeader &Response::getRequest()
 {
 	return this->_request;
 }
@@ -575,8 +575,8 @@ std::string Response::getErrorPath(int &errorNumber, std::string& errorName)
 
 bool Response::checkCGI()
 {
-	size_t pos = this->_request->getUri().find_last_of(".");
-	size_t pos2 = this->_request->getUri().find_last_of("/");
+	size_t pos = this->_request.getUri().find_last_of(".");
+	size_t pos2 = this->_request.getUri().find_last_of("/");
 	if (this->getConfig().getIntrPath().empty())
 		return false;
 	if (pos != std::string::npos)
@@ -586,7 +586,7 @@ bool Response::checkCGI()
 			this->_is_dir = true;
 			return false;
 		}
-		this->_ext = this->_request->getUri().substr(pos);
+		this->_ext = this->_request.getUri().substr(pos);
 		std::map<std::string, std::string>::iterator it = this->getConfig().getIntrPath().find(this->_ext);
 		if (it != this->getConfig().getIntrPath().end())
 			return true;
@@ -597,7 +597,7 @@ bool Response::checkCGI()
 
 bool	Response::checkPermissions()
 {
-	std::string path = this->getRequest()->getUri();
+	std::string path = this->getRequest().getUri();
 	if (path.size() == 1)
 		path = this->_location.get_root() + this->_location.get_index();
 	else
@@ -714,7 +714,7 @@ ssize_t Response::receivedBytes(ssize_t received)
 {
 	this->_received_bytes += received;
 	// std::cout << "total received: " << _received_bytes << " content: " << this->getRequest().getContentLength() << std::endl;
-	return (this->getRequest()->getContentLength() - this->_received_bytes);
+	return (this->getRequest().getContentLength() - this->_received_bytes);
 }
 
 // const char* dir_path = "/path/to/directory";
@@ -734,7 +734,7 @@ std::string &Response::getExt()
 
 void	Response::setChunked()
 {
-	if (this->_request->get_single_header("transfer-encoding") == "chunked")
+	if (this->_request.get_single_header("transfer-encoding") == "chunked")
 		this->_is_chunked = true;
 	else
 		this->_is_chunked = false;
