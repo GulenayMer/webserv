@@ -357,8 +357,6 @@ bool	CGI::sendResponse()
 	}
 	else
 	{
-		for (size_t i = 0; i < this->_response_buff.size(); i++)
-			std::cout << this->_response_buff[i];
 		sent = send(this->_response.getConnFd(), &_response_buff[this->_bytes_sent], _response_buff.size() - this->_bytes_sent, MSG_DONTWAIT);
 		std::string temp(_response_buff.begin(), _response_buff.end());
 		_response_string = temp;
