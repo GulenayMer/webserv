@@ -151,13 +151,6 @@ bool	CGI::handle_cgi()
     if (this->_pid == 0)
 	{
 		this->env_to_char();
-		std::cout << "CGI script path: " << script_path << std::endl;
-		char cwd[PATH_MAX];
-		if (getcwd(cwd, sizeof(cwd)) != NULL) {
-			std::cout << "Current working dir: " << cwd << std::endl;
-		} else {
-			perror("getcwd() error");
-		}
         exec_script(this->_input_pipe, this->_output_pipe, script_path);
 	}
     else
@@ -180,17 +173,11 @@ void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
 	if (pos != std::string::npos)
 	{
 		script_name = path.substr(pos + 1);
-		std::cout << "CGI script name: " << script_name << std::endl;
-		std::string cwd = path.substr(0, path.find_last_of("/"));
-		std::cout << "CGI cwd: " << cwd << std::endl;
+		std::string cwd(path.substr(0, path.find_last_of("/")));
 		chdir(cwd.c_str());
 	}
 	else
-	{
 		script_name = path;
-		std::cout << "CGI script name: " << path << std::endl;
-		std::cout << "CGI cwd: " << std::endl;
-	}
 	if (output_pipe[0] > 0)
 		close(output_pipe[0]);
 	if (input_pipe[1] > 0)
@@ -204,7 +191,7 @@ void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
 	if (input_pipe[0] > 0)
 		close(input_pipe[0]);
     execve(args[0], args, this->_exec_env);
-    perror("execve failed.");
+    perror("execve");
 	exit(1);
 }
 
@@ -419,10 +406,8 @@ void	CGI::set_boundary()
 
 void	CGI::storeBuffer(char *buffer, size_t received)
 {
-	// std::cout << "STORE BUFFER" << std::endl;
 	for (size_t i = 0; i < received; i++)
 		this->_request_buff.push_back(buffer[i]);
-	// std::cout << "STORE BUFFER END" << std::endl;
 }
 
 int		CGI::getOutFd()
@@ -452,10 +437,8 @@ void	CGI::writeToCGI()
 			this->_request_buff.clear();
 		}
 		this->_bytes_sent += sent;
-		// std::cout << "total bytes sent: " << this->_bytes_sent << ", content_length: " << this->_content_length << std::endl;
 		if (this->_bytes_sent >= this->_content_length)
 		{
-			// std::cout << "DONE" << std::endl;
 			this->_body_complete = true;
 			this->_bytes_sent = 0;
 			this->_content_length = 0;
@@ -501,12 +484,6 @@ void CGI::mergeChunk(char *buffer, size_t received) //TODO this is removing newl
 				addHeaderChunked();
 				this->_content_length += this->_header_length;
 				this->_response.finishChunk();
-				std::cout << RED << "Complete message:" << std::endl;
-				for (size_t i = 0; i < this->_request_buff.size(); i++)
-					std::cout << this->_request_buff[i];
-				std::cout << RESET << std::endl;
-				std::cout << "Message end." << std::endl;
-				std::cout << "Content length: " << this->_content_length << std::endl;
 				return;
 			}
 		}
@@ -543,7 +520,6 @@ size_t CGI::convertHex(char *buffer)
 	// if (this->_chunk_size == 0 && std::strcmp(buffer, "0"))
 	// 	throw std::runtime_error("CGI::convertHex: Invalid hexadecimal number");
 	this->_content_length += this->_chunk_size;
-	std::cout << "chunk size: " << this->_chunk_size << std::endl;
 	i += 2;
 	this->_chunk_context = true;
 	return i;
@@ -555,7 +531,6 @@ void CGI::addHeaderChunked()
 	std::ostringstream oss;
 	oss << this->_content_length;
 	std::string len(oss.str() + "\r\n\r\n");
-	std::cout << "content-length: " << len << std::endl;
 	for (int i = len.length() - 1; i >= 0; i--)
 	{
 		this->_request_buff.insert(this->_request_buff.begin(), len[i]);

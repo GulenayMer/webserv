@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Chivo+Mono&family=Montserrat&family=Roboto&display=swap');
+
+body {
+	background-color:rgb(190, 242, 255);
+	text-shadow: rgb(128, 128, 128) 0px 0px 7px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+pre {
+	font-weight: 600;
+	font-family: 'sans-serif', monospace;
+	margin: 50px;
+}
+
+button {
+	font-family: 'Roboto', sans-serif;
+	margin: 2px;
+	color: #000000;
+	background-color: #17bbc7;
+	font-weight: 600;
+	padding: 10px 30px;
+	border-radius: 7px;
+	border-color: black;
+}

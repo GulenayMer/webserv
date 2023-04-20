@@ -3,7 +3,7 @@
 import sys
 
 try:
-	f = open("uploaded.png", "xb")
+	f = open("upload", "xb")
 except:
 	print("HTTP/1.1 200 OK\r")
 	print("Content-Type: text/html\r")
@@ -20,5 +20,5 @@ with f:
 		f.write(line.encode('utf8','surrogateescape'))
 f.close()
 
-print("HTTP/1.1 204 No Content\r\n")
+print("HTTP/1.1 204 No Content\r\n\r\n")
 	
