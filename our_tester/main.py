@@ -118,6 +118,7 @@ def run() -> None:
     
     
     run_test("Test 500: GET", test_500)
+    run_test("Test 400: GET", test_request_line_multiple_space)
 
     # run_test("Test 400: GET /iamnothere/", test_errors, "iamnothere/", 400)
     # run_test("Test 405: POST /", test_errors, None, 405)
