@@ -142,18 +142,13 @@ def test_501() -> str:
     return ""
 
 def test_request_line_multiple_space() -> str:
-    request_header = "GET  /  HTTP/1.1\r\nHost:{}\r\n\r\n".format(config.SERVER_ADDR)
+    request_header = "GET  /  HTTP/1.1\r\nHost: {}:{}\r\n\r\n".format(config.SERVER_NAME, config.SERVER_PORT)
     http_response = send_request(request_header)
     try:
         if http_response.status != 400:
             return "Bad status code: {}, expected: {}".format(
-                str(http_response.status), "400"
-            )
+                str(http_response.status), "400")
     except Exception as e:
         print(f"Error: {e}")
         return "Bad status code, expected: {}".format("400")
-    # if http_response.status != 400:
-    #     return "Bad status code: {}, expected: {}".format(
-    #         str(http_response.status), "400"
-    #     )
     return ""
