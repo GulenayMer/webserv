@@ -1,0 +1,27 @@
+GET
+
+"GET /"
+"GET /pokemon"
+"GET /pokemon/index.html"
+"GET /contact"
+"GET /about"
+"GET /fake"
+
+
+POST
+
+DELETE
+
+CGI
+
+COOKIES
+
+ERRORS
+"GET /iamnothere" #400 directory doesn't exist
+#400 POST request and content length in 0
+#403 If cgi was called and cgi is not allowed
+GET /iamnothere.html #404 file doesn't exist
+
+
+Errors we didnt user
+#401
