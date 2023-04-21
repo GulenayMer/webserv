@@ -1,5 +1,16 @@
 #include "../include/ServerManager.hpp"
 
+/*
+	Server Manager :
+	+ gets the config file, initializes the variables from the config, unless it has errors
+	+ after that it runs the server according to the incoming request, 
+		# this process includes I/O multiplexing, 
+		# which allows a single thread/process to handle multiple I/O operations simultaneously.
+		# poll() method is used for this, which allows monitoring multiple fds to determine which ones are ready for I/O operations.
+		# when fds are ready for the connection, it accepts & connects
+		# then sends the responses according to requests
+*/
+
 ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _nfds(0) {
     for (size_t i = 0; i < this->_configs.size(); i++)
     {
@@ -22,7 +33,8 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 			server_create_error(e, i);
 		}
     }
-	if (this->_host_serv.size() > 0) {
+	if (this->_host_serv.size() > 0) 
+	{
 		this->_compress_array = false;
 		this->_fds = new struct pollfd[MAX_CONN * 2];
 		memset(this->_fds, 0, MAX_CONN * 2);

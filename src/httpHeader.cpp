@@ -196,7 +196,7 @@ void httpHeader::setMethod(std::string tmp_method)
 
 void httpHeader::setVersion(std::string version)
 {
-	//TODO - check is version is valid
+	//TODO - check is version is valid -- DONE
 	// check for http 1.1
 	// throw error
 	_version = version;

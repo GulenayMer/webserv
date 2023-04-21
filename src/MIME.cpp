@@ -1,5 +1,10 @@
 #include "../include/MIME.hpp"
 
+/*
+	These are the allowed media types, which indicates the format of a document, file etc.
+	Browsers use the MIME type, not the file extension, to determine how to process a URL,
+	so it's important that web servers send the correct MIME type in the response's Content-Type header.
+*/
 MIME::MIME()
 {
 	this->_mime_types[".html"] = "Content-Type: text/html\r\n\r\n";

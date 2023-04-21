@@ -1,5 +1,9 @@
 #include "../include/Response.hpp"
 
+/*
+	This is where the responses are handled according to requested method
+*/
+
 Response::Response(int conn_fd, int server_fd, struct pollfd* fds, int nfds, std::string addr)
 {
     _conn_fd = conn_fd;
