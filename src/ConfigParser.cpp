@@ -131,11 +131,7 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
         {
             context -= 1;
             if (context == 0)
-            {
                 addToExtMap();
-                std::cout << "full host: " << this->get_config(this->_n_servers - 1).getHost() << std::endl;
-                std::cout << "name host: " << this->get_config(this->_n_servers - 1).getNamePort() << std::endl;
-            }
             else if (context < 0)
 				throw std::runtime_error("Invalid configuration file context.");
         }

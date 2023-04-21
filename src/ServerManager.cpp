@@ -19,7 +19,7 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 			this->_configs[i].check_config();
 			std::cout << "name : " << this->_configs[i].get_server_name() << std::endl;
 			std::cout << "root : " << this->_configs[i].get_root() << std::endl;
-			std::cout << "port : " << this->_configs[i].get_port() << std::endl << std::endl;
+			std::cout << "host : " << this->_configs[i].getHost() << std::endl << std::endl;
 			Server server(this->_configs[i]);
 			std::map<std::string, std::string>::iterator it = this->_default_host.find(this->_configs[i].getHost());
 			if (it == this->_default_host.end())
