@@ -107,17 +107,16 @@ def run() -> None:
     run_test("Test 2: DELETE /storage/file_exists)", test_delete, "storage/test.txt", 204, "/workspaces/webserv/docs/www/website/storage/test.txt")
 
 
-    # print(r"{}{}### TESTING ERRORS ###{}".format(C_B_WHITE, B_GRAY, RESET))
-    # run_test("Test 403: GET /a/a.html", test_403)
-    # run_test("Test 404: GET /iamnothere", test_errors, "iamnothere", 404)
+    print(r"{}{}### TESTING ERRORS ###{}".format(C_B_WHITE, B_GRAY, RESET))
+    run_test("Test 400: GET   /  HTTP/1.1", test_request_line_multiple_space)
+    run_test("Test 403: GET /a/a.html", test_403)
+    run_test("Test 404: GET /iamnothere", test_errors, "iamnothere", 404)
 
-    # run_test("Test 413: POST /pokemon", test_post, "pokemon/pokedex.py", 413, {"pokemon" : ('a' * 1000000)})
-    # run_test("Test 414: GET /", URITooLarge)
-    # run_test("Test 501: GET /pokemon", test_501)
-    # run_test("Test 505: GET /", HTTPVersionNotSupported)
-    
-    
-    # run_test("Test 500: GET", test_500)
+    run_test("Test 413: POST /pokemon", test_post, "pokemon/pokedex.py", 413, {"pokemon" : ('a' * 1000000)})
+    run_test("Test 414: GET /", URITooLarge)
+    run_test("Test 501: GET /pokemon", test_501)
+    run_test("Test 505: GET /", HTTPVersionNotSupported)
+    run_test("Test 500: GET", test_500)
 
     # run_test("Test 400: GET /iamnothere/", test_errors, "iamnothere/", 400)
     # run_test("Test 405: POST /", test_errors, None, 405)

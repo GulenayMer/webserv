@@ -16,7 +16,7 @@ httpHeader::httpHeader(std::string header)
 	std::string tmp_method = header.substr(start, end - start);
 	start = end + 1;
 	end = header.find(" ", start);
-	if (end - start > 2048)
+	if (end - start > 500)
 	{
 		this->_error = 1;
 		this->_uri.clear();
