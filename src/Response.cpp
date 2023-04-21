@@ -1,5 +1,9 @@
 #include "../include/Response.hpp"
 
+/*
+	This is where the responses are handled according to requested method
+*/
+
 Response::Response(int conn_fd, int server_fd, struct pollfd* fds, int nfds, std::string addr)
 {
     _conn_fd = conn_fd;
@@ -103,12 +107,12 @@ void Response::getPath()
 			{
 				_is_dir = false;
 				_list_dir = false;
-				std::ifstream	name((_respond_path + dir_name + ".html").c_str());
-				if (name.good())
+				std::string file = _respond_path + dir_name + ".html";
+				if (access(file.c_str(), F_OK) != -1)
 					_respond_path = _respond_path + dir_name + ".html";
 				else {
-					std::ifstream	index((_respond_path + "/index.html").c_str());
-					if (index.good())
+					file = _respond_path + "/index.html";
+					if (access(file.c_str(), F_OK) != -1)
 						_respond_path = _respond_path + "/index.html";
 					else
 						_is_dir = true;
@@ -121,16 +125,16 @@ void Response::getPath()
 				_respond_path = location_it->second.get_root();
 				if (dir_name[0] == '/')
 					dir_name = dir_name.substr(1, dir_name.length() - 1);
-				std::ifstream	name((_respond_path + dir_name + ".html").c_str());
-				if (name.good())
+				std::string file = _respond_path + dir_name + ".html";
+				if (access(file.c_str(), F_OK) != -1)
 				{
 					_respond_path = _respond_path + dir_name + ".html";
 					location_it->second.set_index(dir_name);
 				}
 				else
 				{
-					std::ifstream	index((_respond_path + "index.html").c_str());
-					if (index.good())
+					file = _respond_path + "/index.html";
+					if (access(file.c_str(), F_OK) != -1)
 					{
 						_respond_path = _respond_path + "index.html";
 						location_it->second.set_index("index.html");
@@ -204,9 +208,14 @@ int 	Response::handle_response()
 		else
 		{
 			std::ifstream file(_respond_path.c_str());
-			if (!file.is_open())
+			if (access(_respond_path.c_str(), F_OK) == -1)
 			{
 				response_stream << createError(404);
+				_to_close = true;
+			}
+			else if (access(_respond_path.c_str(), R_OK) == -1)
+			{
+				response_stream << createError(403);
 				_to_close = true;
 			}
 			else

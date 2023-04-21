@@ -191,12 +191,12 @@ void httpHeader::setMethod(std::string tmp_method)
 			// std::cerr << "Error method not compatible!" << std::endl; 
 			break;
 	}
-	//_method = method;
+
 }
 
 void httpHeader::setVersion(std::string version)
 {
-	//TODO - check is version is valid
+	//TODO - check is version is valid -- DONE
 	// check for http 1.1
 	// throw error
 	_version = version;
@@ -245,17 +245,7 @@ void httpHeader::printHeader()
 	if (itr != _header.end())
 		std::cout << YELLOW << "\"" << itr->second << "\"" << RESET;
 	std::cout << std::endl << std::endl;
-	
 
-	// std::cout << GREEN <<"Method: " << YELLOW << method << RESET << std::endl;
-    // std::cout << GREEN << "URI: " << YELLOW << _uri << RESET << std::endl;
-    // std::cout << GREEN << "HTTP Version: " << YELLOW << _version << RESET << std::endl;
-
-	// std::cout << "map Contains:\n";
-	// for ( std::map<std::string, std::string>::iterator itr = _header.begin(); itr != _header.end(); ++itr)
-	// {
-	// 	std::cout << GREEN << itr->first << RESET << ": " << YELLOW << itr->second.c_str() << RESET << std::endl;
-	// }
 }
 
 /* check if header is http 1.1 protocol */

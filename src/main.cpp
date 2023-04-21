@@ -1,10 +1,15 @@
-#include <stdio.h> // we will not need it probably
+#include <stdio.h>
 #include "../include/Utils.hpp"
 #include "../include/httpHeader.hpp"
 #include "../include/ConfigParser.hpp"
 #include "../include/ServerManager.hpp"
 #include "../include/minilib.hpp"
 
+
+/*
+	if there is no config file given as an argument, 
+	it gets the default one, and calls the constructor according to that.
+*/
 int main(int argc, char** argv)
 {
     if (argc > 2) {

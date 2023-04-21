@@ -22,12 +22,13 @@ def print_message(body, user_exists):
 	# Meaning user was created in this registration
 	if user_exists == False:
 		html += "<meta http-equiv='refresh' content='0;url=/index.html'>"
+		message = "HTTP/1.1 201 OK\r\n"
 	else:
 		html += "<meta http-equiv='refresh' content='0;url=/failedRegistration.html'>"
+		message = "HTTP/1.1 409 OK\r\n"
 	html += "</head>"
 	html += body
 	html += "</html>"
-	message = "HTTP/1.1 201 OK\r\n"
 	message += f"Content-length: {len(html)} \r\n"
 	message += "Content-type:text/html\r\n\r\n"
 	message += html
