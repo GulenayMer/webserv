@@ -99,12 +99,13 @@ def run() -> None:
     run_test("Test 7: POST /register (new user)", test_post, "cgi-bin/register.py", 201, {"username" : "nemo", "email" : "nemo@gmail.com", "password" : "secret"})
     run_test("Test 6: POST /register (existing user)", test_post, "cgi-bin/register.py", 409, {"username" : "nemo", "email" : "nemo@gmail.com", "password" : "secret"})
     run_test("Test 5: POST /login", test_post, "cgi-bin/login.py", 200, {"username" : "nemo", "password" : "secret"})
-    run_test("Test 4: POST /upload", test_post, "cgi-bin/upload.py", 200, {"form" : "./test.txt"})
+    run_test("Test 5: POST /cgi-bin/delete.py", test_post, "cgi-bin/delete.py", 200, {"session" : "nemo"})
+    run_test("Test 4: POST /upload", test_post, "cgi-bin/upload.py", 200, {"form" : "/workspaces/webserv/test.txt"})
    
 
     print(r"{}{}### TESTING DELETE ###{}".format(C_B_WHITE, B_GRAY, RESET))
     run_test("Test 2: DELETE /storage/file_does_not_exist)", test_delete, "storage/dummy", 404)
-    run_test("Test 2: DELETE /storage/file_exists)", test_delete, "storage/test.txt", 204)
+    run_test("Test 2: DELETE /storage/file_exists)", test_delete, "storage/test.txt", 204, "/workspaces/webserv/docs/www/website/storage/test.txt")
 
 
     print(r"{}{}### TESTING ERRORS ###{}".format(C_B_WHITE, B_GRAY, RESET))
