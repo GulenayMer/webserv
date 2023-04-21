@@ -91,15 +91,20 @@ def run() -> None:
     run_test("Test 6: GET /fake", test_get, "fake", 200)
 
     print(r"{}{}### TESTING POST ###{}".format(C_B_WHITE, B_GRAY, RESET))
-    # run_test("Test 1: POST /pokemon", test_post, "pokemon", 411)
-    # run_test("Test 2: POST /storage", test_post, "storage", 411)
-    # run_test("Test 3: POST /contact", test_post, "contact", 411)
-    run_test("Test 4: POST /pokemon", test_post, "pokemon/pokedex.py", 200, 'pokemon=Pikachu')
-    # run_test("Test 2: POST /storage", test_post, "storage", 200, "file")
-    # run_test("Test 1: POST /contact", test_post, "contact", 200, "what?")
+    run_test("Test 1: POST /pokemon", test_post, "pokemon", 411)
+    run_test("Test 2: POST /storage", test_post, "storage", 411)
+    run_test("Test 3: POST /pokemon", test_post, "pokemon/pokedex.py", 411)
+    run_test("Test 4: POST /pokemon", test_post, "pokemon/pokedex.py", 200, {"pokemon" : ("Pikachu")})
+    run_test("Test 5: POST /login", test_post, "cgi-bin/login.py", 200, {"username" : "nemo", "password" : "secret"})
+    run_test("Test 7: POST /register (new user)", test_post, "cgi-bin/register.py", 201, {"username" : "nemo", "email" : "nemo@gmail.com", "password" : "secret"})
+    run_test("Test 6: POST /register (existing user)", test_post, "cgi-bin/register.py", 409, {"username" : "nemo", "email" : "nemo@gmail.com", "password" : "secret"})
+    run_test("Test 5: POST /login", test_post, "cgi-bin/login.py", 200, {"username" : "nemo", "password" : "secret"})
+    run_test("Test 4: POST /upload", test_post, "cgi-bin/upload.py", 200, {"form" : "./test.txt"})
+   
 
     print(r"{}{}### TESTING DELETE ###{}".format(C_B_WHITE, B_GRAY, RESET))
-    # run_test("Test 2: DELETE /pokemon", test_delete, "pokemon", 200)
+    run_test("Test 2: DELETE /storage/file_does_not_exist)", test_delete, "storage/dummy", 404)
+    run_test("Test 2: DELETE /storage/file_exists)", test_delete, "storage/test.txt", 204)
 
 
     print(r"{}{}### TESTING ERRORS ###{}".format(C_B_WHITE, B_GRAY, RESET))

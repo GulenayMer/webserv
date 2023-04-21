@@ -2,6 +2,8 @@ import requests
 import config
 import sys
 import subprocess
+import urllib.parse
+import uuid
 
 def get_base_url() -> str:
     """
@@ -48,10 +50,19 @@ def test_post(uri = None, expected_status = None, data_to_send = None) -> str:
     if uri is None:
         req = requests.post(get_base_url())
     else:
-        data = ""
         if data_to_send != None:
-            data = f"{data_to_send}"
-        req = requests.post(get_base_url() + uri, data=data)
+            boundary = str(uuid.uuid4())
+            headers = {"Content-type": f"multipart/form-data; boundary={boundary}"}
+            data = []
+            for key, value in data_to_send.items():
+                if value is not None:
+                    data.append(
+                        f"--{boundary}\r\nContent-Disposition: form-data; name=\"{key}\"\r\n\r\n{value}\r\n"
+                    )
+            data.append(f"--{boundary}--\r\n")
+            req = requests.post(get_base_url() + uri, headers=headers, data="".join(data))
+        else:
+            req = requests.post(get_base_url() + uri)
     if req.status_code != expected_status:
         return "Bad status code: {}, expected: {}".format(
             str(req.status_code), expected_status
@@ -69,6 +80,18 @@ def test_delete(uri = None, expected_status = None, data_to_send = None) -> str:
         )
     return ""
 
+def test_delete(uri = None, expected_status = None, data_to_send = None) -> str:
+    if uri is None:
+        req = requests.delete(get_base_url())
+    else:
+        print(get_base_url() + uri)
+        req = requests.delete(get_base_url() + uri)
+    if req.status_code != expected_status:
+        return "Bad status code: {}, expected: {}".format(
+            str(req.status_code), expected_status
+        )
+    return ""
+
 def URITooLarge() -> str:
     req = requests.get(get_base_url() + "a" * 1000)
     if req.status_code != 414:
@@ -77,21 +100,21 @@ def URITooLarge() -> str:
         )
     return ""
 
-def HTTPVersionNotSupported() -> str:
+# def HTTPVersionNotSupported() -> str:
 
-    # url = get_base_url()
-    # command = ['curl', '--http1.0', url]
-    # result = subprocess.run(command, capture_output=True)
-    # print(result.stdout)
+#     # url = get_base_url()
+#     # command = ['curl', '--http1.0', url]
+#     # result = subprocess.run(command, capture_output=True)
+#     # print(result.stdout)
 
     
-    # req = requests.get(get_base_url(), headers={'HTTP_VERSION': 'HTTP/2'})
-    # if req.status_code != 505:
-    #     return "Bad status code: {}, expected: {}".format(
-    #         str(req.status_code), "505"
-    #     )
-    request_header = 'GET / HTTP/0.1\r\nHost:{}\r\n\r\n'.format(config.SERVER_NAME)
-    http_response = send_request(request_header)
-    if http_response.status != 505 and http_response.status // 100 != 4:
-        return
-    return ""
+#     # req = requests.get(get_base_url(), headers={'HTTP_VERSION': 'HTTP/2'})
+#     # if req.status_code != 505:
+#     #     return "Bad status code: {}, expected: {}".format(
+#     #         str(req.status_code), "505"
+#     #     )
+#     request_header = 'GET / HTTP/0.1\r\nHost:{}\r\n\r\n'.format(config.SERVER_NAME)
+#     http_response = send_request(request_header)
+#     if http_response.status != 505 and http_response.status // 100 != 4:
+#         return
+#     return ""
