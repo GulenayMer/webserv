@@ -1,1 +1,1 @@
-curl -H "Transfer-Encoding: chunked" -d @upload.txt http://127.0.0.1:8000/cgi-bin/chunked.py
+curl --verbose -H "Transfer-Encoding: chunked" -H "content-type: image/png" --data-binary @4132.png webserv:8000/cgi-bin/chunked.py
