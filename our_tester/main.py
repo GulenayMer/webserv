@@ -85,7 +85,7 @@ def run() -> None:
     run_test("Test 2: GET /index.html", test_get, "index.html", 200)
     run_test("Test 3: 100 GET /", test_multiple_get)
     run_test("Test 2: GET /pokemon", test_get, "pokemon", 200)
-    run_test("Test 3: GET /pokemon/index.html", test_get, "pokemon/index.html", 200)
+    run_test("Test 3: GET /pokemon/pokemon.html", test_get, "pokemon/pokemon.html", 200)
     run_test("Test 4: GET /contact", test_get, "contact", 200)
     run_test("Test 5: GET /about", test_get, "about", 200)
     run_test("Test 6: GET /fake", test_get, "fake", 200)
@@ -103,18 +103,19 @@ def run() -> None:
 
 
     print(r"{}{}### TESTING ERRORS ###{}".format(C_B_WHITE, B_GRAY, RESET))
-    run_test("Test 400: GET /iamnothere/", test_errors, "iamnothere/", 400)
-    run_test("Test 401: GET /iamnothere", test_errors, "iamnothere", 401)
+    run_test("Test 403: GET /a/a.html", test_403)
+    run_test("Test 404: GET /iamnothere", test_errors, "iamnothere", 404)
 
     run_test("Test 414: GET /", URITooLarge)
-    
-    
-    
+    run_test("Test 501: GET /pokemon", test_501)
     run_test("Test 505: GET /", HTTPVersionNotSupported)
     
     
+    run_test("Test 500: GET /pokemon", test_errors, "pokemon", 500)
 
-    # run_test("Test 403: GET /iamnothere", test_errors, "iamnothere", 403)
+
+    # run_test("Test 400: GET /iamnothere/", test_errors, "iamnothere/", 400)
+    # run_test("Test 401: GET /iamnothere", test_errors, "iamnothere", 401)
     # run_test("Test 404: GET /iamnothere.html", test_errors, "iamnothere.html", 404)
     # run_test("Test 405: POST /", test_errors, None, 405)
     # run_test("Test 406: GET /", test_errors, None, 406)
@@ -127,12 +128,6 @@ def run() -> None:
     # run_test("Test 415: GET /pokemon", test_errors, "pokemon", 415)
     # run_test("Test 418: GET /pokemon", test_errors, "pokemon", 418)
     # run_test("Test 429: GET /pokemon", test_errors, "pokemon", 429)
-    # run_test("Test 500: GET /pokemon", test_errors, "pokemon", 500)
-    # run_test("Test 501: GET /pokemon", test_errors, "pokemon", 501)
-    # run_test("Test 502: GET /pokemon", test_errors, "pokemon", 502)
-    # run_test("Test 503: GET /pokemon", test_errors, "pokemon", 503)
-    # run_test("Test 504: GET /pokemon", test_errors, "pokemon", 504)
-
 
 if __name__ == "__main__":
     cleanup()

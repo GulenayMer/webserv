@@ -198,6 +198,7 @@ int ServerManager::run_servers()
 							// 	this->_cgis.erase(cgi_it);
 							// 	this->_compress_array = true;
 							// }
+							std::cout << buffer << std::endl;
 							httpHeader request(buffer);
 							std::string host(request.get_single_header("host"));
 							std::map<std::string, Server>::iterator serv_it = this->_host_serv.find(host);
