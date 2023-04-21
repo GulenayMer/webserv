@@ -106,28 +106,22 @@ def run() -> None:
     run_test("Test 403: GET /a/a.html", test_403)
     run_test("Test 404: GET /iamnothere", test_errors, "iamnothere", 404)
 
+    run_test("Test 413: POST /pokemon", test_post, "pokemon/pokedex.py", 413, 'pokemon=' + 'a' * 1000000)
     run_test("Test 414: GET /", URITooLarge)
     run_test("Test 501: GET /pokemon", test_501)
     run_test("Test 505: GET /", HTTPVersionNotSupported)
     
     
-    run_test("Test 500: GET /pokemon", test_errors, "pokemon", 500)
-
+    run_test("Test 500: GET", test_500)
 
     # run_test("Test 400: GET /iamnothere/", test_errors, "iamnothere/", 400)
-    # run_test("Test 401: GET /iamnothere", test_errors, "iamnothere", 401)
-    # run_test("Test 404: GET /iamnothere.html", test_errors, "iamnothere.html", 404)
     # run_test("Test 405: POST /", test_errors, None, 405)
-    # run_test("Test 406: GET /", test_errors, None, 406)
-    # run_test("Test 407: GET /pokemon", test_errors, "pokemon", 407)
-    # run_test("Test 408: GET /pokemon", test_errors, "pokemon", 408)
+    # run_test("Test 415: GET /pokemon", test_errors, "pokemon", 415)
+
+
+
     # # 411 was checked above in POST
     # run_test("Test 411: POST /pokemon", test_errors, "pokemon", 411)
-    # #
-    # run_test("Test 413: POST /pokemon", test_errors, "pokemon", 413)
-    # run_test("Test 415: GET /pokemon", test_errors, "pokemon", 415)
-    # run_test("Test 418: GET /pokemon", test_errors, "pokemon", 418)
-    # run_test("Test 429: GET /pokemon", test_errors, "pokemon", 429)
 
 if __name__ == "__main__":
     cleanup()

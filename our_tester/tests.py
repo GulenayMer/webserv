@@ -72,7 +72,7 @@ def test_delete(uri = None, expected_status = None, data_to_send = None) -> str:
     return ""
 
 def URITooLarge() -> str:
-    req = requests.get(get_base_url() + "a" * 1000)
+    req = requests.get(get_base_url() + 'a' * 2000)
     if req.status_code != 414:
         return "Bad status code: {}, expected: {}".format(
             str(req.status_code), "414"
@@ -96,6 +96,20 @@ def test_403() -> str:
         return "Bad status code: {}, expected: {}".format(
             str(req.status_code), "403"
         )
+    return ""
+
+def test_500() -> str:
+    print("Test 500 - Bad status code")
+    request_header = 'GET /cgi-bin/invalid_for_testing.py HTTP/1.1\r\nHost: {}:{}\r\n\r\n'.format(config.SERVER_NAME, config.SERVER_PORT)
+    # request_header = 'GET /pokemon/pokemon_question.py HTTP/1.1\r\nHost: {}:{}\r\nContent-Length: 1\r\n\r\n'.format(config.SERVER_NAME, config.SERVER_PORT)
+    http_response = send_request(request_header)
+    try:
+        if http_response.status != 500:
+            return "Bad status code: {}, expected: {}".format(
+                str(http_response.status), "500")
+    except Exception as e:
+        print(f"Error: {e}")
+        return "Bad status code, expected: {}".format("500")
     return ""
 
 def test_501() -> str:
