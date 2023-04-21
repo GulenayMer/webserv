@@ -111,7 +111,7 @@ def run() -> None:
     run_test("Test 403: GET /a/a.html", test_403)
     run_test("Test 404: GET /iamnothere", test_errors, "iamnothere", 404)
 
-    run_test("Test 413: POST /pokemon", test_post, "pokemon/pokedex.py", 413, 'pokemon=' + 'a' * 1000000)
+    run_test("Test 413: POST /pokemon", test_post, "pokemon/pokedex.py", 413, {"pokemon" : ('a' * 1000000)})
     run_test("Test 414: GET /", URITooLarge)
     run_test("Test 501: GET /pokemon", test_501)
     run_test("Test 505: GET /", HTTPVersionNotSupported)
