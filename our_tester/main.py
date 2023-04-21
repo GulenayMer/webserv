@@ -49,13 +49,16 @@ def cleanup() -> None:
     os.system("rm -rf www/tmp/*")
     os.system("rm -rf www/long.txt")
 
-def run_test(test_name: str, test: Callable, uri = None, expected_status = None) -> None:
+def run_test(test_name: str, test: Callable, uri = None, expected_status = None, data_to_send = None) -> None:
     """
     Runs a test defined in function test, with the name test_name,
     and prints weather it passed or not.
     """
     try:
-            result = test(uri, expected_status)
+        if expected_status is None:            
+            result = test()
+        else:
+            result = test(uri, expected_status, data_to_send)
     except:
         print(
             "{}Cannot connect to the server on port {}{}".format(
@@ -79,23 +82,57 @@ def run() -> None:
     
     print(r"{}{}### TESTING GET ###{}".format(C_B_WHITE, B_GRAY, RESET))
     run_test("Test 1: GET /", test_get, None, 200)
+    run_test("Test 2: GET /index.html", test_get, "index.html", 200)
+    run_test("Test 3: 100 GET /", test_multiple_get)
     run_test("Test 2: GET /pokemon", test_get, "pokemon", 200)
     run_test("Test 3: GET /pokemon/index.html", test_get, "pokemon/index.html", 200)
     run_test("Test 4: GET /contact", test_get, "contact", 200)
     run_test("Test 5: GET /about", test_get, "about", 200)
-    run_test("Test 5: GET /fake", test_get, "fake", 200)
-
+    run_test("Test 6: GET /fake", test_get, "fake", 200)
 
     print(r"{}{}### TESTING POST ###{}".format(C_B_WHITE, B_GRAY, RESET))
-    run_test("Test 1: POST /pokemon", test_post, "pokemon", 200)
+    # run_test("Test 1: POST /pokemon", test_post, "pokemon", 411)
+    # run_test("Test 2: POST /storage", test_post, "storage", 411)
+    # run_test("Test 3: POST /contact", test_post, "contact", 411)
+    run_test("Test 4: POST /pokemon", test_post, "pokemon/pokedex.py", 200, 'pokemon=Pikachu')
+    # run_test("Test 2: POST /storage", test_post, "storage", 200, "file")
+    # run_test("Test 1: POST /contact", test_post, "contact", 200, "what?")
 
-    # print(r"{}{}### TESTING DELETE ###{}".format(C_B_WHITE, B_GRAY, RESET))
+    print(r"{}{}### TESTING DELETE ###{}".format(C_B_WHITE, B_GRAY, RESET))
     # run_test("Test 2: DELETE /pokemon", test_delete, "pokemon", 200)
 
 
     print(r"{}{}### TESTING ERRORS ###{}".format(C_B_WHITE, B_GRAY, RESET))
     run_test("Test 400: GET /iamnothere/", test_errors, "iamnothere/", 400)
-    run_test("Test 404: GET /iamnothere.html", test_errors, "iamnothere.html", 404)
+    run_test("Test 401: GET /iamnothere", test_errors, "iamnothere", 401)
+
+    run_test("Test 414: GET /", URITooLarge)
+    
+    
+    
+    run_test("Test 505: GET /", HTTPVersionNotSupported)
+    
+    
+
+    # run_test("Test 403: GET /iamnothere", test_errors, "iamnothere", 403)
+    # run_test("Test 404: GET /iamnothere.html", test_errors, "iamnothere.html", 404)
+    # run_test("Test 405: POST /", test_errors, None, 405)
+    # run_test("Test 406: GET /", test_errors, None, 406)
+    # run_test("Test 407: GET /pokemon", test_errors, "pokemon", 407)
+    # run_test("Test 408: GET /pokemon", test_errors, "pokemon", 408)
+    # # 411 was checked above in POST
+    # run_test("Test 411: POST /pokemon", test_errors, "pokemon", 411)
+    # #
+    # run_test("Test 413: POST /pokemon", test_errors, "pokemon", 413)
+    # run_test("Test 415: GET /pokemon", test_errors, "pokemon", 415)
+    # run_test("Test 418: GET /pokemon", test_errors, "pokemon", 418)
+    # run_test("Test 429: GET /pokemon", test_errors, "pokemon", 429)
+    # run_test("Test 500: GET /pokemon", test_errors, "pokemon", 500)
+    # run_test("Test 501: GET /pokemon", test_errors, "pokemon", 501)
+    # run_test("Test 502: GET /pokemon", test_errors, "pokemon", 502)
+    # run_test("Test 503: GET /pokemon", test_errors, "pokemon", 503)
+    # run_test("Test 504: GET /pokemon", test_errors, "pokemon", 504)
+
 
 if __name__ == "__main__":
     cleanup()
