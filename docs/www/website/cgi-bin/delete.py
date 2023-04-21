@@ -15,7 +15,7 @@ def is_json_file_valid(file_path):
             return False
         return True
 
-
+print("came here")
 error = False
 # File does not exist, or file is empty
 # then user to delete does not exist, error is set to True

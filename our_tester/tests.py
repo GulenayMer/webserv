@@ -71,6 +71,21 @@ def test_post(uri = None, expected_status = None, data_to_send = None) -> str:
         )
     return ""
 
+# def test_cookies(uri = None, expected_status = None, data_to_send = None) -> str:
+    # if uri is None:
+    #     req = requests.post(get_base_url())
+    # else:
+    #     if data_to_send != None:
+    #         cookies = data_to_send
+    #         print(cookies)
+            # req = requests.post(get_base_url() + uri, cookies=cookies)
+    #     else:
+    #         req = requests.post(get_base_url() + uri)
+    # if req.status_code != expected_status:
+    #     return "Bad status code: {}, expected: {}".format(
+    #         str(req.status_code), expected_status
+    #     )
+    # return ""
 
 def test_delete(uri = None, expected_status = None, data_to_send = None) -> str:
     if uri is None:
