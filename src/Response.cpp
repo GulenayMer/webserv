@@ -121,16 +121,16 @@ void Response::getPath()
 				_respond_path = location_it->second.get_root();
 				if (dir_name[0] == '/')
 					dir_name = dir_name.substr(1, dir_name.length() - 1);
-				std::ifstream	name((_respond_path + dir_name + ".html").c_str());
-				if (name.good())
+				std::string file = _respond_path + dir_name + ".html";
+				if (access(file.c_str(), F_OK) != -1)
 				{
 					_respond_path = _respond_path + dir_name + ".html";
 					location_it->second.set_index(dir_name);
 				}
 				else
 				{
-					std::ifstream	index((_respond_path + "index.html").c_str());
-					if (index.good())
+					file = _respond_path + "/index.html";
+					if (access(file.c_str(), F_OK) != -1)
 					{
 						_respond_path = _respond_path + "index.html";
 						location_it->second.set_index("index.html");
@@ -204,14 +204,14 @@ int 	Response::handle_response()
 		else
 		{
 			std::ifstream file(_respond_path.c_str());
-			if (access(_respond_path.c_str(), R_OK))
-			{
-				response_stream << createError(403);
-				_to_close = true;
-			}
-			else if (!file.is_open())
+			if (access(_respond_path.c_str(), F_OK) == -1)
 			{
 				response_stream << createError(404);
+				_to_close = true;
+			}
+			else if (access(_respond_path.c_str(), R_OK) == -1)
+			{
+				response_stream << createError(403);
 				_to_close = true;
 			}
 			else
