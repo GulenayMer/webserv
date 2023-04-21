@@ -71,22 +71,30 @@ def test_post(uri = None, expected_status = None, data_to_send = None) -> str:
         )
     return ""
 
-def test_delete(uri = None, expected_status = None, data_to_send = None) -> str:
-    if uri is None:
-        req = requests.delete(get_base_url())
-    else:
-        req = requests.delete(get_base_url() + uri)
-    if req.status_code != expected_status:
-        return "Bad status code: {}, expected: {}".format(
-            str(req.status_code), expected_status
-        )
-    return ""
+# def test_cookies(uri = None, expected_status = None, data_to_send = None) -> str:
+    # if uri is None:
+    #     req = requests.post(get_base_url())
+    # else:
+    #     if data_to_send != None:
+    #         cookies = data_to_send
+    #         print(cookies)
+            # req = requests.post(get_base_url() + uri, cookies=cookies)
+    #     else:
+    #         req = requests.post(get_base_url() + uri)
+    # if req.status_code != expected_status:
+    #     return "Bad status code: {}, expected: {}".format(
+    #         str(req.status_code), expected_status
+    #     )
+    # return ""
 
 def test_delete(uri = None, expected_status = None, data_to_send = None) -> str:
     if uri is None:
         req = requests.delete(get_base_url())
     else:
-        print(get_base_url() + uri)
+        if expected_status == 204:
+            create_path = f"{data_to_send}"
+            with open(create_path, 'w') as file:
+                file.write('Hello, world, I will be delete soon')
         req = requests.delete(get_base_url() + uri)
     if req.status_code != expected_status:
         return "Bad status code: {}, expected: {}".format(
@@ -122,9 +130,7 @@ def test_403() -> str:
     return ""
 
 def test_500() -> str:
-    print("Test 500 - Bad status code")
     request_header = 'GET /cgi-bin/invalid_for_testing.py HTTP/1.1\r\nHost: {}:{}\r\n\r\n'.format(config.SERVER_NAME, config.SERVER_PORT)
-    # request_header = 'GET /pokemon/pokemon_question.py HTTP/1.1\r\nHost: {}:{}\r\nContent-Length: 1\r\n\r\n'.format(config.SERVER_NAME, config.SERVER_PORT)
     http_response = send_request(request_header)
     try:
         if http_response.status != 500:
@@ -175,4 +181,70 @@ def test_501() -> str:
     if http_response.status != 501 and http_response.status // 100 != 4:
         return "Bad status code: {}, expected: {}".format(
             str(http_response.status), "501")
+    return ""
+
+def test_request_line_multiple_space() -> str:
+    request_header = "GET  /  HTTP/1.1\r\nHost: {}:{}\r\n\r\n".format(config.SERVER_NAME, config.SERVER_PORT)
+    http_response = send_request(request_header)
+    try:
+        if http_response.status != 400:
+            return "Bad status code: {}, expected: {}".format(
+                str(http_response.status), "400")
+    except Exception as e:
+        print(f"Error: {e}")
+        return "Bad status code, expected: {}".format("400")
+    return ""
+
+def test_post_not_allowed() -> str:
+    request_header = "POST / HTTP/1.1\r\nHost: {}:{}\r\n\r\n".format(config.SERVER_NAME, config.SERVER_PORT)
+    http_response = send_request(request_header)
+    try:
+        if http_response.status != 405:
+            return "Bad status code: {}, expected: {}".format(
+                str(http_response.status), "405")
+    except Exception as e:
+        print(f"Error: {e}")
+        return "Bad status code, expected: {}".format("405")
+    return ""
+
+def test_space_before_colon() -> str:
+    request_header = "GET / HTTP/1.1\r\nHost :{}\r\n\r\n".format(config.SERVER_NAME)
+    http_response = send_request(request_header)
+    try:
+        if http_response.status != 400:
+            return "Bad status code: {}, expected: {}".format(
+                str(http_response.status), "400")
+    except Exception as e:
+        print(f"Error: {e}")
+        return "Bad status code, expected: {}".format("400")
+
+    request_header = (
+        "GET / HTTP/1.1\r\nHost:{}\r\nAccept-Language :hyeyoo\r\n\r\n".format(
+            config.SERVER_NAME
+        )
+    )
+    http_response = send_request(request_header)
+    try:
+        if http_response.status != 400:
+            return "Bad status code: {}, expected: {}".format(
+                str(http_response.status), "400"
+            )
+    except Exception as e:
+        print(f"Error: {e}")
+        return "Bad status code, expected: {}".format("400")
+    return ""
+
+def test_missing_header_name() -> str:
+    request_header = "GET / HTTP/1.1\r\nHost:{}\r\n:empty_name\r\n\r\n".format(
+        config.SERVER_NAME
+    )
+    http_response = send_request(request_header)
+    try:
+         if http_response.status // 100 != 4:
+            return "Bad status code: {}, expected: {}".format(
+            str(http_response.status), "4XX"
+        )
+    except Exception as e:
+        print(f"Error: {e}")
+        return "Bad status code, expected: {}".format("4XX")
     return ""
