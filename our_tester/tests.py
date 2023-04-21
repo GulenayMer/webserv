@@ -122,9 +122,7 @@ def test_403() -> str:
     return ""
 
 def test_500() -> str:
-    print("Test 500 - Bad status code")
     request_header = 'GET /cgi-bin/invalid_for_testing.py HTTP/1.1\r\nHost: {}:{}\r\n\r\n'.format(config.SERVER_NAME, config.SERVER_PORT)
-    # request_header = 'GET /pokemon/pokemon_question.py HTTP/1.1\r\nHost: {}:{}\r\nContent-Length: 1\r\n\r\n'.format(config.SERVER_NAME, config.SERVER_PORT)
     http_response = send_request(request_header)
     try:
         if http_response.status != 500:
@@ -141,4 +139,21 @@ def test_501() -> str:
     if http_response.status != 501 and http_response.status // 100 != 4:
         return "Bad status code: {}, expected: {}".format(
             str(http_response.status), "501")
+    return ""
+
+def test_request_line_multiple_space() -> str:
+    request_header = "GET  /  HTTP/1.1\r\nHost:{}\r\n\r\n".format(config.SERVER_ADDR)
+    http_response = send_request(request_header)
+    try:
+        if http_response.status != 400:
+            return "Bad status code: {}, expected: {}".format(
+                str(http_response.status), "400"
+            )
+    except Exception as e:
+        print(f"Error: {e}")
+        return "Bad status code, expected: {}".format("400")
+    # if http_response.status != 400:
+    #     return "Bad status code: {}, expected: {}".format(
+    #         str(http_response.status), "400"
+    #     )
     return ""
