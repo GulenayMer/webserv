@@ -132,7 +132,8 @@ bool	CGI::handle_cgi()
 	std::string shebang;
 
 	std::map<std::string, std::string>::const_iterator path_it = this->_response.getConfig().getIntrPath().find(this->_response.getExt());
-	if (!file_exists(script_path))
+	// if (!file_exists(script_path))
+	if (access(script_path.c_str(), F_OK) == -1)
 	{
 		this->_errno = 1;
 		return false;
@@ -292,7 +293,13 @@ bool	CGI::sendResponse()
 	if (this->_errno == 1)
 	{
 		_response_string = this->getResponse().createError(404);
-		std::cout << "ERROR 404" << std::endl;
+		_content_length = _response_string.size();
+		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
+		_size_sent = sent;
+	}
+	else if (access(_response.getRequest().getUri().c_str(), R_OK) == -1 || access(_response.getRequest().getUri().c_str(), X_OK) == -1)
+	{
+		_response_string = this->getResponse().createError(403);
 		_content_length = _response_string.size();
 		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
 		_size_sent = sent;
@@ -300,7 +307,6 @@ bool	CGI::sendResponse()
 	else if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
 	{
 		_response_string = this->getResponse().createError(500);
-		std::cout << "ERROR 500" << std::endl;
 		_content_length = _response_string.size();
 		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
 		_size_sent = sent;
