@@ -67,7 +67,7 @@ def cleanup() -> None:
 def run_test(test_name: str, test: Callable) -> None:
     """
     Runs a test defined in function test, with the name test_name,
-    and prints weather it passed or not.
+    and prints wether it passed or not.
     """
     try:
         result = test()
@@ -92,8 +92,8 @@ def run() -> None:
     """
     Entrypoint of the tester
     """
-    # print(r"{}{}### TESTING HEAD ###{}".format(C_B_WHITE, B_GRAY, RESET))
-    # run_test("HEAD /", test_head)
+    print(r"{}{}### TESTING HEAD ###{}".format(C_B_WHITE, B_GRAY, RESET))
+    run_test("HEAD /", test_head)
     print(r"{}{}### TESTING GET ###{}".format(C_B_WHITE, B_GRAY, RESET))
     run_test("GET /", test_get)
     run_test("GET /a/", test_get_dir_index)
