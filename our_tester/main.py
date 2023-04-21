@@ -59,7 +59,8 @@ def run_test(test_name: str, test: Callable, uri = None, expected_status = None,
             result = test()
         else:
             result = test(uri, expected_status, data_to_send)
-    except:
+    except Exception as e:
+        print (e)
         print(
             "{}Cannot connect to the server on port {}{}".format(
                 C_B_RED, config.SERVER_PORT, RESET
@@ -100,7 +101,10 @@ def run() -> None:
     run_test("Test 6: POST /register (existing user)", test_post, "cgi-bin/register.py", 409, {"username" : "nemo", "email" : "nemo@gmail.com", "password" : "secret"})
     run_test("Test 5: POST /login", test_post, "cgi-bin/login.py", 200, {"username" : "nemo", "password" : "secret"})
     run_test("Test 4: POST /upload", test_post, "cgi-bin/upload.py", 200, {"form" : "./test.txt"})
-   
+    
+    print(r"{}{}### TESTING CHUNKED ###{}".format(C_B_WHITE, B_GRAY, RESET))
+    run_test("Test 1: POST /cgi-bin/chunked.py (text)", test_chunked_text)
+    run_test("Test 2: POST /cgi-bin/chunked.py (image)", test_chunked_img)
 
     print(r"{}{}### TESTING DELETE ###{}".format(C_B_WHITE, B_GRAY, RESET))
     run_test("Test 2: DELETE /storage/file_does_not_exist)", test_delete, "storage/dummy", 404)

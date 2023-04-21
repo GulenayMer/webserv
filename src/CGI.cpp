@@ -483,7 +483,7 @@ void CGI::mergeChunk(char *buffer, size_t received) //TODO this is removing newl
 	{
 		if (!this->_chunk_context)
 		{
-			pos = convertHex(&buffer[pos]);
+			pos = convertHex(buffer, pos);
 			this->_chunk_remaining = this->_chunk_size;
 			if (this->_chunk_size == 0)
 			{
@@ -509,26 +509,19 @@ void CGI::mergeChunk(char *buffer, size_t received) //TODO this is removing newl
 	}
 }
 
-size_t CGI::convertHex(char *buffer)
+// Convert hexadecimal number to decimal
+size_t CGI::convertHex(char *buffer, size_t pos)
 {
-	// Convert hexadecimal number to decimal
 	char *stopstr;
-	int	i = 0;
-
+	size_t i = pos;
 	// Find the end of the hex number
-	while (buffer[i] && buffer[i] != '\r' && buffer[i] != '\n')
-		i++;
-	// TODO: check if this is correct
-	// if (i == 0)
-	// 	throw std::runtime_error("CGI::convertHex: No hexadecimal number found");
-	this->_chunk_size = std::strtoul(buffer, &stopstr, 16);
-	// TODO: check if this is correct
-	// if (this->_chunk_size == 0 && std::strcmp(buffer, "0"))
-	// 	throw std::runtime_error("CGI::convertHex: Invalid hexadecimal number");
+	while (buffer[pos] && buffer[pos] != '\r' && buffer[pos] != '\n')
+		pos++;
+	this->_chunk_size = std::strtoul(&buffer[i], &stopstr, 16);
 	this->_content_length += this->_chunk_size;
-	i += 2;
+	pos += 2;
 	this->_chunk_context = true;
-	return i;
+	return pos;
 }
 
 void CGI::addHeaderChunked()

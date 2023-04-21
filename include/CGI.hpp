@@ -77,7 +77,7 @@ class CGI {
 		int		PID();
 		void	closePipes();
 		void	mergeChunk(char *buffer, size_t received);
-		size_t	convertHex(char *buffer);
+		size_t	convertHex(char *buffer, size_t pos);
 		void	addHeaderChunked();
 		void	removeHeader(char *buffer, ssize_t received);
 };

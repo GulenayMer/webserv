@@ -135,6 +135,40 @@ def test_500() -> str:
         return "Bad status code, expected: {}".format("500")
     return ""
 
+def chunk_gen(file, chunk_size):
+    f = open(file, "rb")
+    while True:
+        data = f.read(chunk_size)
+        if not data:
+            break
+        yield data
+
+def test_chunked_text() -> str:
+    headers = {"Transfer-Encoding":"chunked", "content-type":"text/plain"}
+    http_response = requests.post(get_base_url() + "cgi-bin/chunked.py", headers=headers, data=chunk_gen("our_tester/resources/blah.txt", 5))
+    try:
+        if http_response.status_code != 200 and http_response.status_code != 204:
+            return f"Bad status code: {str(http_response.status_code)}, expected 200 or 204"
+        result = subprocess.run(["diff", "our_tester/resources/blah.txt", "docs/www/website/cgi-bin/uploaded.txt"])
+        if result.returncode != 0:
+            return "Uploaded file differs from original"
+    except Exception as e:
+        return f"Error: {e}"
+    return ""
+
+def test_chunked_img() -> str:
+    headers = {"Transfer-Encoding":"chunked", "content-type":"image/png"}
+    http_response = requests.post(get_base_url() + "cgi-bin/chunked.py", headers=headers, data=chunk_gen("our_tester/resources/chunked.png", 1024))
+    try:
+        if http_response.status_code != 200 and http_response.status_code != 204:
+            return f"Bad status code: {str(http_response.status_code)}, expected 200 or 204"
+        result = subprocess.run(["diff", "our_tester/resources/chunked.png", "docs/www/website/cgi-bin/uploaded.png"])
+        if result.returncode != 0:
+            return "Uploaded file differs from original"
+    except Exception as e:
+        return f"Error: {e}"
+    return ""
+
 def test_501() -> str:
     request_header = 'OPTIONS / HTTP/1.1\r\nHost: {}:{}\r\n\r\n'.format(config.SERVER_NAME, config.SERVER_PORT)
     http_response = send_request(request_header)
