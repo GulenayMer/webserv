@@ -48,6 +48,7 @@ Response &Response::operator=(const Response &src)
 		_to_close = src._to_close;
 		_addr = src._addr;
 		_ext = src._ext;
+		_status_code = src._status_code;
 	}
 	return *this;
 }
@@ -61,10 +62,14 @@ void Response::newConfig(Config &config)
 
 void Response::getPath()
 {
-	_respond_path.clear();
-	_response_body.clear();
-	_response.clear();
-	_is_cgi = false;
+	/* 
+		1. which server block?
+		2. check location blocks to see if there is a match
+			- if there is a match, check if the location block has a root
+			- if it does, set the root to the location block root
+			- if it doesn't, set the root to the server root
+			- if there is no match, set the root to the server root
+ 	*/
 
 	if (this->_request.getMethod() != DELETE && this->checkCGI())
 	{
@@ -74,7 +79,7 @@ void Response::getPath()
     else
 	{
 		// TODO Find where the extra '/' is being added to the end of uri and fix it
-		std::string	tmp_path = _request.getUri();
+		std::string	tmp_path(_request.getUri());
 		_respond_path = tmp_path;
 		while (tmp_path.length() > 1 && tmp_path[tmp_path.length() - 1] == '/')
 			tmp_path.erase(tmp_path.length() - 1);
@@ -86,26 +91,19 @@ void Response::getPath()
 			//TODO: check if the path is a directory || is this finished?
 			// I'm assuming that we won't allow directory listing for directories that are not specified in the config file
 			// Right now it only accept index.html or <dir_name>.html
-			std::string dir_name = tmp_path.substr(pos, tmp_path.size() - pos);
-			std::map<std::string, Location>::iterator location_it = _config.get_location().begin();
-
-			while (location_it != _config.get_location().end())
-			{
-				if (location_it->first == dir_name)
-					break;
-				location_it++;
-			}
+			std::string dir_name(tmp_path.substr(pos, tmp_path.size() - pos));
+			std::map<std::string, Location>::iterator location_it = _config.get_location().find(dir_name);
 			if (location_it == _config.get_location().end())
 			{
 				_is_dir = false;
 				_list_dir = false;
-				std::string file = _respond_path + dir_name + ".html";
+				std::string file(_respond_path + dir_name + ".html");
 				if (access(file.c_str(), F_OK) != -1)
-					_respond_path = _respond_path + dir_name + ".html";
+					_respond_path = file;
 				else {
 					file = _respond_path + "/index.html";
 					if (access(file.c_str(), F_OK) != -1)
-						_respond_path = _respond_path + "/index.html";
+						_respond_path = file;
 					else
 						_is_dir = true;
 				}
@@ -117,7 +115,7 @@ void Response::getPath()
 				_respond_path = location_it->second.get_root();
 				if (dir_name[0] == '/')
 					dir_name = dir_name.substr(1, dir_name.length() - 1);
-				std::string file = _respond_path + dir_name + ".html";
+				std::string file(_respond_path + dir_name + ".html");
 				if (access(file.c_str(), F_OK) != -1)
 				{
 					_respond_path = _respond_path + dir_name + ".html";
@@ -302,6 +300,7 @@ void	Response::responseToGET(std::ifstream &file, size_t &pos, std::ostringstrea
 	_response_body = file_buffer.str();
 	response_stream << HTTP_OK << "Content-Length: " << _response_body.length() << "\nConnection: Keep-Alive\n";
 	response_stream << type << _response_body;
+	this->_status_code = 200;
 }
 
 bool	Response::new_request(httpHeader &request)
@@ -395,6 +394,7 @@ void	Response::responseToDELETE(std::ostringstream &response_stream)
 	else
 	{
 		response_stream << HTTP_204 << _types.get_content_type(".txt");
+		this->_status_code = 204;
 	}
 	pathTest.close();
 }
@@ -449,6 +449,7 @@ std::string	Response::createError(int errorNumber)
 	std::string			error_path = getErrorPath(errorNumber, errorName);
 	std::ifstream error(error_path.c_str());
 
+	this->_status_code = errorNumber;
 	if(!error.is_open())
 		std::cerr << RED << "error opening " << errorNumber << " file at " << error_path << RESET << std::endl;
 	else

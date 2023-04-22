@@ -242,7 +242,7 @@ void httpHeader::printHeader()
 		itr++;
 	if (itr != _header.end())
 		std::cout << YELLOW << "\"" << itr->second << "\"" << RESET;
-	std::cout << std::endl << std::endl;
+	std::cout << "\n\n";
 
 }
 

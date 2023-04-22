@@ -16,11 +16,11 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 	for (size_t i = 0; i < this->_configs.size(); i++)
     {
 		try {
-			std::cout << BLUE << "[---------- Server : " << i << " ----------]" << RESET << std::endl;
+			std::cout << BLUE << "[---------- Server : " << i << " ----------]\n" << RESET;
 			this->_configs[i].check_config();
-			std::cout << "name : " << this->_configs[i].get_server_name() << std::endl;
-			std::cout << "root : " << this->_configs[i].get_root() << std::endl;
-			std::cout << "host : " << this->_configs[i].getHost() << std::endl << std::endl;
+			std::cout << "name : " << this->_configs[i].get_server_name() << "\n";
+			std::cout << "root : " << this->_configs[i].get_root() << "\n";
+			std::cout << "host : " << this->_configs[i].getHost() << "\n\n";
 			Server server(this->_configs[i]);
 			std::map<std::string, std::string>::iterator it = this->_default_host.find(this->_configs[i].getHost());
 			if (it == this->_default_host.end())
@@ -37,14 +37,14 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 	if (this->_host_serv.size() > 0) 
 	{
 		this->_compress_array = false;
-		this->_fds = new struct pollfd[MAX_CONN * 2]; //TODO use RLIMIT_NOFILE?
-		memset(this->_fds, 0, MAX_CONN * 2);
+		this->_fds = new struct pollfd[FD_SETSIZE];
+		memset(this->_fds, 0, FD_SETSIZE * sizeof(struct pollfd));
 		this->_n_servers = this->pollfd_init();
 		this->_nfds = this->_n_servers;
 		this->run_servers();
 	}
 	else
-		std::cerr << RED << "ERROR: --- No valid configurations provided to create servers ---" << RESET << std::endl;
+		std::cerr << RED << "ERROR: --- No valid configurations provided to create servers ---\n" << RESET;
 }
 
 ServerManager::~ServerManager()
@@ -68,13 +68,13 @@ int ServerManager::pollfd_init()
 
 int ServerManager::run_servers()
 {
-	int		nbr_fd_ready;
+	int	nbr_fd_ready;
+	int	connection_fd;
 	while (SWITCH)
     {
         nbr_fd_ready = poll(this->_fds, this->_nfds, -1);
         if (nbr_fd_ready == -1)
         {
-            // TODO avoid killing the server, implement test how to deal with it 
 			perror("poll");
 			continue ;
         }
@@ -86,7 +86,6 @@ int ServerManager::run_servers()
 			{
 				struct sockaddr_in addr;
 				socklen_t addr_len = sizeof(sockaddr_in);
-				int	connection_fd;
 				connection_fd = accept(this->_fds[i].fd, (struct sockaddr *)&addr, &addr_len);
 				if (connection_fd < 0)
 				{
@@ -101,7 +100,6 @@ int ServerManager::run_servers()
 					continue ;
 				}
 				std::string address(inet_ntoa(addr.sin_addr));
-				// this->_addr_fd.insert(std::map<std::string, int>::value_type(address, connection_fd));
 				this->_fds[this->_nfds].fd = connection_fd;
 				this->_fds[this->_nfds].events = POLLIN;
 				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_fds[i].fd, this->_fds, this->_nfds, address)));
@@ -123,11 +121,13 @@ int ServerManager::run_servers()
 					}
 					else if (received == 0)
 					{
+						std::cout << "Received 0, closing connection." << std::endl;
 						nbr_fd_ready--;
 						this->close_connection(response_it->second, i);
 					}
 					else
 					{
+						std::cout << "buffer:\n" << buffer << "end of buffer." << std::endl;
 						/* [ prepare response ] */
 						std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
 						if (cgi_it != this->_cgis.end() && !cgi_it->second.completeContent()) // cgi fd
@@ -152,16 +152,16 @@ int ServerManager::run_servers()
 								std::map<std::string, std::string>::iterator def_it = this->_default_host.find(host);
 								if (def_it != this->_default_host.end())
 								{
-									std::cout << BLUE << "Using default server for IP/Port: " << def_it->second << RESET << std::endl;
+									std::cout << BLUE << "Using default server for IP/Port: " << def_it->second << "\n" << RESET;
 									response_it->second.newConfig(this->_host_serv.find(def_it->second)->second.get_config());
 								}
 								else
 								{
-									std::cout << BLUE << "Finding default server for port" << RESET << std::endl;
+									std::cout << BLUE << "Finding default server for port\n" << RESET;
 									host = getDefPort(host);
 									if (host.empty())
 									{
-										std::cout << RED << "No default server found for port. Request from: " << request.get_single_header("host") << RESET << std::endl;
+										std::cout << RED << "No default server found for port. Request from: " << request.get_single_header("host") << "\n" << RESET;
 										close_connection(response_it->second, i);
 										continue;
 									}
@@ -216,12 +216,12 @@ int ServerManager::run_servers()
 					if (rec == 0)
 						cgi_it->second.setReadComplete();
 					else
-						std::cout << RED << "terrible news" << RESET << std::endl;
+						std::cout << RED << "terrible news\n" << RESET;
 					cgi_it->second.closePipes();
 					this->_compress_array = true;
 				}
 				else
-					std::cout << RED << "something just went down" << RESET << std::endl;
+					std::cout << RED << "something just went down\n" << RESET;
 			}
 			if (this->_fds[i].revents & POLLOUT && this->_fds[i].fd > 0) // if POLLOUT -> write to fd ready for writing
 			{
@@ -232,7 +232,7 @@ int ServerManager::run_servers()
 					cgi_it = this->_cgis.find(response_it->second.getCGIFd());
 				if (response_it != this->_responses.end() && !response_it->second.is_cgi()) // for sending non-CGI responses
 				{
-					std::cout << "SEND RESPONSE" << std::endl;
+					std::cout << "SEND RESPONSE\n";
 					response_it->second.handle_response();
 					response_it->second.getRequest().printHeader();
 					if (response_it->second.shouldClose())
@@ -254,19 +254,18 @@ int ServerManager::run_servers()
 				}
 				else if (cgi_fd_it != this->_cgi_fds.end()) // write to cgi stdin
 				{
-					std::cout << "SEND TO CGI" << std::endl;
 					cgi_it = this->_cgis.find(cgi_fd_it->second);
 					if (!cgi_it->second.bodySentCGI())
 					{
 						if (!cgi_it->second.getResponse().isChunked())
 						{
-							std::cout << "SEND BODY TO CGI" << std::endl;
+							std::cout << "SEND BODY TO CGI\n";
 							cgi_it->second.writeToCGI();
 						}
 					}
 					else if (cgi_it->second.bodySentCGI())
 					{
-						std::cout << "CGI BODY COMPLETE" << std::endl;
+						std::cout << "CGI BODY COMPLETE\n";
 						close(this->_fds[i].fd);
 						this->_fds[i].fd = -1;
 						this->_compress_array = true;
@@ -280,7 +279,6 @@ int ServerManager::run_servers()
 		}
 		if (this->_compress_array)
 		{
-			//std::cout << "COMPRESS" << std::endl;
 			this->_compress_array = false;
 			for (int i = this->_nfds - 1; i >= this->_n_servers; i--)
 			{
@@ -352,7 +350,7 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 		std::pair<std::map<int, CGI>::iterator, bool> ret_pair = this->_cgis.insert(std::map<int, CGI>::value_type(out_fd, cgi));
 		std::cout << RED << "Could insert into CGI map: " << ret_pair.second << "\n";
 		std::pair<std::map<int, int>::iterator, bool> cgi_ret_pair = this->_cgi_fds.insert(std::map<int, int>::value_type(in_fd, out_fd));
-		std::cout << "Could insert into CGI-FD map: " << cgi_ret_pair.second << RESET << std::endl;
+		std::cout << "Could insert into CGI-FD map: " << cgi_ret_pair.second << "\n" << RESET;
 		std::map<int, CGI>::iterator cgi_it = ret_pair.first;
 		this->_fds[_nfds].fd = out_fd;
 		this->_fds[_nfds].events = POLLIN;
@@ -391,15 +389,12 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 
 void	ServerManager::server_create_error(std::logic_error &e, int i)
 {
-	std::cerr << std::endl;
-	std::cerr << RED << "---------------------------------------------------------------------------" << std::endl;
-	std::cerr << std::endl;
-	std::cerr << "Could not create server at index: " << i << std::endl;
-	std::cerr << "Server name: " << this->_configs[i].get_server_name()  << std::endl;
-	std::cerr << e.what() << std::endl;
-	std::cerr << std::endl;
-	std::cerr << "---------------------------------------------------------------------------" << RESET << std::endl;
-	std::cerr << std::endl;
+	std::cerr << "\n";
+	std::cerr << RED << "---------------------------------------------------------------------------\n\n";
+	std::cerr << "Could not create server at index: " << i;
+	std::cerr << "\nServer name: " << this->_configs[i].get_server_name() << "\n";
+	std::cerr << e.what();
+	std::cerr << "\n\n---------------------------------------------------------------------------\n\n" << RESET;
 }
 
 int		ServerManager::get_cgi_response(std::string header)
@@ -413,13 +408,12 @@ int		ServerManager::get_cgi_response(std::string header)
 		start = header.find_first_of(" \r\t\b\f", start);
 		start = header.find_first_not_of(" \r\t\b\f", start);
 		end = header.find_first_of(" \r\t\b\f", start);
-		header = header.substr(start, end - start);
-		std::stringstream	ss(header);
+		std::stringstream	ss(header.substr(start, end - start));
 		ss >> result;
 
 		return result;
 	}
-	std::cout << RED << "ERROR : something wrong with logs" << RESET << std::endl;
+	std::cout << RED << "ERROR : something wrong with logs\n" << RESET;
 	return (0);
 }
 

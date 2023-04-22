@@ -16,7 +16,6 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"forwardPorts": [
 		"webserv:8000",
-		"webserv2:8000"
 	],
 	"customizations": {
 		"vscode": {

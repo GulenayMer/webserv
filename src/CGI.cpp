@@ -483,8 +483,15 @@ void CGI::mergeChunk(char *buffer, size_t received) //TODO this is removing newl
 	{
 		if (!this->_chunk_context)
 		{
-			pos = convertHex(buffer, pos);
+			pos = convertHex(buffer, pos, received);
 			this->_chunk_remaining = this->_chunk_size;
+			std::cout << "pos: " << pos << std::endl;
+			std::cout << "received: " << received << std::endl;
+			std::cout << "chunk remaining: " << this->_chunk_remaining << std::endl;
+			std::cout << "buffer start" << std::endl;
+			for (size_t i = 0; i < this->_request_buff.size(); i++)
+				std::cout << this->_request_buff[i];
+			std::cout << "buffer end" << std::endl;
 			if (this->_chunk_size == 0)
 			{
 				addHeaderChunked();
@@ -510,12 +517,12 @@ void CGI::mergeChunk(char *buffer, size_t received) //TODO this is removing newl
 }
 
 // Convert hexadecimal number to decimal
-size_t CGI::convertHex(char *buffer, size_t pos)
+size_t CGI::convertHex(char *buffer, size_t pos, size_t received)
 {
 	char *stopstr;
 	size_t i = pos;
 	// Find the end of the hex number
-	while (buffer[pos] && buffer[pos] != '\r' && buffer[pos] != '\n')
+	while (pos < received && buffer[pos] != '\r' && buffer[pos] != '\n')
 		pos++;
 	this->_chunk_size = std::strtoul(&buffer[i], &stopstr, 16);
 	this->_content_length += this->_chunk_size;
