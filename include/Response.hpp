@@ -19,6 +19,7 @@ class Response
 		std::string					_addr;
         int                         _conn_fd;
         int                         _server_fd;
+		int							_status_code;
 		size_t						_bytes_sent;
 		struct pollfd*				_fds;
 		int							_nfds;

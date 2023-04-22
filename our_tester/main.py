@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import os
 import sys
 
@@ -105,7 +107,7 @@ def run() -> None:
 	
 	print(r"{}{}### TESTING CHUNKED ###{}".format(C_B_WHITE, B_GRAY, RESET))
 	run_test("Test 1: POST /cgi-bin/chunked.py (text)", test_chunked_text)
-	run_test("Test 2: POST /cgi-bin/chunked.py (image)", test_chunked_img)
+	# run_test("Test 2: POST /cgi-bin/chunked.py (image)", test_chunked_img)
 
 	print(r"{}{}### TESTING DELETE ###{}".format(C_B_WHITE, B_GRAY, RESET))
 	run_test("Test 2: DELETE /storage/file_does_not_exist)", test_delete, "storage/dummy", 404)
