@@ -6,6 +6,7 @@ import urllib.parse
 import uuid
 import os
 from send_request import send_request
+import threading
 
 def get_base_url() -> str:
 	"""
@@ -33,7 +34,10 @@ def test_get(uri = None, expected_status = None, data_to_send = None) -> str:
 def test_multiple_get() -> str:
 	for i in range(100):
 		req = requests.get(get_base_url())
-		if req.status_code != 200:
+		try:
+			if req.status_code != 200:
+				return "Bad request at {}th iteration.".format(i + 1)
+		except:
 			return "Bad request at {}th iteration.".format(i + 1)
 	return ""
 
@@ -248,3 +252,15 @@ def test_missing_header_name() -> str:
 		print(f"Error: {e}")
 		return "Bad status code, expected: {}".format("4XX")
 	return ""
+
+""" create different threads to send requests to the server """
+def stress_test() -> str:
+	threads = []
+	for i in range(50):
+		t = threading.Thread(target=send_request, args=("GET / HTTP/1.1\r\nHost:{}\r\n\r	\n".format(config.SERVER_NAME),))
+		threads.append(t)
+		t.start()
+	for t in threads:
+		t.join()
+	return ""
+
