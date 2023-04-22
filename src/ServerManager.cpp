@@ -19,7 +19,7 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 			this->_configs[i].check_config();
 			std::cout << "name : " << this->_configs[i].get_server_name() << std::endl;
 			std::cout << "root : " << this->_configs[i].get_root() << std::endl;
-			std::cout << "port : " << this->_configs[i].get_port() << std::endl << std::endl;
+			std::cout << "host : " << this->_configs[i].getHost() << std::endl << std::endl;
 			Server server(this->_configs[i]);
 			std::map<std::string, std::string>::iterator it = this->_default_host.find(this->_configs[i].getHost());
 			if (it == this->_default_host.end())
@@ -86,12 +86,6 @@ int ServerManager::run_servers()
 				socklen_t addr_len = sizeof(sockaddr_in);
 				int	connection_fd;
 				connection_fd = accept(this->_fds[i].fd, (struct sockaddr *)&addr, &addr_len);
-				//int port = ntohs(addr.sin_port);
-				// if (this->_addr_fd.find(address) != this->_addr_fd.end())
-				// {
-				// 	close(connection_fd);
-				// 	continue;
-				// }
 				if (connection_fd < 0)
 				{
 					perror("accept");
@@ -105,8 +99,7 @@ int ServerManager::run_servers()
 					continue ;
 				}
 				std::string address(inet_ntoa(addr.sin_addr));
-				this->_addr_fd.insert(std::map<std::string, int>::value_type(address, connection_fd));
-				//std::cout << GREEN << "New Connection" << RESET << std::endl;
+				// this->_addr_fd.insert(std::map<std::string, int>::value_type(address, connection_fd));
 				this->_fds[this->_nfds].fd = connection_fd;
 				this->_fds[this->_nfds].events = POLLIN;
 				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_fds[i].fd, this->_fds, this->_nfds, address)));
@@ -181,7 +174,7 @@ int ServerManager::run_servers()
 								response_it->second.getRequest().printHeader();
 							if (response_it->second.shouldClose())
 								close_connection(response_it->second, i);
-							else if (response_it->second.is_cgi()) // init cgi
+							else if (response_it->second.is_cgi()) // initialise cgi process
 							{
 								if (this->initCGI(response_it->second, buffer, received, i, request))
 								{
@@ -252,7 +245,6 @@ int ServerManager::run_servers()
 						cgi_it->second.getResponse().getRequest().setStatusCode(get_cgi_response(cgi_it->second.get_response_string()));
 						cgi_it->second.getResponse().getRequest().setSentSize(cgi_it->second.get_size_sent());
 						cgi_it->second.getResponse().getRequest().printHeader();
-						// cgi_it->second.getResponse().getRequest()->printHeader();
 						this->_cgis.erase(cgi_it);
 						this->_compress_array = true;
 						this->_fds[i].events = POLLIN;
