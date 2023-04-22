@@ -143,16 +143,11 @@ int ServerManager::run_servers()
 				socklen_t addr_len = sizeof(sockaddr_in);
 				connection_fd = accept(this->_fds[i].fd, (struct sockaddr *)&addr, &addr_len);
 				if (connection_fd < 0)
-				{
 					perror("accept");
-					nbr_fd_ready--;
-					continue ;
-                }
 				if (fcntl(connection_fd, F_SETFL, O_NONBLOCK) == -1)
 				{
 					perror("fcntl set_flags");
 					close(connection_fd);
-					continue ;
 				}
 				std::string address(inet_ntoa(addr.sin_addr));
 				this->_fds[this->_nfds].fd = connection_fd;
@@ -170,16 +165,11 @@ int ServerManager::run_servers()
 					memset(buffer, 0, sizeof(buffer));
 					received = recv(this->_fds[i].fd, buffer, sizeof(buffer), MSG_DONTWAIT);
 					if (received < 0)
-					{
-						nbr_fd_ready--;
 						perror("recv");
-					}
 					else if (received == 0)
 					{
 						std::cout << "Received 0, closing connection." << std::endl;
-						nbr_fd_ready--;
 						this->close_connection(response_it->second, i);
-						continue;
 					}
 					else
 					{
@@ -280,17 +270,7 @@ int ServerManager::run_servers()
 					this->_compress_array = true;
 				}
 				else
-				{
-					std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
-					if (response_it != this->_responses.end())
-					{
-						std::cout << RED << "something just went down\n" << RESET;
-						close_connection(response_it->second, i);
-					}
-					else
-						std::cout << RED << "something just went down\n" << RESET;
-				}
-
+					std::cout << RED << "something just went down\n" << RESET;
 			}
 			if (this->_fds[i].revents & POLLOUT && this->_fds[i].fd > 0) // if POLLOUT -> write to fd ready for writing
 			{
