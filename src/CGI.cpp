@@ -454,8 +454,13 @@ void	CGI::writeToCGI()
 
 bool CGI::completeContent()
 {
+	if (getResponse().isChunked())
+		return false;
 	if (this->_request_buff.size() - this->_content_length == 0)
+	{
+		std::cout << "CGI CONTENT COMPLETE" << std::endl;
 		return true;
+	}
 	return false;
 }
 

@@ -39,6 +39,9 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 		this->_compress_array = false;
 		this->_fds = new struct pollfd[FD_SETSIZE];
 		memset(this->_fds, 0, FD_SETSIZE * sizeof(struct pollfd));
+		/* set all fd to -1 */
+		for (int i = 0; i < FD_SETSIZE; i++)
+			this->_fds[i].fd = -1;
 		this->_n_servers = this->pollfd_init();
 		this->_nfds = this->_n_servers;
 		this->run_servers();
@@ -66,13 +69,57 @@ int ServerManager::pollfd_init()
 	return i;
 }
 
+int ServerManager::compress_arrary()
+{
+	this->_compress_array = false;
+	/* go through all the fd array and move all the fds that are not -1 to the front of the array */
+	int count = 0;
+	for (int i = this->_n_servers; i < this->_nfds; i++)
+	{
+		if (this->_fds[i].fd == -1)
+		{
+			count++;
+			if (i == this->_nfds - 1)
+			{
+				this->_fds[i].events = 0;
+				break ;
+			}
+			for (int j = i + 1; j < this->_nfds; j++)
+			{
+				if (this->_fds[j].fd != -1)
+				{
+					this->_fds[i].fd = this->_fds[j].fd;
+					this->_fds[i].events = this->_fds[j].events;
+					this->_fds[j].fd = -1;
+					this->_fds[j].events = 0;
+					break ;
+				}
+				if (j == this->_nfds - 1)
+				{
+					this->_fds[i].events = 0;
+				}
+			}
+		}
+	}
+	this->_nfds -= count;
+	return count;
+}
+
 int ServerManager::run_servers()
 {
 	int	nbr_fd_ready;
 	int	connection_fd;
 	while (SWITCH)
     {
-        nbr_fd_ready = poll(this->_fds, this->_nfds, -1);
+        compress_arrary();
+		std::cout << "number of fds: " << this->_nfds << "\n";
+		/* print all active fds from poll */
+		for (int i = 0; i < FD_SETSIZE; i++)
+		{
+			if (this->_fds[i].fd != -1)
+				std::cout << "fd: " << this->_fds[i].fd << "\n";
+		}
+		nbr_fd_ready = poll(this->_fds, this->_nfds, -1);
         if (nbr_fd_ready == -1)
         {
 			perror("poll");
@@ -281,25 +328,55 @@ int ServerManager::run_servers()
 		}
 		if (this->_compress_array)
 		{
-			this->_compress_array = false;
-			for (int i = this->_nfds - 1; i >= this->_n_servers; i--)
-			{
-				if (this->_fds[i].fd == -1)
-				{
-					for (int j = this->_nfds - 1; j > i; j--)
-					{
-						if (this->_fds[j].fd != -1)
-						{
-							this->_fds[i].fd = this->_fds[j].fd;
-							this->_fds[i].events = this->_fds[j].events;
-							this->_fds[j].fd = -1;
-							this->_fds[j].events = 0;	
-							break ;
-						}
-					}
-					this->_nfds--;
-				}
-			}
+			// this->_compress_array = false;
+			// /* go through all the fd array and move all the fds that are not -1 to the front of the array */
+			// int count = 0;
+			// for (int i = this->_n_servers; i < this->_nfds; i++)
+			// {
+			// 	if (this->_fds[i].fd == -1)
+			// 	{
+			// 		if (i == this->_nfds - 1)
+			// 		{
+			// 			this->_fds[i].events = 0;
+			// 			break ;
+			// 		}
+			// 		for (int j = i + 1; j < this->_nfds; j++)
+			// 		{
+			// 			if (this->_fds[j].fd != -1)
+			// 			{
+			// 				this->_fds[i].fd = this->_fds[j].fd;
+			// 				this->_fds[i].events = this->_fds[j].events;
+			// 				this->_fds[j].fd = -1;
+			// 				this->_fds[j].events = 0;
+			// 				break ;
+			// 			}
+			// 			if (j == this->_nfds - 1)
+			// 			{
+			// 				this->_fds[i].events = 0;
+			// 			}
+			// 		}
+			// 		count++;
+			// 	}
+			// }
+			// this->_nfds -= count;
+			// for (int i = this->_nfds - 1; i >= this->_n_servers; i--)
+			// {
+			// 	if (this->_fds[i].fd == -1)
+			// 	{
+			// 		for (int j = this->_nfds - 1; j > i; j--)
+			// 		{
+			// 			if (this->_fds[j].fd != -1)
+			// 			{
+			// 				this->_fds[i].fd = this->_fds[j].fd;
+			// 				this->_fds[i].events = this->_fds[j].events;
+			// 				this->_fds[j].fd = -1;
+			// 				this->_fds[j].events = 0;	
+			// 				break ;
+			// 			}
+			// 		}
+			// 		this->_nfds--;
+			// 	}
+			// }
 		}
     }
 	for (int i = 0; i < this->_nfds; i++)
