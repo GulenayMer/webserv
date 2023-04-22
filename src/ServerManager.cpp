@@ -42,8 +42,10 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 		/* set all fd to -1 */
 		for (int i = 0; i < FD_SETSIZE; i++)
 			this->_fds[i].fd = -1;
-		this->_n_servers = this->pollfd_init();
-		this->_nfds = this->_n_servers;
+		this->_nfds = 0;
+		this->pollfd_init();
+		this->_n_servers = this->_nfds;
+		// this->_nfds = this->_n_servers;
 		this->run_servers();
 	}
 	else
@@ -72,6 +74,7 @@ int ServerManager::pollfd_init()
 		{
 			this->_fds[i].fd = it->second.get_sockfd();
 			this->_fds[i].events = POLLIN;
+			this->_nfds++;
 		}
 		i++;
     }
@@ -180,6 +183,7 @@ int ServerManager::run_servers()
 						std::cout << "Received 0, closing connection." << std::endl;
 						nbr_fd_ready--;
 						this->close_connection(response_it->second, i);
+						continue;
 					}
 					else
 					{
@@ -279,7 +283,17 @@ int ServerManager::run_servers()
 					this->_compress_array = true;
 				}
 				else
-					std::cout << RED << "something just went down\n" << RESET;
+				{
+					std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
+					if (response_it != this->_responses.end())
+					{
+						std::cout << RED << "something just went down\n" << RESET;
+						close_connection(response_it->second, i);
+					}
+					else
+						std::cout << RED << "something just went down\n" << RESET;
+				}
+
 			}
 			if (this->_fds[i].revents & POLLOUT && this->_fds[i].fd > 0) // if POLLOUT -> write to fd ready for writing
 			{
@@ -337,6 +351,7 @@ int ServerManager::run_servers()
 		}
 		if (this->_compress_array)
 		{
+			// compress_arrary();
 			// this->_compress_array = false;
 			// /* go through all the fd array and move all the fds that are not -1 to the front of the array */
 			// int count = 0;
