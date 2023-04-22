@@ -62,8 +62,17 @@ int ServerManager::pollfd_init()
 	std::map<std::string, Server>::iterator it = this->_host_serv.begin();
 	for (; it != this->_host_serv.end(); it++)
     {
-		this->_fds[i].fd = it->second.get_sockfd();
-		this->_fds[i].events = POLLIN;
+		int j = 0;
+		for (; j < i; j++)
+		{
+			if (this->_fds[j].fd == it->second.get_sockfd())
+				break;
+		}
+		if (j == i)
+		{
+			this->_fds[i].fd = it->second.get_sockfd();
+			this->_fds[i].events = POLLIN;
+		}
 		i++;
     }
 	return i;

@@ -561,7 +561,7 @@ void CGI::addHeaderChunked()
 		this->_request_buff.insert(this->_request_buff.begin(), ' ');
 		this->_request_buff.insert(this->_request_buff.begin(), ':');
 		this->_request_buff.insert(this->_request_buff.begin(), it->first.begin(), it->first.end());
-		this->_header_length += it->second.length() + it->first.length() + 2;
+		this->_header_length += it->second.length() + it->first.length() + 3;
 	}
 }
 
