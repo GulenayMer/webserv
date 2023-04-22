@@ -125,7 +125,6 @@ void Location::set_error_code(int error_code)
 }
 
 // Setters
-
 void										Location::set_root(std::string	root)
 {
 	if (root[root.size() - 1] != '/')
@@ -176,10 +175,7 @@ int								Location::check_location()
 	if (this->get_index().size() != 0 && file_exists(this->get_root() + this->get_index()) == false) {
 		return 24;
 	}
-	// if redirection path is given check if file exists
-	// if (this->get_redirection().size() > 0 && dir_exists(this->get_redirection()) == false) {
-	// 	return 25;
-	// }
+	// redirect value exists and given file exists
 	if (this->get_redirection().size() > 0)
 		return EXIT_SUCCESS;
 
@@ -191,6 +187,7 @@ int								Location::check_location()
 			method_check = 1;
 	}
 	if (method_check == 0)
+	
 	//TODO allow GET by defualt
 		this->set_methods(get_method_num("GET"), true);
 	return EXIT_SUCCESS;

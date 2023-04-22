@@ -6,7 +6,6 @@ ConfigParser::ConfigParser()
 	
 	this->_error_code = 0;
 	this->_n_servers = 0;
-	//this->_configs = new std::vector<Config>;
 	
 	// Check if config file exists
 	in_file.open("./webserv.config", std::ios::in);
@@ -41,11 +40,7 @@ ConfigParser::ConfigParser(std::string config_file)
 	in_file.close();
 }
 
-ConfigParser::~ConfigParser()
-{
-	//  for (size_t i = 0; i < this->_configs.size(); i++)
-	//  	delete this->_configs[i];
-}
+ConfigParser::~ConfigParser() {}
 
 std::vector<Config>	&ConfigParser::get_configs()
 {
@@ -118,10 +113,8 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 		else if ((line.find(UPLOAD_STORE) != std::string::npos) && check_def_format(UPLOAD_STORE, line))
 			this->clean_upload_store(line);
 		/*
-		
 			go into function and separate location config
 			keep track of context
-		
 		*/
 		if (line.find("location") != std::string::npos && line.find("{") != std::string::npos)
 			this->get_config(this->get_n_servers() - 1).set_location(config_file, line);
@@ -136,13 +129,6 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 				throw std::runtime_error("Invalid configuration file context.");
         }
 	}
-	// std::map<int, std::string>::iterator it = this->get_config(this->get_n_servers() - 1).get_default_error().begin();
-	// while (it != this->get_config(this->get_n_servers() - 1).get_default_error().end())
-	// {
-	// 	std::cout << it->first << std::endl;
-	// 	std::cout << it->second << std::endl;
-	// 	++it;
-	// }
 	if (context != 0 && this->get_error_code() != 0)
 		return false;
 	return true;
@@ -243,14 +229,6 @@ void ConfigParser::clean_error_page(std::string line)
 	else
 		std::cout << RED << "Provided error page [" << path << "] does not exist, falling back to default." << RESET << std::endl;
 }
-
-// void ConfigParser::clean_server_name(std::string line)
-// {
-// 	line = get_value(line);
-// 	if (line.size() == 0)
-// 		this->set_error_code(6);
-// 	this->get_config(this->get_n_servers() - 1).set_server_name(line);
-// }
 
 void ConfigParser::clean_client_max_body_size(std::string line)
 {

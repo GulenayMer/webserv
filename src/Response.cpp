@@ -88,6 +88,7 @@ void Response::getPath()
 			pos = 0;
 		if (tmp_path.find_first_of(".", pos) == std::string::npos)
 		{
+			//TODO: check if the path is a directory || is this finished?
 			// I'm assuming that we won't allow directory listing for directories that are not specified in the config file
 			// Right now it only accept index.html or <dir_name>.html
 			std::string dir_name(tmp_path.substr(pos, tmp_path.size() - pos));
@@ -213,13 +214,12 @@ int 	Response::handle_response()
 					responseToGET(file, ext_pos, response_stream);
 				else if (_request.getMethod() == POST)
 				{
-					// responseToPOST(_request, response_stream); TODO
-					// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A POST REQUEST";
+					//TODO: do we need to check for POST here?
+					// responseToPOST(_request, response_stream);
 				}
 				else if (_request.getMethod() == DELETE)
 				{
 					responseToDELETE(response_stream);
-					// response_stream << HTTPS_OK << _types.get_content_type(".html") << "THERE WAS A DELETE REQUEST";
 				}
 			}
 			file.close();
@@ -273,7 +273,6 @@ int 	Response::handle_response_error(std::ostringstream& response_stream)
 	return 0;
 }
 
-
 int 	Response::send_response(std::ostringstream& response_stream)
 {
 	_response.clear();
@@ -303,35 +302,6 @@ void	Response::responseToGET(std::ifstream &file, size_t &pos, std::ostringstrea
 	response_stream << type << _response_body;
 	this->_status_code = 200;
 }
-
-// void	Response::responseToPOST(const httpHeader request, std::ostringstream &response_stream)
-// {
-// 	// TODO change CGI constructor to accept httpheader instead of only URI
-// 	// CGI handler(this->_config, request, _response_body, _fds, _nfds);
-// 	// 	if (handler.handle_cgi() == EXIT_SUCCESS)
-//	// 		response_stream << HTTPS_OK << "Content-Length: " << _response_body.length() << "\n" << "Connection: Keep-Alive\n" << _types.get_content_type(".html") << handler.get_response_body();
-// 	// 	else
-// 	// 		send_404(this->_config.get_root(), response_stream);
-// }
-
-// void 	Response::send_404(std::string root, std::ostringstream &response_stream)
-// {
-// 	std::string response_body;
-
-// 	// if the file cannot be opened, send a 404 error
-//     std::ifstream error404((root + this->_config.get_error_path(404)).c_str());
-//     if (!error404.is_open())
-//         std::cerr << RED << _404_ERROR << RESET << std::endl;
-// 	else
-// 	{
-// 		std::stringstream	file_buffer;
-// 		file_buffer << error404.rdbuf();
-// 		response_body = file_buffer.str();
-// 		response_stream << "HTTP/1.1 404 Not Found\r\n\r\n";
-// 		response_stream << response_body;
-// 		error404.close();
-// 	}
-// }
 
 bool	Response::new_request(httpHeader &request)
 {
@@ -416,16 +386,6 @@ bool	Response::response_complete() const
 
 void	Response::responseToDELETE(std::ostringstream &response_stream)
 {
-	/* 
-		DELETE REQUEST
-		1. Get path to the requested resource path
-		2. Check if the resource exists
-		3. delete resource
-		4. send 204 status
-		or/else
-		5. send 404
-	*/
-	// std::cout << RED << "PATH : " << _respond_path << RESET << std::endl;
 	std::ifstream	pathTest(_respond_path.c_str());
 	if (pathTest.fail() == true)
 		response_stream << createError(404);
@@ -628,14 +588,13 @@ bool Response::shouldClose()
 	return this->_to_close;
 }
 
-
-/* 
-    directoryExists()
-        checks if a directory exists at the specified path
+/**
+ * @brief Checks if a directory exists at path
         using the stat() system call.
-        If the path exists and is a directory,
-        return true; otherwise, return false.
-*/
+ * 
+ * @param path path to check
+ * @return true or false
+ */
 bool Response::directoryExists(const char* path)
 {
     struct stat info;
@@ -647,10 +606,11 @@ bool Response::directoryExists(const char* path)
         return false;
 }
 
-/* 
-    directoryListing()
-        returns a string containing an HTML directory listing
-        of the specified directory.
+/**
+ * @brief Returns a string containing an HTML directory listing
+ * 
+ * @param uri path to directory
+ * @return std::string containing HTML
 */
 std::string Response::directoryListing(std::string uri)
 {
@@ -692,7 +652,12 @@ std::string Response::directoryListing(std::string uri)
 	return (message.str());
 }
 
-
+/** 
+ * @brief Checks if a directory exists at a given path.
+ * 
+ * @param dirName_in path to directory
+ * @return true or false
+*/
 bool Response::dir_exists(const std::string& dirName_in)
 {
 	int ret = 0;
@@ -716,19 +681,8 @@ bool Response::dir_exists(const std::string& dirName_in)
 ssize_t Response::receivedBytes(ssize_t received)
 {
 	this->_received_bytes += received;
-	// std::cout << "total received: " << _received_bytes << " content: " << this->getRequest().getContentLength() << std::endl;
 	return (this->getRequest().getContentLength() - this->_received_bytes);
 }
-
-// const char* dir_path = "/path/to/directory";
-
-//     // check if the directory exists
-//     struct stat st;
-//     if (stat(dir_path, &st) == 0 && S_ISDIR(st.st_mode)) {
-//         std::cout << dir_path << " is a directory" << std::endl;
-//     } else {
-//         std::cout << dir_path << " is not a directory" << std::endl;
-//     }
 
 std::string &Response::getExt()
 {
@@ -752,14 +706,6 @@ bool	Response::isChunked()
 {
 	return this->_is_chunked;
 }
-
-// bool Response::isRedirect(std::string uri)
-// {
-// 	(void )uri;
-
-
-// 	return true;
-// }
 
 std::string Response::redirect(std::string uri)
 {

@@ -12,7 +12,8 @@
 */
 
 ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _nfds(0) {
-    for (size_t i = 0; i < this->_configs.size(); i++)
+    _fds = NULL;
+	for (size_t i = 0; i < this->_configs.size(); i++)
     {
 		try {
 			std::cout << BLUE << "[---------- Server : " << i << " ----------]\n" << RESET;
@@ -48,7 +49,8 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 
 ServerManager::~ServerManager()
 {
-	delete [] this->_fds;
+	if (this->_fds)
+		delete [] this->_fds;
 }
 
 int ServerManager::pollfd_init()

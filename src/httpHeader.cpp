@@ -146,7 +146,6 @@ int httpHeader::getStatusCode()
 void httpHeader::setHeader(std::string name, std::string value)
 {
 	this->_header.insert(std::map<std::string, std::string>::value_type(name, value));
-	//_header[ name ] = value;
 }
 
 void httpHeader::setMethod(std::string tmp_method)
@@ -188,7 +187,6 @@ void httpHeader::setMethod(std::string tmp_method)
 			break;
 		default:
 			this->_method = NONE;
-			// std::cerr << "Error method not compatible!" << std::endl; 
 			break;
 	}
 
@@ -196,9 +194,7 @@ void httpHeader::setMethod(std::string tmp_method)
 
 void httpHeader::setVersion(std::string version)
 {
-	//TODO - check is version is valid -- DONE
-	// check for http 1.1
-	// throw error
+	//TODO - Do we need this function?
 	_version = version;
 }
 
@@ -235,10 +231,12 @@ void httpHeader::printHeader()
 			break;				
 	}
  
+	//TODO - make a print log function?
 	std::cout << PURPLE << "[" << _userIP << "]" << " " << RESET;
 	std::cout << "[" << PURPLE << _requestTime << RESET << "] ";
 	std::cout << YELLOW << "\"" << method << " " << _uri << " " << _version << "\" ";
 	std::cout << PURPLE << _statusCode << " " << _sentSize << " " << RESET;
+	
 	std::map<std::string, std::string>::iterator itr = _header.begin();
 	while (itr != _header.end() && itr->first != "user-agent") 
 		itr++;
@@ -248,14 +246,11 @@ void httpHeader::printHeader()
 
 }
 
-/* check if header is http 1.1 protocol */
 bool httpHeader::isHttp11()
 {
-	//std::cout << "VERSION: " << this->_version << std::endl;
 	if ((this->_version == "HTTP/1.1" || this->_version == "http/1.1" || this->_version == "Http/1.1") \
 		&& !get_single_header("host").empty())
 		return true;
-	//std::cout << "HERE INVALID HTTP" << std::endl;
 	return false;
 }
 

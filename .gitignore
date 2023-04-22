@@ -38,3 +38,6 @@ vgcore.*
 .vscode/
 cgi-bin/tmp
 *.cpython-39.pyc
+.idea/
+cmake-build-debug/
+CMakeLists.txt
