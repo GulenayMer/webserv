@@ -82,6 +82,4 @@ class CGI {
 		void	removeHeader(char *buffer, ssize_t received);
 };
 
-
-
 #endif

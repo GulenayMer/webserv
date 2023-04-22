@@ -5,8 +5,6 @@
 # include "minilib.hpp"
 # include <cstdlib>
 
-// Set-Cookie: key=value; expires='formated date'; asdfaf=sadadd
-
 enum httpMethods 
 {
 	GET,

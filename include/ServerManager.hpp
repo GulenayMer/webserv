@@ -45,6 +45,7 @@ class ServerManager {
 		void	server_create_error(std::logic_error &e, int i);
 		int		get_cgi_response(std::string header);
 		std::string	getDefPort(std::string &host);
+		int compress_arrary();
 };
 
 #endif

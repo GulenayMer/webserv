@@ -10,8 +10,6 @@
 # include "Config.hpp"
 # include "Utils.hpp"
 
-
-
 class ConfigParser {
 	private:
 		int							_n_servers;
@@ -25,14 +23,13 @@ class ConfigParser {
 		ConfigParser(std::string config_file);
 		~ConfigParser();
 		
-
 		// Getter
 		std::vector<Config>	&get_configs();
 		Config& get_config(int i);
 		int get_error_code();
 		int get_n_servers();
 
-		//
+		//Setters
 		void set_error_code(int error_code);
 		void set_n_servers(int i);
 
@@ -51,18 +48,9 @@ class ConfigParser {
 		void addToExtMap();
 		std::string findIP(std::string &word);
 
-
-
-		// Utils
-		
-
-
-
 		// Error Handling
 		int exit_with_error(int err_code, std::ifstream& in_file);
 		bool check_server_context(std::ifstream& config_file);
 };
 		
-
-
 #endif
