@@ -39,13 +39,11 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
 		this->_compress_array = false;
 		this->_fds = new struct pollfd[FD_SETSIZE];
 		memset(this->_fds, 0, FD_SETSIZE * sizeof(struct pollfd));
-		/* set all fd to -1 */
 		for (int i = 0; i < FD_SETSIZE; i++)
 			this->_fds[i].fd = -1;
 		this->_nfds = 0;
 		this->pollfd_init();
 		this->_n_servers = this->_nfds;
-		// this->_nfds = this->_n_servers;
 		this->run_servers();
 	}
 	else
@@ -84,7 +82,6 @@ int ServerManager::pollfd_init()
 int ServerManager::compress_arrary()
 {
 	this->_compress_array = false;
-	/* go through all the fd array and move all the fds that are not -1 to the front of the array */
 	int count = 0;
 	for (int i = this->_n_servers; i < this->_nfds; i++)
 	{
@@ -124,13 +121,12 @@ int ServerManager::run_servers()
 	while (SWITCH)
     {
         compress_arrary();
-		std::cout << "number of fds: " << this->_nfds << "\n";
-		/* print all active fds from poll */
-		for (int i = 0; i < FD_SETSIZE; i++)
-		{
-			if (this->_fds[i].fd != -1)
-				std::cout << "fd: " << this->_fds[i].fd << "\n";
-		}
+		// std::cout << "number of fds: " << this->_nfds << "\n";
+		// for (int i = 0; i < FD_SETSIZE; i++)
+		// {
+		// 	if (this->_fds[i].fd != -1)
+		// 		std::cout << "fd: " << this->_fds[i].fd << "\n";
+		// }
 		nbr_fd_ready = poll(this->_fds, this->_nfds, -1);
         if (nbr_fd_ready == -1)
         {
@@ -279,7 +275,8 @@ int ServerManager::run_servers()
 						cgi_it->second.setReadComplete();
 					else
 						std::cout << RED << "terrible news\n" << RESET;
-					cgi_it->second.closePipes();
+					close(this->_fds[i].fd);
+					this->_fds[i].fd = -1;
 					this->_compress_array = true;
 				}
 				else
@@ -453,7 +450,7 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 		std::pair<std::map<int, CGI>::iterator, bool> ret_pair = this->_cgis.insert(std::map<int, CGI>::value_type(out_fd, cgi));
 		std::cout << RED << "Could insert into CGI map: " << ret_pair.second << "\n";
 		std::pair<std::map<int, int>::iterator, bool> cgi_ret_pair = this->_cgi_fds.insert(std::map<int, int>::value_type(in_fd, out_fd));
-		std::cout << "Could insert into CGI-FD map: " << cgi_ret_pair.second << "\n" << RESET;
+		std::cout << "Could insert into CGI-FD map: " << cgi_ret_pair.second << RESET << std::endl;
 		std::map<int, CGI>::iterator cgi_it = ret_pair.first;
 		this->_fds[_nfds].fd = out_fd;
 		this->_fds[_nfds].events = POLLIN;
