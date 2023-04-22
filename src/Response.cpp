@@ -660,10 +660,9 @@ std::string Response::directoryListing(std::string uri)
 */
 bool Response::dir_exists(const std::string& dirName_in)
 {
-	int ret = 0;
 	struct stat info;
 
-	ret = stat(dirName_in.c_str(), &info);
+	int ret = stat(dirName_in.c_str(), &info);
 	if( ret != 0 )
 	{
 		return false;  // something went wrong
