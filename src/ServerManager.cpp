@@ -132,13 +132,15 @@ int ServerManager::run_servers()
 						std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
 						if (cgi_it != this->_cgis.end() && !cgi_it->second.completeContent()) // cgi fd
 						{
+							std::cout << "adding new received data to cgi buffer" << std::endl;
 							if (cgi_it->second.getResponse().isChunked())
 								cgi_it->second.mergeChunk(buffer, received);
 							else
 								cgi_it->second.storeBuffer(buffer, received);
 						}
-						else //not a cgi fd
+						else //no ongoing cgi
 						{
+							std::cout << "new request" << std::endl;
 							httpHeader request(buffer);
 							std::string host(request.get_single_header("host"));
 							std::map<std::string, Server>::iterator serv_it = this->_host_serv.find(host);

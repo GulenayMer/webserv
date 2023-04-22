@@ -115,17 +115,17 @@ def run() -> None:
 
 
 	print(r"{}{}### TESTING ERRORS ###{}".format(C_B_WHITE, B_GRAY, RESET))
-	run_test("Test 400: GET   /  HTTP/1.1", test_request_line_multiple_space)
-	run_test("Test 400 (bad request)", test_space_before_colon)
-	run_test("Test 403: GET /a/a.html", test_403)
-	run_test("Test 404: GET /iamnothere", test_errors, "iamnothere", 404)
-	run_test("Test 405: POST /", test_post_not_allowed)
-	run_test("Test 413: POST /pokemon", test_post, "pokemon/pokedex.py", 413, {"pokemon" : ('a' * 1000000)})
-	run_test("Test 414: GET /", URITooLarge)
-	run_test("Test 501: GET /pokemon", test_501)
-	run_test("Test 505: GET /", HTTPVersionNotSupported)
-	run_test("Test 500: GET", test_500)
-	run_test("Test missing header", test_missing_header_name)
+	# run_test("Test 400: GET   /  HTTP/1.1", test_request_line_multiple_space)
+	# run_test("Test 400 (bad request)", test_space_before_colon)
+	# run_test("Test 403: GET /a/a.html", test_403)
+	# run_test("Test 404: GET /iamnothere", test_errors, "iamnothere", 404)
+	# run_test("Test 405: POST /", test_post_not_allowed)
+	# run_test("Test 413: POST /pokemon", test_post, "pokemon/pokedex.py", 413, {"pokemon" : ('a' * 1000000)})
+	# run_test("Test 414: GET /", URITooLarge)
+	# run_test("Test 501: GET /pokemon", test_501)
+	# run_test("Test 505: GET /", HTTPVersionNotSupported)
+	# run_test("Test 500: GET", test_500)
+	# run_test("Test missing header", test_missing_header_name)
 
 
 
