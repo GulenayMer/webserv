@@ -29,7 +29,8 @@
 				"ms-vscode.cpptools",
 				"ms-vscode.cpptools-extension-pack",
 				"panzerstadt.light-dark-toggle",
-				"ms-python.python"
+				"ms-python.python",
+				"ms-vsliveshare.vsliveshare"
 			]
 		}
 	}
