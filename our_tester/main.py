@@ -92,6 +92,11 @@ def run() -> None:
 	run_test("Test 6: GET /contact", test_get, "contact", 200)
 	run_test("Test 7: GET /about", test_get, "about", 200)
 	run_test("Test 8: GET /fake", test_get, "fake", 200)
+	run_test("Test 4: GET /pokemon", test_get, "pokemon", 200)
+	run_test("Test 5: GET /pokemon/pokemon.html", test_get, "pokemon/pokemon.html", 200)
+	run_test("Test 6: GET /contact", test_get, "contact", 200)
+	run_test("Test 7: GET /about", test_get, "about", 200)
+	run_test("Test 8: GET /fake", test_get, "fake", 200)
 
 	print(r"{}{}### TESTING POST ###{}".format(C_B_WHITE, B_GRAY, RESET))
 	run_test("Test 1: POST /pokemon", test_post, "pokemon", 411)
@@ -107,7 +112,7 @@ def run() -> None:
 	
 	print(r"{}{}### TESTING CHUNKED ###{}".format(C_B_WHITE, B_GRAY, RESET))
 	run_test("Test 1: POST /cgi-bin/chunked.py (text)", test_chunked_text)
-	# run_test("Test 2: POST /cgi-bin/chunked.py (image)", test_chunked_img)
+	run_test("Test 2: POST /cgi-bin/chunked.py (image)", test_chunked_img)
 
 	print(r"{}{}### TESTING DELETE ###{}".format(C_B_WHITE, B_GRAY, RESET))
 	run_test("Test 1: DELETE /storage/file_does_not_exist)", test_delete, "storage/dummy", 404)
@@ -115,17 +120,17 @@ def run() -> None:
 
 
 	print(r"{}{}### TESTING ERRORS ###{}".format(C_B_WHITE, B_GRAY, RESET))
-	# run_test("Test 400: GET   /  HTTP/1.1", test_request_line_multiple_space)
-	# run_test("Test 400 (bad request)", test_space_before_colon)
-	# run_test("Test 403: GET /a/a.html", test_403)
-	# run_test("Test 404: GET /iamnothere", test_errors, "iamnothere", 404)
-	# run_test("Test 405: POST /", test_post_not_allowed)
-	# run_test("Test 413: POST /pokemon", test_post, "pokemon/pokedex.py", 413, {"pokemon" : ('a' * 1000000)})
-	# run_test("Test 414: GET /", URITooLarge)
-	# run_test("Test 501: GET /pokemon", test_501)
-	# run_test("Test 505: GET /", HTTPVersionNotSupported)
-	# run_test("Test 500: GET", test_500)
-	# run_test("Test missing header", test_missing_header_name)
+	run_test("Test 400: GET   /  HTTP/1.1", test_request_line_multiple_space)
+	run_test("Test 400 (bad request)", test_space_before_colon)
+	run_test("Test 403: GET /a/a.html", test_403)
+	run_test("Test 404: GET /iamnothere", test_errors, "iamnothere", 404)
+	run_test("Test 405: POST /", test_post_not_allowed)
+	run_test("Test 413: POST /pokemon", test_post, "pokemon/pokedex.py", 413, {"pokemon" : ('a' * 1000000)})
+	run_test("Test 414: GET /", URITooLarge)
+	run_test("Test 501: GET /pokemon", test_501)
+	run_test("Test 505: GET /", HTTPVersionNotSupported)
+	run_test("Test 500: GET", test_500)
+	run_test("Test missing header", test_missing_header_name)
 
 
 

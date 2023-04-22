@@ -172,10 +172,11 @@ void grim_reaper(int signum)
 
 	(void)signum;
 	pid = waitpid(-1, &status, WNOHANG);
-	if (pid > 0)
+	while (pid > 0)
 	{
 		exit_status.insert(std::map<int, int>::value_type(pid, WEXITSTATUS(status)));
 		std::cout << GREEN << WEXITSTATUS(status) << RESET << std::endl;
+		pid = waitpid(-1, &status, WNOHANG);
 	}
 }
 
