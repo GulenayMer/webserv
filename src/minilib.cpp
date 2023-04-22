@@ -186,8 +186,6 @@ std::string clean_response_path(std::string response_path)
 	return response_path;
 }
 
-
-
 std::string encodeURI(const std::string &uri)
 {
   std::ostringstream decoded;
@@ -202,7 +200,6 @@ std::string encodeURI(const std::string &uri)
   }
   return decoded.str();
 }
-
 
 std::string decodeURI(const std::string& input) {
     std::stringstream output;
