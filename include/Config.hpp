@@ -33,6 +33,7 @@ class Config {
 		Config(const Config& obj);
 		~Config();
 		Config& operator=(const Config& obj);
+		void init();
 
 		// getters
 		uint16_t							&get_port();

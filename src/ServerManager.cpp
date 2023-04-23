@@ -137,13 +137,20 @@ int ServerManager::run_servers()
 				connection_fd = accept(this->_fds[i].fd, (struct sockaddr *)&addr, &addr_len);
 				if (connection_fd < 0)
 					perror("accept");
+				if (this->_nfds > 30)
+				{
+					close(connection_fd);
+					continue;
+				}
 				if (fcntl(connection_fd, F_SETFL, O_NONBLOCK) == -1)
 				{
 					perror("fcntl set_flags");
 					close(connection_fd);
+					continue;
 				}
 				std::string address(inet_ntoa(addr.sin_addr));
 				std::cout << "New connection from " << address << " on socket " << connection_fd << "\n";
+				std::cout << "nfds: " << this->_nfds << "\n";
 				this->_fds[this->_nfds].fd = connection_fd;
 				this->_fds[this->_nfds].events = POLLIN;
 				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_fds[i].fd, this->_fds, this->_nfds, address)));

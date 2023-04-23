@@ -84,9 +84,10 @@ bool ConfigParser::check_server_context(std::ifstream& config_file)
 		if ((line.find("server") != std::string::npos && check_def_format("server", line) && line.find("{") != std::string::npos) && line.find("}") != std::string::npos)
 			throw std::runtime_error("Server context is empty.");
 		else if ((line.find("server") != std::string::npos && check_def_format("server", line) && line.find("{") != std::string::npos) && context == 0) {
-			this->_n_servers++;
 			context += 1;
 			this->_configs.push_back(Config());
+			this->_configs.at(this->_n_servers).init();
+			this->_n_servers++;
 			continue;
 		}
 		else if (context == 0) {
