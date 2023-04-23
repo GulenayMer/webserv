@@ -38,7 +38,6 @@ class CGI {
 		pid_t								_pid;
 		size_t								_chunk_remaining;
 		std::string							_response_string;
-		int									_size_sent;
 
 	public:
 		CGI(Response &response, httpHeader &header);
@@ -47,9 +46,9 @@ class CGI {
 		~CGI();
 
 		// getters
-		std::string	get_response_body();
-		std::string	get_response_string();
-		int			get_size_sent();
+		// std::string	get_response_body();
+		// std::string	get_response_string();
+		// int			get_size_sent();
 
 		void		env_init(void);
 		void		env_to_char(void);
@@ -78,6 +77,7 @@ class CGI {
 		void	convertHex(char *buffer, size_t &pos, size_t received);
 		void	addHeaderChunked();
 		void	removeHeader(char *buffer, ssize_t received);
+		void	setErrNo(int err);
 };
 
 #endif

@@ -17,7 +17,6 @@ CGI::CGI(Response &response, httpHeader &header): _response(response), _header(h
 	this->set_boundary();
 	this->_header_length = 0;
 	this->_chunk_remaining = 0;
-	this->_size_sent = 0;
 }
 
 CGI::CGI(const CGI& obj): _response(obj._response)
@@ -291,28 +290,40 @@ bool	CGI::sendResponse()
 		_response_string = this->getResponse().createError(404);
 		_content_length = _response_string.size();
 		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
-		_size_sent = sent;
+		this->_response.getRequest().setStatusCode(404);
+		this->_response.getRequest().setSentSize(sent);
+	}
+	else if (this->_errno == 2)
+	{
+		_response_string = this->getResponse().createError(503);
+		_content_length = _response_string.size();
+		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
+		this->_response.getRequest().setStatusCode(503);
+		this->_response.getRequest().setSentSize(sent);
 	}
 	else if (access(_response.getRequest().getUri().c_str(), R_OK) == -1 || access(_response.getRequest().getUri().c_str(), X_OK) == -1)
 	{
 		_response_string = this->getResponse().createError(403);
 		_content_length = _response_string.size();
 		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
-		_size_sent = sent;
+		this->_response.getRequest().setStatusCode(403);
+		this->_response.getRequest().setSentSize(sent);
 	}
 	else if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
 	{
 		_response_string = this->getResponse().createError(500);
 		_content_length = _response_string.size();
 		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
-		_size_sent = sent;
+		this->_response.getRequest().setStatusCode(500);
+		this->_response.getRequest().setSentSize(sent);
 	}
 	else if (_content_length == 0)
 	{
 		_response_string = "HTTP/1.1 204 OK\r\nConnection: Keep-Alive\r\n\r\n";
 		_content_length = _response_string.size();
 		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
-		_size_sent = sent;
+		this->_response.getRequest().setStatusCode(204);
+		this->_response.getRequest().setSentSize(sent);
 	}
 	else if (this->_response.getExt() == ".php")
 	{
@@ -339,16 +350,14 @@ bool	CGI::sendResponse()
 			_content_length = this->_response_buff.size();
 		}
 		sent = send(this->_response.getConnFd(), &_response_buff[this->_bytes_sent], _response_buff.size() - this->_bytes_sent, MSG_DONTWAIT);
-		std::string temp(_response_buff.begin(), _response_buff.end());
-		_response_string = temp;
-		_size_sent = sent;
+		this->_response.getRequest().setStatusCode(200);
+		this->_response.getRequest().setSentSize(sent);
 	}
 	else
 	{
 		sent = send(this->_response.getConnFd(), &_response_buff[this->_bytes_sent], _response_buff.size() - this->_bytes_sent, MSG_DONTWAIT);
-		std::string temp(_response_buff.begin(), _response_buff.end());
-		_response_string = temp;
-		_size_sent = sent;
+		this->_response.getRequest().setStatusCode(200);
+		this->_response.getRequest().setSentSize(sent);
 	}
 	if (sent >= 0)
 	{
@@ -576,12 +585,12 @@ void	CGI::removeHeader(char *buffer, ssize_t received)
 	}
 }
 
-std::string	CGI::get_response_string()
+void CGI::setErrNo(int err)
 {
-	return this->_response_string;
+	this->_errno = err;
 }
 
-int			CGI::get_size_sent()
-{
-	return this->_size_sent;
-}
+// std::string	CGI::get_response_string()
+// {
+// 	return this->_response_string;
+// }

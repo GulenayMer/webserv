@@ -1,8 +1,14 @@
 #include "../include/Config.hpp"
 
 
-Config::Config(): _error_code(0)
+Config::Config()
 {
+
+}
+
+void Config::init()
+{
+	this->_error_code = 0;
 	this->set_port(80);
 	this->set_addr(inet_addr("127.0.0.1"));
 	this->set_server_name("default");

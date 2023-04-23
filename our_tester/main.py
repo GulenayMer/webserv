@@ -110,8 +110,8 @@ def run() -> None:
 	#run_test("Test 5: POST /cgi-bin/delete.py", test_post, "cgi-bin/delete.py", 200, {"session" : "nemo"}) //TODO throws exception
 	run_test("Test 9: POST /upload", test_post, "cgi-bin/upload.py", 200, {"form" : "/workspaces/webserv/test.txt"})
 	
-	# print(r"{}{}### TESTING CHUNKED ###{}".format(C_B_WHITE, B_GRAY, RESET))
-	# run_test("Test 1: POST /cgi-bin/chunked.py (text)", test_chunked_text)
+	print(r"{}{}### TESTING CHUNKED ###{}".format(C_B_WHITE, B_GRAY, RESET))
+	run_test("Test 1: POST /cgi-bin/chunked.py (text)", test_chunked_text)
 	#run_test("Test 2: POST /cgi-bin/chunked.py (image)", test_chunked_img)
 
 	print(r"{}{}### TESTING DELETE ###{}".format(C_B_WHITE, B_GRAY, RESET))
