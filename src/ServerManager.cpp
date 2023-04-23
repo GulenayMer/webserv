@@ -79,21 +79,14 @@ int ServerManager::pollfd_init()
 	return i;
 }
 
-int ServerManager::compress_arrary()
+void ServerManager::compress_array()
 {
-	this->_compress_array = false;
-	int count = 0;
 	for (int i = this->_n_servers; i < this->_nfds; i++)
 	{
 		if (this->_fds[i].fd == -1)
 		{
-			count++;
-			if (i == this->_nfds - 1)
-			{
-				this->_fds[i].events = 0;
-				break ;
-			}
-			for (int j = i + 1; j < this->_nfds; j++)
+			int j = this->_nfds - 1;
+			for (; j > i; j--)
 			{
 				if (this->_fds[j].fd != -1)
 				{
@@ -101,17 +94,17 @@ int ServerManager::compress_arrary()
 					this->_fds[i].events = this->_fds[j].events;
 					this->_fds[j].fd = -1;
 					this->_fds[j].events = 0;
+					this->_nfds--;
 					break ;
 				}
-				if (j == this->_nfds - 1)
-				{
-					this->_fds[i].events = 0;
-				}
+			}
+			if (j == i)
+			{
+				this->_fds[i].events = 0;
+				this->_nfds--;
 			}
 		}
 	}
-	this->_nfds -= count;
-	return count;
 }
 
 int ServerManager::run_servers()
@@ -120,13 +113,13 @@ int ServerManager::run_servers()
 	int	connection_fd;
 	while (SWITCH)
     {
-        compress_arrary();
-		// std::cout << "number of fds: " << this->_nfds << "\n";
-		// for (int i = 0; i < FD_SETSIZE; i++)
-		// {
-		// 	if (this->_fds[i].fd != -1)
-		// 		std::cout << "fd: " << this->_fds[i].fd << "\n";
-		// }
+        compress_array();
+		std::cout << "number of fds: " << this->_nfds << "\n";
+		for (int i = 0; i < FD_SETSIZE; i++)
+		{
+			if (this->_fds[i].fd != -1)
+				std::cout << "fd: " << this->_fds[i].fd << "\n";
+		}
 		nbr_fd_ready = poll(this->_fds, this->_nfds, -1);
         if (nbr_fd_ready == -1)
         {
@@ -326,59 +319,6 @@ int ServerManager::run_servers()
 			if (nbr_fd_ready == 0)
 				break ;
 		}
-		if (this->_compress_array)
-		{
-			// compress_arrary();
-			// this->_compress_array = false;
-			// /* go through all the fd array and move all the fds that are not -1 to the front of the array */
-			// int count = 0;
-			// for (int i = this->_n_servers; i < this->_nfds; i++)
-			// {
-			// 	if (this->_fds[i].fd == -1)
-			// 	{
-			// 		if (i == this->_nfds - 1)
-			// 		{
-			// 			this->_fds[i].events = 0;
-			// 			break ;
-			// 		}
-			// 		for (int j = i + 1; j < this->_nfds; j++)
-			// 		{
-			// 			if (this->_fds[j].fd != -1)
-			// 			{
-			// 				this->_fds[i].fd = this->_fds[j].fd;
-			// 				this->_fds[i].events = this->_fds[j].events;
-			// 				this->_fds[j].fd = -1;
-			// 				this->_fds[j].events = 0;
-			// 				break ;
-			// 			}
-			// 			if (j == this->_nfds - 1)
-			// 			{
-			// 				this->_fds[i].events = 0;
-			// 			}
-			// 		}
-			// 		count++;
-			// 	}
-			// }
-			// this->_nfds -= count;
-			// for (int i = this->_nfds - 1; i >= this->_n_servers; i--)
-			// {
-			// 	if (this->_fds[i].fd == -1)
-			// 	{
-			// 		for (int j = this->_nfds - 1; j > i; j--)
-			// 		{
-			// 			if (this->_fds[j].fd != -1)
-			// 			{
-			// 				this->_fds[i].fd = this->_fds[j].fd;
-			// 				this->_fds[i].events = this->_fds[j].events;
-			// 				this->_fds[j].fd = -1;
-			// 				this->_fds[j].events = 0;	
-			// 				break ;
-			// 			}
-			// 		}
-			// 		this->_nfds--;
-			// 	}
-			// }
-		}
     }
 	for (int i = 0; i < this->_nfds; i++)
 	{
@@ -435,17 +375,15 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 		this->_fds[_nfds].fd = out_fd;
 		this->_fds[_nfds].events = POLLIN;
 		this->_fds[_nfds].revents = 0;
-		_nfds++;
+		this->_nfds++;
 		this->_fds[_nfds].fd = in_fd;
 		this->_fds[_nfds].events = POLLOUT;
 		this->_fds[_nfds].revents = 0;
-		_nfds++;
+		this->_nfds++;
 		if (!cgi_it->second.handle_cgi())
 		{
-			_nfds--;
-			this->_fds[_nfds].fd = -1;
-			_nfds--;
-			this->_fds[_nfds].fd = -1;
+			this->_fds[_nfds - 1].fd = -1;
+			this->_fds[_nfds - 2].fd = -1;
 			this->_compress_array = true;
 			cgi_it->second.closePipes();
 			cgi_it->second.sendResponse();
