@@ -39,6 +39,7 @@ httpHeader::httpHeader(std::string header)
 	_statusCode = 0;
 	_sentSize = 0;
 	_requestTime = get_current_time();
+	this->_error = 0;
 	
 	size_t start = 0, end = 0;
 	
@@ -47,19 +48,12 @@ httpHeader::httpHeader(std::string header)
 	
 	/* Find the method */
 	end = header.find(" ");
-	if (end == std::string::npos) {
-		/* no space found */
+	if (end == std::string::npos)
 		this->_error = 2;
-		std::cout << "Invalid HTTP request: no space found" << std::endl;
-
-		// throw std::runtime_error("Invalid HTTP request");
-	}
 	std::string tmp_method = header.substr(start, end - start);
 	if (!isMethodValid(tmp_method)) {
-		std::cout << "Method is not valid" << std::endl;
 		/* method is not valid */
 		this->_error = 2;
-		// throw std::runtime_error("Invalid HTTP request");
 	}
 
 	/* Find the URI */
@@ -67,12 +61,17 @@ httpHeader::httpHeader(std::string header)
 	end = header.find(" ", start);
 	if (end - start > 500)
 	{
+		/* "URI is too long" */
 		this->_error = 1;
+		this->_uri.clear();
+	}
+	else if (!isUriValid(this->_uri)) {
+		/* URI is not valid */
+		this->_error = 2;
 		this->_uri.clear();
 	}
 	else
 	{
-		this->_error = 0;
 		this->_uri = decodeURI(header.substr(start, end - start));
 		start = this->_uri.find_first_of("?");
 		if (start != std::string::npos)
@@ -80,13 +79,6 @@ httpHeader::httpHeader(std::string header)
 			this->_query = this->_uri.substr(start);
 			this->_uri.erase(start);
 		}
-	}
-	if (!isUriValid(this->_uri)) {
-		/* URI is not valid */
-		this->_error = 2;
-		this->_uri.clear();
-		std::cout << "URI is invalid" << std::endl;
-		// throw std::runtime_error("Invalid HTTP request");
 	}
 
 	/* Find the version */
@@ -97,8 +89,6 @@ httpHeader::httpHeader(std::string header)
 		/* version is not valid */
 		this->_error = 2;
 		this->_version.clear();
-		std::cout << "Version is invalid" << std::endl;
-		// throw std::runtime_error("Invalid HTTP request");
 	}
 	
 	setMethod(tmp_method);
