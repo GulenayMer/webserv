@@ -34,6 +34,16 @@ bool httpHeader::isUriValid(std::string line)
 	return false;
 }
 
+/* check to see if header is valid */
+bool httpHeader::isHeaderValid(std::string line)
+{
+	/* check to see if header is valid */
+	if (line.find(": ") != std::string::npos)
+		return true;
+	
+	return false;
+}
+
 httpHeader::httpHeader(std::string header)
 {
 	_statusCode = 0;
@@ -99,6 +109,18 @@ httpHeader::httpHeader(std::string header)
 	while ((end = header.find("\r\n", start)) != std::string::npos)
 	{
 		std::string line = header.substr(start, end - start);
+		if (line.empty())
+			break;
+		if (line[0] == '\n')
+			line.erase(0, 1);
+		std::cout << RED << "*" << line << "*" << RESET << std::endl;
+		if (!isHeaderValid(line))
+		{
+			std::cout << RED << "Invalid header" << RESET << std::endl;
+			_error = 2;
+			start = end + 2;
+			break ;
+		}
 		size_t separator = line.find(": ");
 		if (separator != std::string::npos) {
 			std::string name;
@@ -107,6 +129,11 @@ httpHeader::httpHeader(std::string header)
 			else
 				name = line.substr(0, separator);
 			std::string value = line.substr(separator + 2);
+			if (name.empty() || value.empty())
+			{
+				_error = 2;
+				break;
+			}
 			name = toLowerCase(name);
 			std::cout << GREEN << name << ": " << value << RESET << std::endl;
 			this->setHeader(name, value);

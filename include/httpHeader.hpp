@@ -69,7 +69,8 @@ class httpHeader
 		bool isMethodValid(std::string line);
 		bool isVersionValid(std::string line);
 		bool isUriValid(std::string line);
-
+		bool isHeaderValid(std::string line);
+		
 		void printHeader();
 		std::string	get_current_time();
 };

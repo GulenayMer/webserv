@@ -132,8 +132,8 @@ def run() -> None:
 	run_test("Test 500: GET", test_500)
 	run_test("Test missing header", test_missing_header_name)
 
+	run_test("Test 400 (bad request)", test_space_before_colon)
 	print(r"{}{}### TEST FINISHED ###{}".format(C_B_WHITE, B_GREEN, RESET))
-	# run_test("Test 400 (bad request)", test_space_before_colon)
 	# run_test("Test 403: GET /a/a.html", test_403)
 	# run_test("Test missing header value", test_missing_header_value)
 	
