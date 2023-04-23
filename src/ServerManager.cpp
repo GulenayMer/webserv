@@ -36,6 +36,8 @@ ServerManager::ServerManager(std::vector<Config> &configs): _configs(configs), _
     }
 	if (this->_host_serv.size() > 0) 
 	{
+		if (this->_host_serv.size() > FD_SETSIZE >> 2)
+			throw std::logic_error("ERROR: --- Too many servers to handle ---\n");
 		this->_compress_array = false;
 		this->_fds = new struct pollfd[FD_SETSIZE];
 		memset(this->_fds, 0, FD_SETSIZE * sizeof(struct pollfd));
@@ -137,7 +139,7 @@ int ServerManager::run_servers()
 				connection_fd = accept(this->_fds[i].fd, (struct sockaddr *)&addr, &addr_len);
 				if (connection_fd < 0)
 					perror("accept");
-				if (this->_nfds > 30)
+				if (this->_nfds > FD_SETSIZE >> 1)
 				{
 					close(connection_fd);
 					continue;
@@ -291,8 +293,6 @@ int ServerManager::run_servers()
 							if (cgi_it->second.sendResponse())
 							{
 								std::cout << "CGI RESPONSE SENT\n";
-								cgi_it->second.getResponse().getRequest().setStatusCode(get_cgi_response(cgi_it->second.get_response_string()));
-								cgi_it->second.getResponse().getRequest().setSentSize(cgi_it->second.get_size_sent());
 								cgi_it->second.getResponse().getRequest().printHeader();
 								close(response_it->second.getCGIFd());
 								response_it->second.setCGIFd(-1);
@@ -384,6 +384,13 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 	int in_fd = cgi.initInputPipe();
 	if (out_fd < 0 || in_fd < 0)
 	{
+		cgi.sendResponse();
+		close_connection(cgi.getResponse(), i);
+		return false;
+	}
+	else if (this->_nfds >= FD_SETSIZE - 10)
+	{
+		cgi.setErrNo(2);
 		cgi.sendResponse();
 		close_connection(cgi.getResponse(), i);
 		return false;

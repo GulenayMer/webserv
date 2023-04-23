@@ -59,6 +59,7 @@ httpHeader::httpHeader(std::string header)
 	/* Find the URI */
 	start = end + 1;
 	end = header.find(" ", start);
+	this->_uri = header.substr(start, end - start);
 	if (end - start > 500)
 	{
 		/* "URI is too long" */
