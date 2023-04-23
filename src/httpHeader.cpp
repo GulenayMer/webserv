@@ -5,15 +5,64 @@ httpHeader::httpHeader()
 	this->_content_length = 0;
 }
 
+/* check to see if method is valid */
+bool httpHeader::isMethodValid(std::string line)
+{
+	/* check to see if method is valid */
+	if (line == "GET" || line == "POST" || line == "DELETE" || line == "PUT" || \
+		line == "HEAD" || line == "OPTIONS" || line == "TRACE" || line == "CONNECT")
+		return true;
+	return false;
+
+}
+
+/* check to see if version is valid */
+bool httpHeader::isVersionValid(std::string line)
+{
+	/* check to see if version is valid */
+	if (line == "HTTP/1.0" || line == "HTTP/1.1")
+		return true;
+	return false;
+}
+
+/* check to see if URI is valid */
+bool httpHeader::isUriValid(std::string line)
+{
+	/* check to see if URI is valid */
+	if (line[0] == '/')
+		return true;
+	return false;
+}
+
 httpHeader::httpHeader(std::string header)
 {
 	_statusCode = 0;
 	_sentSize = 0;
 	_requestTime = get_current_time();
+	
 	size_t start = 0, end = 0;
+	
+	/* Find the request header */
 	this->_header_length = header.find("\r\n\r\n") + 4;
+	
+	/* Find the method */
 	end = header.find(" ");
+	if (end == std::string::npos) {
+		/* no space found */
+		this->_error = 2;
+		std::cout << "Invalid HTTP request: no space found" << std::endl;
+
+		// throw std::runtime_error("Invalid HTTP request");
+	}
 	std::string tmp_method = header.substr(start, end - start);
+	if (!isMethodValid(tmp_method)) {
+		std::cout << "Method is not valid" << std::endl;
+		/* method is not valid */
+		this->_error = 2;
+		// throw std::runtime_error("Invalid HTTP request");
+	}
+
+	/* Find the URI */
 	start = end + 1;
 	end = header.find(" ", start);
 	if (end - start > 500)
@@ -32,10 +81,29 @@ httpHeader::httpHeader(std::string header)
 			this->_uri.erase(start);
 		}
 	}
+	if (!isUriValid(this->_uri)) {
+		/* URI is not valid */
+		this->_error = 2;
+		this->_uri.clear();
+		std::cout << "URI is invalid" << std::endl;
+		// throw std::runtime_error("Invalid HTTP request");
+	}
+
+	/* Find the version */
 	start = end + 1;
 	end = header.find("\r\n", start);
 	this->_version = header.substr(start, end - start);
+	if (!isVersionValid(this->_version)) {
+		/* version is not valid */
+		this->_error = 2;
+		this->_version.clear();
+		std::cout << "Version is invalid" << std::endl;
+		// throw std::runtime_error("Invalid HTTP request");
+	}
+	
 	setMethod(tmp_method);
+	
+	/* Create key : value pairs */
 	start = end + 1;
 	while ((end = header.find("\r\n", start)) != std::string::npos)
 	{
