@@ -235,10 +235,15 @@ int 	Response::handle_response()
 int 	Response::handle_response_error(std::ostringstream& response_stream)
 {
 	if (_request.isError()) {
-		if (_request.isError() == 2)
+		uint8_t myByte = _request.isError();
+		if (static_cast<int>(myByte) == 2)
+		{
 			response_stream << createError(400);
-		else if (_request.isError() == 1)
+		}
+		else if (static_cast<int>(myByte) == 1)
+		{
 			response_stream << createError(414);
+		}
 		_to_close = true;
 		return 1;
 	}

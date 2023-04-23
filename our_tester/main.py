@@ -132,8 +132,11 @@ def run() -> None:
 	run_test("Test 500: GET", test_500)
 	run_test("Test missing header", test_missing_header_name)
 
-	# run_test("Test missing header value", test_missing_header_value)
 	print(r"{}{}### TEST FINISHED ###{}".format(C_B_WHITE, B_GREEN, RESET))
+	# run_test("Test 400 (bad request)", test_space_before_colon)
+	# run_test("Test 403: GET /a/a.html", test_403)
+	# run_test("Test missing header value", test_missing_header_value)
+	
 	# run_test("Test 415: GET /pokemon", test_errors, "pokemon", 415)
 	# # 411 was checked above in POST
 	# run_test("Test 411: POST /pokemon", test_errors, "pokemon", 411)
@@ -141,4 +144,3 @@ def run() -> None:
 if __name__ == "__main__":
 	cleanup()
 	run()
-	
