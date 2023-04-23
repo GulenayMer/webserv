@@ -16,8 +16,6 @@ CGI::CGI(Response &response, httpHeader &header): _response(response), _header(h
 	this->env_init();
 	this->set_boundary();
 	this->_header_length = 0;
-	this->_chunk_context = false;
-	this->_chunk_size = 0;
 	this->_chunk_remaining = 0;
 	this->_size_sent = 0;
 }
@@ -52,8 +50,6 @@ CGI& CGI::operator=(const CGI& obj)
 		this->_output_pipe[0] = obj._output_pipe[0];
 		this->_output_pipe[1] = obj._output_pipe[1];
 		this->_header_length = obj._header_length;
-		this->_chunk_context = obj._chunk_context;
-		this->_chunk_size = obj._chunk_size;
 		this->_chunk_remaining = obj._chunk_remaining;
 		this->_response = obj._response;
 	}
@@ -431,6 +427,7 @@ void	CGI::writeToCGI()
 	if (this->_request_buff.empty())
 	{
 		this->_vector_pos = 0;
+		std::cout << "request buff empty" << std::endl;
 		return;
 	}
 	ssize_t sent = write(this->_input_pipe[1], &this->_request_buff[this->_vector_pos], this->_request_buff.size() - this->_vector_pos);
@@ -481,15 +478,15 @@ void	CGI::closePipes()
 		close(this->_output_pipe[1]);
 }
 
-void CGI::mergeChunk(char *buffer, size_t received) //TODO this is removing newline characters
+void CGI::mergeChunk(char *buffer, size_t received)
 {
 	size_t	pos = 0;
 	while (pos < received)
 	{
-		if (!this->_chunk_context)
+		if (this->_chunk_remaining == 0)
 		{
-			pos = convertHex(buffer, pos, received);
-			this->_chunk_remaining = this->_chunk_size;
+			convertHex(buffer, pos, received);
+			std::cout << buffer << std::endl;
 			std::cout << "pos: " << pos << std::endl;
 			std::cout << "received: " << received << std::endl;
 			std::cout << "chunk remaining: " << this->_chunk_remaining << std::endl;
@@ -497,7 +494,9 @@ void CGI::mergeChunk(char *buffer, size_t received) //TODO this is removing newl
 			for (size_t i = 0; i < this->_request_buff.size(); i++)
 				std::cout << this->_request_buff[i];
 			std::cout << "buffer end" << std::endl;
-			if (this->_chunk_size == 0)
+			if (buffer[0] == 0)
+				exit(0);
+			if (this->_chunk_remaining == 0)
 			{
 				addHeaderChunked();
 				this->_content_length += this->_header_length;
@@ -515,25 +514,21 @@ void CGI::mergeChunk(char *buffer, size_t received) //TODO this is removing newl
 		{
 			storeBuffer(&buffer[pos], this->_chunk_remaining);
 			pos += this->_chunk_remaining + 2;
-			this->_chunk_context = false;
 			this->_chunk_remaining = 0;
 		}
 	}
 }
 
 // Convert hexadecimal number to decimal
-size_t CGI::convertHex(char *buffer, size_t pos, size_t received)
+void CGI::convertHex(char *buffer, size_t &pos, size_t received)
 {
 	char *stopstr;
 	size_t i = pos;
-	// Find the end of the hex number
 	while (pos < received && buffer[pos] != '\r' && buffer[pos] != '\n')
 		pos++;
-	this->_chunk_size = std::strtoul(&buffer[i], &stopstr, 16);
-	this->_content_length += this->_chunk_size;
+	this->_chunk_remaining = std::strtoul(&buffer[i], &stopstr, 16);
+	this->_content_length += this->_chunk_remaining;
 	pos += 2;
-	this->_chunk_context = true;
-	return pos;
 }
 
 void CGI::addHeaderChunked()

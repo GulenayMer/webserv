@@ -36,8 +36,6 @@ class CGI {
 		std::string							_boundary;
 		int									_errno;
 		pid_t								_pid;
-		bool								_chunk_context;
-		size_t								_chunk_size;
 		size_t								_chunk_remaining;
 		std::string							_response_string;
 		int									_size_sent;
@@ -77,7 +75,7 @@ class CGI {
 		int		PID();
 		void	closePipes();
 		void	mergeChunk(char *buffer, size_t received);
-		size_t	convertHex(char *buffer, size_t pos, size_t received);
+		void	convertHex(char *buffer, size_t &pos, size_t received);
 		void	addHeaderChunked();
 		void	removeHeader(char *buffer, ssize_t received);
 };

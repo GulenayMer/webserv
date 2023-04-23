@@ -55,7 +55,7 @@ class Response
         void	newConfig(Config &config);
 		int 	handle_response();
 		int		handle_response_error(std::ostringstream& response_stream);
-		int		send_response(std::ostringstream& response_stream);
+		int		send_response();
         void 	send_404(std::string root, std::ostringstream &response_stream);
 
 		bool	new_request(httpHeader &request);
@@ -80,7 +80,6 @@ class Response
 		std::string directoryListing(std::string uri);
 		bool checkCGI();
 		bool checkPermissions();
-		void setCompletion(bool complete);
 		bool isComplete();
 		std::string &getAddress();
 		bool shouldClose();
