@@ -193,7 +193,10 @@ int 	Response::handle_response()
 				this->_is_cgi = false;
 			}
 			else
+			{
+				this->_is_complete = true;
 				return 0;
+			}
 		}
 		else
 		{
@@ -225,7 +228,8 @@ int 	Response::handle_response()
 			file.close();
 		}
 	}
-	return (send_response(response_stream));
+	this->_response = response_stream.str();
+	return (send_response());
 }
 
 int 	Response::handle_response_error(std::ostringstream& response_stream)
@@ -281,10 +285,8 @@ int 	Response::handle_response_error(std::ostringstream& response_stream)
 	return 0;
 }
 
-int 	Response::send_response(std::ostringstream& response_stream)
+int 	Response::send_response()
 {
-	_response.clear();
-	this->_response = response_stream.str();
 	int	sent = send(this->_conn_fd, _response.c_str(), _response.length(), MSG_DONTWAIT);
 	_request.setSentSize(sent);
 	if (sent > 0)
@@ -292,6 +294,8 @@ int 	Response::send_response(std::ostringstream& response_stream)
 		_bytes_sent += sent;
 		if (_bytes_sent == _response.length())
 		{
+			std::cout << "Response completely sent" << std::endl;
+			this->_is_complete = true;
 			_bytes_sent = 0;
 		}
 	}
@@ -574,11 +578,6 @@ bool	Response::checkPermissions()
 	else
 		path = this->_location.get_root() + &path[1];
 	return dir_exists(path);
-}
-
-void	Response::setCompletion(bool complete)
-{
-	this->_is_complete = complete;
 }
 
 bool	Response::isComplete()

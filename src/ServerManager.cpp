@@ -114,12 +114,12 @@ int ServerManager::run_servers()
 	while (SWITCH)
     {
         compress_array();
-		std::cout << "number of fds: " << this->_nfds << "\n";
-		for (int i = 0; i < FD_SETSIZE; i++)
-		{
-			if (this->_fds[i].fd != -1)
-				std::cout << "fd: " << this->_fds[i].fd << "\n";
-		}
+		// std::cout << "number of fds: " << this->_nfds << "\n";
+		// for (int i = 0; i < FD_SETSIZE; i++)
+		// {
+		// 	if (this->_fds[i].fd != -1)
+		// 		std::cout << "fd: " << this->_fds[i].fd << "\n";
+		// }
 		nbr_fd_ready = poll(this->_fds, this->_nfds, -1);
         if (nbr_fd_ready == -1)
         {
@@ -143,6 +143,7 @@ int ServerManager::run_servers()
 					close(connection_fd);
 				}
 				std::string address(inet_ntoa(addr.sin_addr));
+				std::cout << "New connection from " << address << " on socket " << connection_fd << "\n";
 				this->_fds[this->_nfds].fd = connection_fd;
 				this->_fds[this->_nfds].events = POLLIN;
 				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_fds[i].fd, this->_fds, this->_nfds, address)));
@@ -220,10 +221,7 @@ int ServerManager::run_servers()
 							else if (response_it->second.is_cgi()) // initialise cgi process
 							{
 								if (this->initCGI(response_it->second, buffer, received, i, request))
-								{
 									this->_fds[i].events = POLLIN | POLLOUT;
-									response_it->second.setCompletion(false);
-								}
 							}
 						}
 					}
@@ -255,12 +253,12 @@ int ServerManager::run_servers()
 						rec = read(this->_fds[i].fd, buffer, sizeof(buffer));
 					}
 					if (rec == 0)
+					{
 						cgi_it->second.setReadComplete();
+						this->_fds[i].fd = -1;
+					}
 					else
 						std::cout << RED << "terrible news\n" << RESET;
-					close(this->_fds[i].fd);
-					this->_fds[i].fd = -1;
-					this->_compress_array = true;
 				}
 				else
 					std::cout << RED << "something just went down\n" << RESET;
@@ -268,58 +266,76 @@ int ServerManager::run_servers()
 			if (this->_fds[i].revents & POLLOUT && this->_fds[i].fd > 0) // if POLLOUT -> write to fd ready for writing
 			{
 				std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
-				std::map<int, CGI>::iterator cgi_it = this->_cgis.end();
-				std::map<int, int>::iterator cgi_fd_it = this->_cgi_fds.find(this->_fds[i].fd);
 				if (response_it != this->_responses.end())
-					cgi_it = this->_cgis.find(response_it->second.getCGIFd());
-				if (response_it != this->_responses.end() && !response_it->second.is_cgi()) // for sending non-CGI responses
 				{
-					std::cout << "SEND RESPONSE\n";
-					response_it->second.handle_response();
-					response_it->second.getRequest().printHeader();
-					if (response_it->second.shouldClose())
-						close_connection(response_it->second, i);
-					else if (response_it->second.response_complete())
-						this->_fds[i].events = POLLIN;
-				}
-				else if (cgi_it != this->_cgis.end() && cgi_it->second.readComplete()) // if done reading from cgi out, send response to client
-				{
-					if (cgi_it->second.sendResponse())
+					if (!response_it->second.isComplete())
 					{
-						cgi_it->second.getResponse().getRequest().setStatusCode(get_cgi_response(cgi_it->second.get_response_string()));
-						cgi_it->second.getResponse().getRequest().setSentSize(cgi_it->second.get_size_sent());
-						cgi_it->second.getResponse().getRequest().printHeader();
-						this->_cgis.erase(cgi_it);
-						this->_compress_array = true;
-						this->_fds[i].events = POLLIN;
+						std::cout << "SEND RESPONSE\n";
+						response_it->second.send_response();
+						if (response_it->second.isComplete())
+							this->_fds[i].events = POLLIN;
 					}
-				}
-				else if (cgi_fd_it != this->_cgi_fds.end()) // write to cgi stdin
-				{
-					cgi_it = this->_cgis.find(cgi_fd_it->second);
-					if (!cgi_it->second.bodySentCGI())
+					else
 					{
-						if (!cgi_it->second.getResponse().isChunked())
+						std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
+						if (cgi_it != this->_cgis.end() && cgi_it->second.readComplete()) // if done reading from cgi out, send response to client
 						{
-							std::cout << "SEND BODY TO CGI\n";
-							cgi_it->second.writeToCGI();
+							std::cout << "SEND CGI RESPONSE\n";
+							if (cgi_it->second.sendResponse())
+							{
+								std::cout << "CGI RESPONSE SENT\n";
+								cgi_it->second.getResponse().getRequest().setStatusCode(get_cgi_response(cgi_it->second.get_response_string()));
+								cgi_it->second.getResponse().getRequest().setSentSize(cgi_it->second.get_size_sent());
+								cgi_it->second.getResponse().getRequest().printHeader();
+								close(response_it->second.getCGIFd());
+								response_it->second.setCGIFd(-1);
+								this->_cgis.erase(cgi_it);
+								this->_compress_array = true;
+								this->_fds[i].events = POLLIN;
+							}
 						}
 					}
-					else if (cgi_it->second.bodySentCGI())
+				}
+				else // write to cgi stdin
+				{
+					std::map<int, int>::iterator cgi_fd_it = this->_cgi_fds.find(this->_fds[i].fd);
+					if (cgi_fd_it != this->_cgi_fds.end())
 					{
-						std::cout << "CGI BODY COMPLETE\n";
-						close(this->_fds[i].fd);
-						this->_fds[i].fd = -1;
-						this->_compress_array = true;
-						this->_cgi_fds.erase(cgi_fd_it);
+						std::map<int, CGI>::iterator cgi_it = this->_cgis.find(cgi_fd_it->second);
+						if (!cgi_it->second.bodySentCGI())
+						{
+							if (!cgi_it->second.getResponse().isChunked())
+							{
+								std::cout << "SEND BODY TO CGI\n";
+								cgi_it->second.writeToCGI();
+							}
+						}
+						else if (cgi_it->second.bodySentCGI())
+						{
+							std::cout << "CGI BODY COMPLETE\n";
+							close(this->_fds[i].fd);
+							this->_fds[i].fd = -1;
+							this->_compress_array = true;
+							this->_cgi_fds.erase(cgi_fd_it);
+						}
 					}
 				}
+				// if (response_it != this->_responses.end() && !response_it->second.is_cgi()) // for sending non-CGI responses
+				// {
+				// 	response_it->second.handle_response();
+				// 	response_it->second.getRequest().printHeader();
+				// 	if (response_it->second.shouldClose())
+				// 		close_connection(response_it->second, i);
+				// 	else if (response_it->second.response_complete())
+				// 		this->_fds[i].events = POLLIN;
+				// }
 			}
 			nbr_fd_ready--;
 			if (nbr_fd_ready == 0)
 				break ;
 		}
     }
+	std::cout << "nfds: " << this->_nfds << std::endl;
 	for (int i = 0; i < this->_nfds; i++)
 	{
 		if (this->_fds[i].fd > 0)
@@ -375,15 +391,17 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 		this->_fds[_nfds].fd = out_fd;
 		this->_fds[_nfds].events = POLLIN;
 		this->_fds[_nfds].revents = 0;
-		this->_nfds++;
+		_nfds++;
 		this->_fds[_nfds].fd = in_fd;
 		this->_fds[_nfds].events = POLLOUT;
 		this->_fds[_nfds].revents = 0;
-		this->_nfds++;
+		_nfds++;
 		if (!cgi_it->second.handle_cgi())
 		{
-			this->_fds[_nfds - 1].fd = -1;
-			this->_fds[_nfds - 2].fd = -1;
+			_nfds--;
+			this->_fds[_nfds].fd = -1;
+			_nfds--;
+			this->_fds[_nfds].fd = -1;
 			this->_compress_array = true;
 			cgi_it->second.closePipes();
 			cgi_it->second.sendResponse();
