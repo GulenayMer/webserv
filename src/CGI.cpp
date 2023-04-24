@@ -10,19 +10,24 @@ std::map<int, int> exit_status;
  */
 CGI::CGI(Response &response, httpHeader &header): _response(response), _header(header)
 {
+	std::cout << "CGI constructor" << std::endl;
 	this->_done_reading = false;
 	this->_body_complete = false;
 	this->_header_removed = false;
 	this->_vector_pos = 0;
 	this->_bytes_sent = 0;
 	this->_errno = 0;
+	std::cout << "zero env" << std::endl;
 	for (int i = 0; i < 20; i++)
 		this->_exec_env[i] = NULL;
 	this->_pid = 0;
+	std::cout << "env init" << std::endl;
 	this->env_init();
+	std::cout << "set boundary" << std::endl;
 	this->set_boundary();
 	this->_header_length = 0;
 	this->_chunk_remaining = 0;
+	std::cout << "CGI constructor complete" << std::endl;
 }
 
 /**
@@ -43,14 +48,23 @@ CGI::CGI(const CGI& obj): _response(obj._response)
  */
 CGI& CGI::operator=(const CGI& obj)
 {
+	std::cout << "CGI assignement operator" << std::endl;
 	if (this != &obj) {
+		std::cout << "done reading" << std::endl;
 		this->_done_reading = obj._done_reading;
+		std::cout << "body complete" << std::endl;
 		this->_body_complete = obj._body_complete;
+		std::cout << "header removed" << std::endl;
 		this->_header_removed = obj._header_removed;
+		std::cout << "content length" << std::endl;
 		this->_content_length = obj._content_length;
+		std::cout << "vector pos" << std::endl;
 		this->_vector_pos = obj._vector_pos;
+		std::cout << "bytes sent" << std::endl;
 		this->_bytes_sent = obj._bytes_sent;
+		std::cout << "errno" << std::endl;
 		this->_errno = obj._errno;
+		std::cout << "exec env" << std::endl;
 		for (int i = 0; i < 20; i++)
 		{
 			if (obj._exec_env[i])
@@ -58,17 +72,26 @@ CGI& CGI::operator=(const CGI& obj)
 			else
 				this->_exec_env[i] = NULL;
 		}
+		std::cout << "pid" << std::endl;
 		this->_pid = obj._pid;
+		std::cout << "env" << std::endl;
 		this->_env = obj._env;
+		std::cout << "boundary" << std::endl;
 		this->_boundary = obj._boundary;
+		std::cout << "input pipe" << std::endl;
 		this->_input_pipe[0] = obj._input_pipe[0];
 		this->_input_pipe[1] = obj._input_pipe[1];
+		std::cout << "output pipe" << std::endl;
 		this->_output_pipe[0] = obj._output_pipe[0];
 		this->_output_pipe[1] = obj._output_pipe[1];
+		std::cout << "header length" << std::endl;
 		this->_header_length = obj._header_length;
+		std::cout << "chunk remaining" << std::endl;
 		this->_chunk_remaining = obj._chunk_remaining;
+		std::cout << "response" << std::endl;
 		this->_response = obj._response;
 	}
+	std::cout << "CGI assignement operator complete" << std::endl;
 	return *this;
 }
 
@@ -88,6 +111,7 @@ CGI::~CGI()
  */
 void	CGI::env_init()
 {
+	std::cout << "env_init" << std::endl;
 	_env["GATEWAY_INTERFACE"] = std::string("CGI/1.1"); // The revision of the Common Gateway Interface that the server uses.
 	_env["SERVER_NAME"] = _response.getConfig().get_server_name(); //  The server's hostname or IP address.
 	_env["SERVER_SOFTWARE"] = std::string("webserv"); //  The name and version of the server software that is answering the client request.
@@ -129,6 +153,7 @@ void	CGI::env_init()
 		_env["HTTP_COOKIE"] = _response.getRequest().get_single_header("cookie");
 	_env["UPLOAD_PATH"] = _response.getConfig().get_upload_store();
 	_env["DOCUMENT_ROOT"] = _response.getConfig().get_root();
+	std::cout << "env_init done" << std::endl;
 }
 
 /**
@@ -345,14 +370,14 @@ bool	CGI::sendResponse()
 		this->_response.getRequest().setStatusCode(403);
 		this->_response.getRequest().setSentSize(sent);
 	}
-	else if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
-	{
-		_response_string = this->getResponse().createError(500);
-		_content_length = _response_string.size();
-		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
-		this->_response.getRequest().setStatusCode(500);
-		this->_response.getRequest().setSentSize(sent);
-	}
+	// else if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
+	// {
+	// 	_response_string = this->getResponse().createError(500);
+	// 	_content_length = _response_string.size();
+	// 	sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
+	// 	this->_response.getRequest().setStatusCode(500);
+	// 	this->_response.getRequest().setSentSize(sent);
+	// }
 	else if (_content_length == 0)
 	{
 		_response_string = "HTTP/1.1 204 OK\r\nConnection: Keep-Alive\r\n\r\n";
@@ -400,7 +425,7 @@ bool	CGI::sendResponse()
 		this->_bytes_sent += sent;
 		if (this->_bytes_sent == this->_content_length)
 		{
-			exit_status.erase(this->_pid);
+			// exit_status.erase(this->_pid);
 			_response_buff.clear();
 			this->_done_reading = false;
 			return true;
