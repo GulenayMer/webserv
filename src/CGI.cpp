@@ -10,24 +10,19 @@ std::map<int, int> exit_status;
  */
 CGI::CGI(Response &response, httpHeader &header): _response(response), _header(header)
 {
-	// std::cout << "CGI constructor" << std::endl;
 	this->_done_reading = false;
 	this->_body_complete = false;
 	this->_header_removed = false;
 	this->_vector_pos = 0;
 	this->_bytes_sent = 0;
 	this->_errno = 0;
-	// std::cout << "zero env" << std::endl;
 	for (int i = 0; i < 20; i++)
 		this->_exec_env[i] = NULL;
 	this->_pid = 0;
-	std::cout << "env init" << std::endl;
 	this->env_init();
-	std::cout << "set boundary" << std::endl;
 	this->set_boundary();
 	this->_header_length = 0;
 	this->_chunk_remaining = 0;
-	// std::cout << "CGI constructor complete" << std::endl;
 }
 
 /**
@@ -48,7 +43,6 @@ CGI::CGI(const CGI& obj): _response(obj._response)
  */
 CGI& CGI::operator=(const CGI& obj)
 {
-	std::cout << "CGI assignement operator" << std::endl;
 	if (this != &obj) {
 		// std::cout << "done reading" << std::endl;
 		this->_done_reading = obj._done_reading;
@@ -145,7 +139,7 @@ void	CGI::env_init()
 		_env["HTTP_COOKIE"] = _response.getRequest().get_single_header("cookie");
 	_env["UPLOAD_PATH"] = _response.getConfig().get_upload_store();
 	_env["DOCUMENT_ROOT"] = _response.getConfig().get_root();
-	std::cout << "env_init done" << std::endl;
+	// std::cout << "env_init done" << std::endl;
 }
 
 /**
