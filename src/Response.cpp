@@ -17,6 +17,9 @@ Response::Response(int conn_fd, int server_fd, struct pollfd* fds, int nfds, std
 	_is_complete = true;
 	_to_close = false;
 	_addr = addr;
+	_status_code = 0;
+	_is_chunked = false;
+	_is_cgi = false;
 }
 
 Response::Response(const Response &src)

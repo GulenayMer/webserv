@@ -115,6 +115,7 @@ int ServerManager::run_servers()
 	int	connection_fd;
 	while (SWITCH)
     {
+		std::cout << "compress_array" << std::endl;
         compress_array();
 		// std::cout << "number of fds: " << this->_nfds << "\n";
 		// for (int i = 0; i < FD_SETSIZE; i++)
@@ -122,6 +123,7 @@ int ServerManager::run_servers()
 		// 	if (this->_fds[i].fd != -1)
 		// 		std::cout << "fd: " << this->_fds[i].fd << "\n";
 		// }
+		std::cout << "poll" << std::endl;
 		nbr_fd_ready = poll(this->_fds, this->_nfds, -1);
         if (nbr_fd_ready == -1)
         {
@@ -139,7 +141,7 @@ int ServerManager::run_servers()
 				connection_fd = accept(this->_fds[i].fd, (struct sockaddr *)&addr, &addr_len);
 				if (connection_fd < 0)
 					perror("accept");
-				if (this->_nfds > FD_SETSIZE >> 1)
+				if (this->_nfds >= FD_SETSIZE >> 1)
 				{
 					close(connection_fd);
 					continue;
@@ -155,8 +157,11 @@ int ServerManager::run_servers()
 				std::cout << "nfds: " << this->_nfds << "\n";
 				this->_fds[this->_nfds].fd = connection_fd;
 				this->_fds[this->_nfds].events = POLLIN;
-				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_fds[i].fd, this->_fds, this->_nfds, address)));
+				std::cout << "inserted into fd array" << std::endl;
+				std::pair<std::map<int, Response>::iterator, bool> inserted = this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_fds[i].fd, this->_fds, this->_nfds, address)));
+				std::cout << "inserted into response map: " << inserted.second << std::endl;
 				this->_nfds++;
+				std::cout << "connection accept complete" << std::endl;
 			}
 			else if (this->_fds[i].revents & POLLIN)
 			{
@@ -225,17 +230,29 @@ int ServerManager::run_servers()
 								}
 							}
 							response_it->second.new_request(request);
+							std::cout << "new request inserted" << std::endl;
 							response_it->second.handle_response();
+							std::cout << "response handled" << std::endl;
 							response_it->second.getRequest().setStatusCode(get_cgi_response(response_it->second.get_response()));
+							std::cout << "status code set" << std::endl;
 							if (response_it->second.is_cgi() == false)
+							{
+								std::cout << "printing header" << std::endl;
 								response_it->second.getRequest().printHeader();
+								std::cout << "printed header" << std::endl;
+							}
 							if (response_it->second.shouldClose())
+							{
+								std::cout << "closing connection" << std::endl;
 								close_connection(response_it->second, i);
+							}
 							else if (response_it->second.is_cgi()) // initialise cgi process
 							{
+								std::cout << "initialising cgi" << std::endl;
 								if (this->initCGI(response_it->second, buffer, received, i, request))
 									this->_fds[i].events = POLLIN | POLLOUT;
 							}
+							std::cout << "end of new response block" << std::endl;
 						}
 					}
 				}
@@ -304,6 +321,7 @@ int ServerManager::run_servers()
 								this->_compress_array = true;
 								this->_fds[i].events = POLLIN;
 							}
+							std::cout << "INCOMPLETE CGI RESPONSE" << std::endl;
 						}
 					}
 				}
@@ -383,8 +401,11 @@ void	ServerManager::close_connection(Response &response, int i)
 
 bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, int i, httpHeader &request)
 {
+	std::cout << "constructing CGI" << std::endl;
 	CGI cgi(response, request);
+	std::cout << "initialising CGI output pipe" << std::endl;
 	int out_fd = cgi.initOutputPipe();
+	std::cout << "initialising CGI input pipe" << std::endl;
 	int in_fd = cgi.initInputPipe();
 	if (out_fd < 0 || in_fd < 0)
 	{
@@ -401,6 +422,7 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 	}
 	else
 	{
+		std::cout << "initialised CGI pipes successfully" << std::endl;
 		std::pair<std::map<int, CGI>::iterator, bool> ret_pair = this->_cgis.insert(std::map<int, CGI>::value_type(out_fd, cgi));
 		std::cout << RED << "Could insert into CGI map: " << ret_pair.second << "\n";
 		std::pair<std::map<int, int>::iterator, bool> cgi_ret_pair = this->_cgi_fds.insert(std::map<int, int>::value_type(in_fd, out_fd));
