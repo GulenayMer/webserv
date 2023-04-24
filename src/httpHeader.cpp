@@ -56,6 +56,7 @@ httpHeader::httpHeader(std::string header)
 	/* Find the request header */
 	this->_header_length = header.find("\r\n\r\n") + 4;
 	
+	// TODO: check if header is valid
 	/* Find the method */
 	end = header.find(" ");
 	if (end == std::string::npos)
@@ -113,10 +114,8 @@ httpHeader::httpHeader(std::string header)
 			break;
 		if (line[0] == '\n')
 			line.erase(0, 1);
-		std::cout << RED << "*" << line << "*" << RESET << std::endl;
 		if (!isHeaderValid(line))
 		{
-			std::cout << RED << "Invalid header" << RESET << std::endl;
 			_error = 2;
 			start = end + 2;
 			break ;

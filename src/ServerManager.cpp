@@ -176,7 +176,7 @@ int ServerManager::run_servers()
 					}
 					else
 					{
-						std::cout << "buffer:\n" << buffer << "end of buffer." << std::endl;
+						// std::cout << "buffer:\n" << buffer << "end of buffer." << std::endl;
 						/* [ prepare response ] */
 						std::map<int, CGI>::iterator cgi_it = this->_cgis.find(response_it->second.getCGIFd());
 						if (cgi_it != this->_cgis.end() && !cgi_it->second.completeContent()) // cgi fd
@@ -213,6 +213,10 @@ int ServerManager::run_servers()
 									if (host.empty())
 									{
 										std::cout << RED << "No default server found for port. Request from: " << request.get_single_header("host") << "\n" << RESET;
+										if (static_cast<int>(request.isError()) == 2)
+											send(this->_fds[i].fd, "HTTP/1.1 Not Found\r\n\r\n", 26, 0);
+										else if (static_cast<int>(request.isError()) == 1)
+											send(this->_fds[i].fd, "HTTP/1.1 414 Bad Request\r\n\r\n", 28, 0);
 										close_connection(response_it->second, i);
 										continue;
 									}
