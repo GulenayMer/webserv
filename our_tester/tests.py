@@ -75,21 +75,21 @@ def test_post(uri = None, expected_status = None, data_to_send = None) -> str:
 		)
 	return ""
 
-# def test_cookies(uri = None, expected_status = None, data_to_send = None) -> str:
-	# if uri is None:
-	#     req = requests.post(get_base_url())
-	# else:
-	#     if data_to_send != None:
-	#         cookies = data_to_send
-	#         print(cookies)
-			# req = requests.post(get_base_url() + uri, cookies=cookies)
-	#     else:
-	#         req = requests.post(get_base_url() + uri)
-	# if req.status_code != expected_status:
-	#     return "Bad status code: {}, expected: {}".format(
-	#         str(req.status_code), expected_status
-	#     )
-	# return ""
+def test_cookies(uri = None, expected_status = None, data_to_send = None) -> str:
+    if uri is None:
+        req = requests.post(get_base_url())
+    else:
+        if data_to_send != None:
+            cookies = data_to_send
+            data = "body"
+            req = requests.post(get_base_url() + uri, cookies=cookies, data= data)
+        else:
+            req = requests.post(get_base_url() + uri)
+    if req.status_code != expected_status:
+        return "Bad status code: {}, expected: {}".format(
+            str(req.status_code), expected_status
+        )
+    return ""
 
 def test_delete(uri = None, expected_status = None, data_to_send = None) -> str:
 	if uri is None:
@@ -155,11 +155,11 @@ def chunk_gen(file, chunk_size):
 
 def test_chunked_text() -> str:
 	headers = {"Transfer-Encoding":"chunked", "content-type":"text/plain"}
-	http_response = requests.post(get_base_url() + "cgi-bin/chunked.py", headers=headers, data=chunk_gen("our_tester/resources/blah.txt", 5))
+	http_response = requests.post(get_base_url() + "cgi-bin/chunked.py", headers=headers, data=chunk_gen("/workspaces/webserv/our_tester/resources/blah.txt", 5))
 	try:
 		if http_response.status_code != 200 and http_response.status_code != 204:
 			return f"Bad status code: {str(http_response.status_code)}, expected 200 or 204"
-		result = subprocess.run(["diff", "our_tester/resources/blah.txt", "docs/www/website/cgi-bin/uploaded.txt"])
+		result = subprocess.run(["diff", "/workspaces/webserv/our_tester/resources/blah.txt", "/workspaces/webserv/docs/www/website/cgi-bin/uploaded.txt"])
 		if result.returncode != 0:
 			return "Uploaded file differs from original"
 	except Exception as e:
@@ -168,11 +168,11 @@ def test_chunked_text() -> str:
 
 def test_chunked_img() -> str:
 	headers = {"Transfer-Encoding":"chunked", "content-type":"image/png"}
-	http_response = requests.post(get_base_url() + "cgi-bin/chunked.py", headers=headers, data=chunk_gen("our_tester/resources/chunked.png", 1024))
+	http_response = requests.post(get_base_url() + "cgi-bin/chunked.py", headers=headers, data=chunk_gen("/workspaces/webserv/our_tester/resources/chunked.png", 1024))
 	try:
 		if http_response.status_code != 200 and http_response.status_code != 204:
 			return f"Bad status code: {str(http_response.status_code)}, expected 200 or 204"
-		result = subprocess.run(["diff", "our_tester/resources/chunked.png", "docs/www/website/cgi-bin/uploaded.png"])
+		result = subprocess.run(["diff", "/workspaces/webserv/our_tester/resources/chunked.png", "/workspaces/webserv/docs/www/website/cgi-bin/uploaded.png"])
 		if result.returncode != 0:
 			return "Uploaded file differs from original"
 	except Exception as e:
@@ -251,6 +251,32 @@ def test_missing_header_name() -> str:
 	except Exception as e:
 		print(f"Error: {e}")
 		return "Bad status code, expected: {}".format("4XX")
+	return ""
+
+def test_post_empty() -> str:
+	request_header = "POST /pokemon HTTP/1.1\r\nHost:{}\r\n\r\n".format(config.SERVER_NAME)
+	http_response = send_request(request_header)
+	try:
+		if http_response.status // 100 != 4:
+			return "Bad status code: {}, expected: {}".format(
+				str(http_response.status), "4XX"
+				)
+	except Exception as e:
+		print(f"Error: {e}")
+		return "Bad status code, expected: {}".format("4XX")
+	return ""
+
+def test_cookies2() -> str:
+	request_header = "POST /cgi-bin/delete.py HTTP/1.1\r\nHost: {}\r\nCookies: session=nemo\r\n\r\n".format(config.SERVER_NAME)
+	http_response = send_request(request_header)
+	try:
+		if http_response.status != 200:
+			return "Bad status code: {}, expected: {}".format(
+				str(http_response.status), "200"
+				)
+	except Exception as e:
+		print(f"Error: {e}")
+		return "Bad status code, expected: {}".format("200")
 	return ""
 
 """ create different threads to send requests to the server """
