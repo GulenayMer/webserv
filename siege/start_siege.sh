@@ -8,4 +8,4 @@ NUMBER_OF_REQUESTS=$2
 URL_LIST_FILE="./urls.txt"
 
 # Run the Siege command with the specified parameters
-siege -c $CONCURRENT_USERS -r $NUMBER_OF_REQUESTS -f $URL_LIST_FILE -i -b
+siege -c $CONCURRENT_USERS -r $NUMBER_OF_REQUESTS -f $URL_LIST_FILE -b -i
