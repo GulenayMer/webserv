@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import cgi, os, hashlib, json, http.cookies
+import cgi, os, hashlib, json, http.cookies, sys
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,7 +15,6 @@ def is_json_file_valid(file_path):
             return False
         return True
 
-print("came here")
 error = False
 # File does not exist, or file is empty
 # then user to delete does not exist, error is set to True
