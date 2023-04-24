@@ -134,7 +134,7 @@ httpHeader::httpHeader(std::string header)
 				break;
 			}
 			name = toLowerCase(name);
-			std::cout << GREEN << name << ": " << value << RESET << std::endl;
+			// std::cout << GREEN << name << ": " << value << RESET << std::endl;
 			this->setHeader(name, value);
 		}
 		else
