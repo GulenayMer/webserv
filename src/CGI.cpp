@@ -197,13 +197,19 @@ bool	CGI::handle_cgi()
 		return false;
 	}
 	this->_pid = fork();
-    if (this->_pid == 0)
+	if (this->_pid < 0)
+	{
+		this->_errno = 1;
+		return false;
+	}
+    else if (this->_pid == 0)
 	{
 		this->env_to_char();
         exec_script(this->_input_pipe, this->_output_pipe, script_path);
 	}
     else
 	{
+		exit_status.insert(std::map<int, int>::value_type(this->_pid, 0));
 		if (this->_input_pipe[0] > 0)
 			close(this->_input_pipe[0]);
 		this->_input_pipe[0] = -1;
@@ -362,14 +368,14 @@ bool	CGI::sendResponse()
 		this->_response.getRequest().setStatusCode(403);
 		this->_response.getRequest().setSentSize(sent);
 	}
-	// else if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
-	// {
-	// 	_response_string = this->getResponse().createError(500);
-	// 	_content_length = _response_string.size();
-	// 	sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
-	// 	this->_response.getRequest().setStatusCode(500);
-	// 	this->_response.getRequest().setSentSize(sent);
-	// }
+	else if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
+	{
+		_response_string = this->getResponse().createError(500);
+		_content_length = _response_string.size();
+		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
+		this->_response.getRequest().setStatusCode(500);
+		this->_response.getRequest().setSentSize(sent);
+	}
 	else if (_content_length == 0)
 	{
 		_response_string = "HTTP/1.1 204 OK\r\nConnection: Keep-Alive\r\n\r\n";
@@ -417,7 +423,7 @@ bool	CGI::sendResponse()
 		this->_bytes_sent += sent;
 		if (this->_bytes_sent == this->_content_length)
 		{
-			// exit_status.erase(this->_pid);
+			exit_status.erase(this->_pid);
 			_response_buff.clear();
 			this->_done_reading = false;
 			return true;
