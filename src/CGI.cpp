@@ -1,5 +1,6 @@
 # include "../include/CGI.hpp"
 
+// Global to record exit status of children.
 std::map<int, int> exit_status;
 
 /**
@@ -44,21 +45,13 @@ CGI::CGI(const CGI& obj): _response(obj._response)
 CGI& CGI::operator=(const CGI& obj)
 {
 	if (this != &obj) {
-		// std::cout << "done reading" << std::endl;
 		this->_done_reading = obj._done_reading;
-		// std::cout << "body complete" << std::endl;
 		this->_body_complete = obj._body_complete;
-		// std::cout << "header removed" << std::endl;
 		this->_header_removed = obj._header_removed;
-		// std::cout << "content length" << std::endl;
 		this->_content_length = obj._content_length;
-		// std::cout << "vector pos" << std::endl;
 		this->_vector_pos = obj._vector_pos;
-		// std::cout << "bytes sent" << std::endl;
 		this->_bytes_sent = obj._bytes_sent;
-		// std::cout << "errno" << std::endl;
 		this->_errno = obj._errno;
-		// std::cout << "exec env" << std::endl;
 		for (int i = 0; i < 20; i++)
 		{
 			if (obj._exec_env[i])
@@ -66,26 +59,17 @@ CGI& CGI::operator=(const CGI& obj)
 			else
 				this->_exec_env[i] = NULL;
 		}
-		// std::cout << "pid" << std::endl;
 		this->_pid = obj._pid;
-		// std::cout << "env" << std::endl;
 		this->_env = obj._env;
-		// std::cout << "boundary" << std::endl;
 		this->_boundary = obj._boundary;
-		// std::cout << "input pipe" << std::endl;
 		this->_input_pipe[0] = obj._input_pipe[0];
 		this->_input_pipe[1] = obj._input_pipe[1];
-		// std::cout << "output pipe" << std::endl;
 		this->_output_pipe[0] = obj._output_pipe[0];
 		this->_output_pipe[1] = obj._output_pipe[1];
-		// std::cout << "header length" << std::endl;
 		this->_header_length = obj._header_length;
-		// std::cout << "chunk remaining" << std::endl;
 		this->_chunk_remaining = obj._chunk_remaining;
-		// std::cout << "response" << std::endl;
 		this->_response = obj._response;
 	}
-	// std::cout << "CGI assignement operator complete" << std::endl;
 	return *this;
 }
 
@@ -174,7 +158,6 @@ bool	CGI::handle_cgi()
 	std::string shebang;
 
 	std::map<std::string, std::string>::const_iterator path_it = this->_response.getConfig().getIntrPath().find(this->_response.getExt());
-	// if (!file_exists(script_path))
 	if (access(script_path.c_str(), F_OK) == -1)
 	{
 		this->_errno = 1;
@@ -182,11 +165,6 @@ bool	CGI::handle_cgi()
 	}
 	else if (path_it == this->_response.getConfig().getIntrPath().end())
 	{
-		// std::cout << "CGI Script interpreter path not found for:" << this->_response.getExt() << std::endl;
-		// std::cout << "Known interpreters: ";
-		// for (path_it = this->_response.getConfig().getIntrPath().begin(); path_it != this->_response.getConfig().getIntrPath().end(); path_it++)
-		// 	std::cout << path_it->second << " ";
-		// std::cout << std::endl;
 		this->_errno = 2;
 		return false;
 	}
@@ -214,6 +192,7 @@ bool	CGI::handle_cgi()
 	return true;
 }
 
+// Forked child process calls this to execute a CGI script.
 void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
 {
 	char *args[2];
@@ -263,6 +242,7 @@ std::string CGI::get_path_from_map()
 	return path;
 }
 
+// Finds and extracts a query string from a URI.
 std::string CGI::get_query()
 {
 	std::string query = this->_response.getRequest().getUri();
@@ -275,11 +255,11 @@ std::string CGI::get_query()
 	return query;
 }
 
+// Open pipe used for reading data from CGI output.
 int	CGI::initOutputPipe()
 {
     if (pipe(this->_output_pipe) < 0)
     {
-        // std::cout << "Error opening pipe" << std::endl;
 		this->_errno = 2;
         return -1;
     }
@@ -298,11 +278,11 @@ int	CGI::initOutputPipe()
 	return this->_output_pipe[0];
 }
 
+// Open pipe used for sending data to the CGI process.
 int	CGI::initInputPipe()
 {
 	if (pipe(this->_input_pipe) < 0)
 	{
-		// std::cout << "Error opening pipe" << std::endl;
 		if (this->_output_pipe[0] > 0)
 			close(this->_output_pipe[0]);
 		this->_output_pipe[0] = -1;
@@ -380,7 +360,6 @@ bool	CGI::sendResponse()
 	}
 	else if (this->_response.getExt() == ".php")
 	{
-		// std::cout << RED << "Sending php response..." << RESET << std::endl;
 		if (this->_bytes_sent == 0)
 		{
 			for (int i = 0; i < 9; i++)
@@ -460,7 +439,6 @@ bool	CGI::bodySentCGI()
 
 void	CGI::set_boundary()
 {
-	// std::cout << _env["CONTENT_TYPE"] << std::endl;
 	size_t pos = _env["CONTENT_TYPE"].find("boundary=");
 	if (pos != std::string::npos) {
 		pos += 9;
@@ -489,7 +467,6 @@ void	CGI::writeToCGI()
 	if (this->_request_buff.empty())
 	{
 		this->_vector_pos = 0;
-		// std::cout << "request buff empty" << std::endl;
 		return;
 	}
 	ssize_t sent = write(this->_input_pipe[1], &this->_request_buff[this->_vector_pos], this->_request_buff.size() - this->_vector_pos);
@@ -511,15 +488,13 @@ void	CGI::writeToCGI()
 	}
 }
 
+// Checks if entire request has been read into buffer.
 bool CGI::completeContent()
 {
 	if (getResponse().isChunked())
 		return false;
 	if (this->_request_buff.size() - this->_content_length == 0)
-	{
-		// std::cout << "CGI CONTENT COMPLETE" << std::endl;
 		return true;
-	}
 	return false;
 }
 
@@ -540,6 +515,7 @@ void	CGI::closePipes()
 		close(this->_output_pipe[1]);
 }
 
+// Merges separate chunks from a chunked POST request.
 void CGI::mergeChunk(char *buffer, size_t received)
 {
 	size_t	pos = 0;
@@ -548,14 +524,6 @@ void CGI::mergeChunk(char *buffer, size_t received)
 		if (this->_chunk_remaining == 0)
 		{
 			convertHex(buffer, pos, received);
-			// std::cout << buffer << std::endl;
-			// std::cout << "pos: " << pos << std::endl;
-			// std::cout << "received: " << received << std::endl;
-			// std::cout << "chunk remaining: " << this->_chunk_remaining << std::endl;
-			// std::cout << "buffer start" << std::endl;
-			// for (size_t i = 0; i < this->_request_buff.size(); i++)
-			// 	std::cout << this->_request_buff[i];
-			// std::cout << "buffer end" << std::endl;
 			if (buffer[0] == 0)
 				exit(0);
 			if (this->_chunk_remaining == 0)
@@ -593,6 +561,7 @@ void CGI::convertHex(char *buffer, size_t &pos, size_t received)
 	pos += 2;
 }
 
+// Adds a header to a completely unchunked request.
 void CGI::addHeaderChunked()
 {
 	std::map<std::string, std::string>::const_iterator it = this->_response.getRequest().getCompleteHeader().begin();
@@ -622,6 +591,7 @@ void CGI::addHeaderChunked()
 	}
 }
 
+// Removes the header from a chunked request, before merging chunks.
 void	CGI::removeHeader(char *buffer, ssize_t received)
 {
 	this->_content_length = 0;
@@ -642,8 +612,3 @@ void CGI::setErrNo(int err)
 {
 	this->_errno = err;
 }
-
-// std::string	CGI::get_response_string()
-// {
-// 	return this->_response_string;
-// }

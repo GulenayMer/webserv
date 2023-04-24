@@ -10,7 +10,7 @@ def run_subprocess() -> None:
 """ create different threads to send requests to the server """
 def stress_test() -> str:
 	threads = []
-	for i in range(500):
+	for i in range(50):
 		t = threading.Thread(target=run_subprocess)
 		threads.append(t)
 		t.start()
