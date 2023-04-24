@@ -2,6 +2,12 @@
 
 std::map<int, int> exit_status;
 
+/**
+ * @brief Construct a new CGI::CGI object
+ * 
+ * @param response response object required to process CGI
+ * @param header header object required to process CGI
+ */
 CGI::CGI(Response &response, httpHeader &header): _response(response), _header(header)
 {
 	this->_done_reading = false;
@@ -19,11 +25,22 @@ CGI::CGI(Response &response, httpHeader &header): _response(response), _header(h
 	this->_chunk_remaining = 0;
 }
 
+/**
+ * @brief Construct a new CGI::CGI object
+ * 
+ * @param obj CGI object to be copied
+ */
 CGI::CGI(const CGI& obj): _response(obj._response)
 {
 	*this = obj;
 }
 
+/**
+ * @brief Assinment operator overload
+ * 
+ * @param obj CGI object to be copied
+ * @return CGI& 
+ */
 CGI& CGI::operator=(const CGI& obj)
 {
 	if (this != &obj) {
@@ -55,12 +72,20 @@ CGI& CGI::operator=(const CGI& obj)
 	return *this;
 }
 
+/**
+ * @brief Destroy the CGI::CGI object
+ * 
+ */
 CGI::~CGI()
 {
 	for (int i = 0; this->_exec_env[i]; i++)
 		free(this->_exec_env[i]);
 }
 
+/**
+ * @brief Initializes the enviromental variables to be sent to CGI program
+ * 
+ */
 void	CGI::env_init()
 {
 	_env["GATEWAY_INTERFACE"] = std::string("CGI/1.1"); // The revision of the Common Gateway Interface that the server uses.
@@ -106,7 +131,11 @@ void	CGI::env_init()
 	_env["DOCUMENT_ROOT"] = _response.getConfig().get_root();
 }
 
-
+/**
+ * @brief Processes the enviromental variables into a format that is
+ * passable to execve
+ * 
+ */
 void	CGI::env_to_char(void)
 {
 	std::string temp;
@@ -120,6 +149,13 @@ void	CGI::env_to_char(void)
 	this->_exec_env[i] = NULL;
 }
 
+/**
+ * @brief Prepares the request to be sent to CGI
+ * 
+ * @return true in case of sucess
+ * \n 
+ * @return false in case of failure
+ */
 bool	CGI::handle_cgi()
 {
     std::ifstream file;

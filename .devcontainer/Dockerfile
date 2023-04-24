@@ -10,6 +10,7 @@ RUN if [ "${REINSTALL_CMAKE_VERSION_FROM_SOURCE}" != "none" ]; then \
     fi \
     && rm -f /tmp/reinstall-cmake.sh \
 	&& apt-get update && apt-get install cowsay -y \
+	&& apt-get install siege -y \
 	&& apt-get install fortune -y && apt install python3-pip -y && pip install requests \
 	&& pip install python-dotenv && apt install php -y
 
