@@ -297,7 +297,7 @@ int 	Response::send_response()
 		_bytes_sent += sent;
 		if (_bytes_sent == _response.length())
 		{
-			std::cout << "Response completely sent" << std::endl;
+			// std::cout << "Response completely sent" << std::endl;
 			this->_is_complete = true;
 			_bytes_sent = 0;
 		}

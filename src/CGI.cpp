@@ -10,14 +10,14 @@ std::map<int, int> exit_status;
  */
 CGI::CGI(Response &response, httpHeader &header): _response(response), _header(header)
 {
-	std::cout << "CGI constructor" << std::endl;
+	// std::cout << "CGI constructor" << std::endl;
 	this->_done_reading = false;
 	this->_body_complete = false;
 	this->_header_removed = false;
 	this->_vector_pos = 0;
 	this->_bytes_sent = 0;
 	this->_errno = 0;
-	std::cout << "zero env" << std::endl;
+	// std::cout << "zero env" << std::endl;
 	for (int i = 0; i < 20; i++)
 		this->_exec_env[i] = NULL;
 	this->_pid = 0;
@@ -27,7 +27,7 @@ CGI::CGI(Response &response, httpHeader &header): _response(response), _header(h
 	this->set_boundary();
 	this->_header_length = 0;
 	this->_chunk_remaining = 0;
-	std::cout << "CGI constructor complete" << std::endl;
+	// std::cout << "CGI constructor complete" << std::endl;
 }
 
 /**
@@ -50,21 +50,21 @@ CGI& CGI::operator=(const CGI& obj)
 {
 	std::cout << "CGI assignement operator" << std::endl;
 	if (this != &obj) {
-		std::cout << "done reading" << std::endl;
+		// std::cout << "done reading" << std::endl;
 		this->_done_reading = obj._done_reading;
-		std::cout << "body complete" << std::endl;
+		// std::cout << "body complete" << std::endl;
 		this->_body_complete = obj._body_complete;
-		std::cout << "header removed" << std::endl;
+		// std::cout << "header removed" << std::endl;
 		this->_header_removed = obj._header_removed;
-		std::cout << "content length" << std::endl;
+		// std::cout << "content length" << std::endl;
 		this->_content_length = obj._content_length;
-		std::cout << "vector pos" << std::endl;
+		// std::cout << "vector pos" << std::endl;
 		this->_vector_pos = obj._vector_pos;
-		std::cout << "bytes sent" << std::endl;
+		// std::cout << "bytes sent" << std::endl;
 		this->_bytes_sent = obj._bytes_sent;
-		std::cout << "errno" << std::endl;
+		// std::cout << "errno" << std::endl;
 		this->_errno = obj._errno;
-		std::cout << "exec env" << std::endl;
+		// std::cout << "exec env" << std::endl;
 		for (int i = 0; i < 20; i++)
 		{
 			if (obj._exec_env[i])
@@ -72,26 +72,26 @@ CGI& CGI::operator=(const CGI& obj)
 			else
 				this->_exec_env[i] = NULL;
 		}
-		std::cout << "pid" << std::endl;
+		// std::cout << "pid" << std::endl;
 		this->_pid = obj._pid;
-		std::cout << "env" << std::endl;
+		// std::cout << "env" << std::endl;
 		this->_env = obj._env;
-		std::cout << "boundary" << std::endl;
+		// std::cout << "boundary" << std::endl;
 		this->_boundary = obj._boundary;
-		std::cout << "input pipe" << std::endl;
+		// std::cout << "input pipe" << std::endl;
 		this->_input_pipe[0] = obj._input_pipe[0];
 		this->_input_pipe[1] = obj._input_pipe[1];
-		std::cout << "output pipe" << std::endl;
+		// std::cout << "output pipe" << std::endl;
 		this->_output_pipe[0] = obj._output_pipe[0];
 		this->_output_pipe[1] = obj._output_pipe[1];
-		std::cout << "header length" << std::endl;
+		// std::cout << "header length" << std::endl;
 		this->_header_length = obj._header_length;
-		std::cout << "chunk remaining" << std::endl;
+		// std::cout << "chunk remaining" << std::endl;
 		this->_chunk_remaining = obj._chunk_remaining;
-		std::cout << "response" << std::endl;
+		// std::cout << "response" << std::endl;
 		this->_response = obj._response;
 	}
-	std::cout << "CGI assignement operator complete" << std::endl;
+	// std::cout << "CGI assignement operator complete" << std::endl;
 	return *this;
 }
 
@@ -111,7 +111,6 @@ CGI::~CGI()
  */
 void	CGI::env_init()
 {
-	std::cout << "env_init" << std::endl;
 	_env["GATEWAY_INTERFACE"] = std::string("CGI/1.1"); // The revision of the Common Gateway Interface that the server uses.
 	_env["SERVER_NAME"] = _response.getConfig().get_server_name(); //  The server's hostname or IP address.
 	_env["SERVER_SOFTWARE"] = std::string("webserv"); //  The name and version of the server software that is answering the client request.
@@ -127,16 +126,9 @@ void	CGI::env_init()
 		default:
 			_env["REQUEST_METHOD"] = "BLAH";
 	}
-	// _env["PATH_INFO"] = get_path_from_map(); //Extra path information passed to a CGI program.
-	// if (_env["PATH_INFO"].length() == 0)
-	// 	_env["PATH_TRANSLATED"] = this->_response.getRequest().; // The translated version of the path given by the variable PATH_INFO.
-	// else
-	// 	_env["PATH_TRANSLATED"] = _env["PATH_INFO"];
 	_env["SCRIPT_NAME"] = remove_end(_response.getRequest().getUri(), '?'); // The virtual path (e.g., /cgi-bin/program.pl) of the script being executed.
-	//TODO find which location to do, using servers for now.
 	_env["DOCUMENT_ROOT"] = this->_response.getConfig().get_root(); // The directory from which Web documents are served.
 	_env["QUERY_STRING"] = this->get_query(); // The query information passed to the program. It is appended to the URL with a "?".
-	// TODO Host might need to be converted
 	if (_response.getRequest().get_single_header("referer").size() > 0)
 		_env["REMOTE_HOST"] = _response.getRequest().get_single_header("referer"); // The remote hostname of the user making the request.
 	else
@@ -196,22 +188,28 @@ bool	CGI::handle_cgi()
 	}
 	else if (path_it == this->_response.getConfig().getIntrPath().end())
 	{
-		std::cout << "CGI Script interpreter path not found for:" << this->_response.getExt() << std::endl;
-		std::cout << "Known interpreters: ";
-		for (path_it = this->_response.getConfig().getIntrPath().begin(); path_it != this->_response.getConfig().getIntrPath().end(); path_it++)
-			std::cout << path_it->second << " ";
-		std::cout << std::endl;
+		// std::cout << "CGI Script interpreter path not found for:" << this->_response.getExt() << std::endl;
+		// std::cout << "Known interpreters: ";
+		// for (path_it = this->_response.getConfig().getIntrPath().begin(); path_it != this->_response.getConfig().getIntrPath().end(); path_it++)
+		// 	std::cout << path_it->second << " ";
+		// std::cout << std::endl;
 		this->_errno = 2;
 		return false;
 	}
 	this->_pid = fork();
-    if (this->_pid == 0)
+	if (this->_pid < 0)
+	{
+		this->_errno = 1;
+		return false;
+	}
+    else if (this->_pid == 0)
 	{
 		this->env_to_char();
         exec_script(this->_input_pipe, this->_output_pipe, script_path);
 	}
     else
 	{
+		exit_status.insert(std::map<int, int>::value_type(this->_pid, 0));
 		if (this->_input_pipe[0] > 0)
 			close(this->_input_pipe[0]);
 		this->_input_pipe[0] = -1;
@@ -287,7 +285,7 @@ int	CGI::initOutputPipe()
 {
     if (pipe(this->_output_pipe) < 0)
     {
-        std::cout << "Error opening pipe" << std::endl;
+        // std::cout << "Error opening pipe" << std::endl;
 		this->_errno = 2;
         return -1;
     }
@@ -310,7 +308,7 @@ int	CGI::initInputPipe()
 {
 	if (pipe(this->_input_pipe) < 0)
 	{
-		std::cout << "Error opening pipe" << std::endl;
+		// std::cout << "Error opening pipe" << std::endl;
 		if (this->_output_pipe[0] > 0)
 			close(this->_output_pipe[0]);
 		this->_output_pipe[0] = -1;
@@ -370,14 +368,14 @@ bool	CGI::sendResponse()
 		this->_response.getRequest().setStatusCode(403);
 		this->_response.getRequest().setSentSize(sent);
 	}
-	// else if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
-	// {
-	// 	_response_string = this->getResponse().createError(500);
-	// 	_content_length = _response_string.size();
-	// 	sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
-	// 	this->_response.getRequest().setStatusCode(500);
-	// 	this->_response.getRequest().setSentSize(sent);
-	// }
+	else if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
+	{
+		_response_string = this->getResponse().createError(500);
+		_content_length = _response_string.size();
+		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
+		this->_response.getRequest().setStatusCode(500);
+		this->_response.getRequest().setSentSize(sent);
+	}
 	else if (_content_length == 0)
 	{
 		_response_string = "HTTP/1.1 204 OK\r\nConnection: Keep-Alive\r\n\r\n";
@@ -388,7 +386,7 @@ bool	CGI::sendResponse()
 	}
 	else if (this->_response.getExt() == ".php")
 	{
-		std::cout << RED << "Sending php response..." << RESET << std::endl;
+		// std::cout << RED << "Sending php response..." << RESET << std::endl;
 		if (this->_bytes_sent == 0)
 		{
 			for (int i = 0; i < 9; i++)
@@ -425,7 +423,7 @@ bool	CGI::sendResponse()
 		this->_bytes_sent += sent;
 		if (this->_bytes_sent == this->_content_length)
 		{
-			// exit_status.erase(this->_pid);
+			exit_status.erase(this->_pid);
 			_response_buff.clear();
 			this->_done_reading = false;
 			return true;
@@ -468,7 +466,7 @@ bool	CGI::bodySentCGI()
 
 void	CGI::set_boundary()
 {
-	std::cout << _env["CONTENT_TYPE"] << std::endl;
+	// std::cout << _env["CONTENT_TYPE"] << std::endl;
 	size_t pos = _env["CONTENT_TYPE"].find("boundary=");
 	if (pos != std::string::npos) {
 		pos += 9;
@@ -497,7 +495,7 @@ void	CGI::writeToCGI()
 	if (this->_request_buff.empty())
 	{
 		this->_vector_pos = 0;
-		std::cout << "request buff empty" << std::endl;
+		// std::cout << "request buff empty" << std::endl;
 		return;
 	}
 	ssize_t sent = write(this->_input_pipe[1], &this->_request_buff[this->_vector_pos], this->_request_buff.size() - this->_vector_pos);
@@ -525,7 +523,7 @@ bool CGI::completeContent()
 		return false;
 	if (this->_request_buff.size() - this->_content_length == 0)
 	{
-		std::cout << "CGI CONTENT COMPLETE" << std::endl;
+		// std::cout << "CGI CONTENT COMPLETE" << std::endl;
 		return true;
 	}
 	return false;
@@ -556,14 +554,14 @@ void CGI::mergeChunk(char *buffer, size_t received)
 		if (this->_chunk_remaining == 0)
 		{
 			convertHex(buffer, pos, received);
-			std::cout << buffer << std::endl;
-			std::cout << "pos: " << pos << std::endl;
-			std::cout << "received: " << received << std::endl;
-			std::cout << "chunk remaining: " << this->_chunk_remaining << std::endl;
-			std::cout << "buffer start" << std::endl;
-			for (size_t i = 0; i < this->_request_buff.size(); i++)
-				std::cout << this->_request_buff[i];
-			std::cout << "buffer end" << std::endl;
+			// std::cout << buffer << std::endl;
+			// std::cout << "pos: " << pos << std::endl;
+			// std::cout << "received: " << received << std::endl;
+			// std::cout << "chunk remaining: " << this->_chunk_remaining << std::endl;
+			// std::cout << "buffer start" << std::endl;
+			// for (size_t i = 0; i < this->_request_buff.size(); i++)
+			// 	std::cout << this->_request_buff[i];
+			// std::cout << "buffer end" << std::endl;
 			if (buffer[0] == 0)
 				exit(0);
 			if (this->_chunk_remaining == 0)
