@@ -123,6 +123,7 @@ int ServerManager::run_servers()
 		// 		std::cout << "fd: " << this->_fds[i].fd << "\n";
 		// }
 		nbr_fd_ready = poll(this->_fds, this->_nfds, -1);
+		// usleep(1);
         if (nbr_fd_ready == -1)
         {
 			perror("poll");
