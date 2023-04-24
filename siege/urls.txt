@@ -1,0 +1,9 @@
+127.0.0.2:8000
+127.0.0.2:8000/about.html
+127.0.0.2:8000/contact
+127.0.0.2:8000/logout.html
+127.0.0.2:8000/form.html
+127.0.0.2:8000/pokemon/pokemon_question.py?
+127.0.0.2:8000/pokemon/pokemon.html?
+127.0.0.2:8000/chat.html?
+127.0.0.2:8000/upload.html?
