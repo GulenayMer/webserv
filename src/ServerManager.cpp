@@ -158,7 +158,7 @@ int ServerManager::run_servers()
 				this->_fds[this->_nfds].fd = connection_fd;
 				this->_fds[this->_nfds].events = POLLIN;
 				// std::cout << "inserted into fd array" << std::endl;
-				std::pair<std::map<int, Response>::iterator, bool> inserted = this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_fds[i].fd, this->_fds, this->_nfds, address)));
+				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_fds[i].fd, this->_fds, this->_nfds, address)));
 				// std::cout << "inserted into response map: " << inserted.second << std::endl;
 				this->_nfds++;
 				// std::cout << "connection accept complete" << std::endl;
