@@ -16,7 +16,6 @@ CGI::CGI(Response &response, httpHeader &header): _response(response), _header(h
 	this->_header_removed = false;
 	this->_vector_pos = 0;
 	this->_bytes_sent = 0;
-	this->_errno = 0;
 	for (int i = 0; i < 20; i++)
 		this->_exec_env[i] = NULL;
 	this->_pid = 0;
@@ -51,7 +50,6 @@ CGI& CGI::operator=(const CGI& obj)
 		this->_content_length = obj._content_length;
 		this->_vector_pos = obj._vector_pos;
 		this->_bytes_sent = obj._bytes_sent;
-		this->_errno = obj._errno;
 		for (int i = 0; i < 20; i++)
 		{
 			if (obj._exec_env[i])
@@ -151,35 +149,28 @@ void	CGI::env_to_char(void)
  * \n 
  * @return false in case of failure
  */
-bool	CGI::handle_cgi()
+int	CGI::handle_cgi()
 {
-    std::ifstream file;
+	std::ifstream file;
 	std::string script_path = this->_response.getRequest().getUri();
 	std::string shebang;
 
 	std::map<std::string, std::string>::const_iterator path_it = this->_response.getConfig().getIntrPath().find(this->_response.getExt());
 	if (access(script_path.c_str(), F_OK) == -1)
-	{
-		this->_errno = 1;
-		return false;
-	}
+		return 404;
+	else if (access(_response.getRequest().getUri().c_str(), X_OK) == -1)
+		return 403;
 	else if (path_it == this->_response.getConfig().getIntrPath().end())
-	{
-		this->_errno = 2;
-		return false;
-	}
+		return 500;
 	this->_pid = fork();
 	if (this->_pid < 0)
-	{
-		this->_errno = 1;
-		return false;
-	}
-    else if (this->_pid == 0)
+		return 500;
+	else if (this->_pid == 0)
 	{
 		this->env_to_char();
-        exec_script(this->_input_pipe, this->_output_pipe, script_path);
+		exec_script(this->_input_pipe, this->_output_pipe, script_path);
 	}
-    else
+	else
 	{
 		exit_status.insert(std::map<int, int>::value_type(this->_pid, 0));
 		if (this->_input_pipe[0] > 0)
@@ -189,7 +180,7 @@ bool	CGI::handle_cgi()
 			close(this->_output_pipe[1]);
 		this->_output_pipe[1] = -1;
 	}
-	return true;
+	return 0;
 }
 
 // Forked child process calls this to execute a CGI script.
@@ -210,7 +201,7 @@ void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
 		close(output_pipe[0]);
 	if (input_pipe[1] > 0)
 		close(input_pipe[1]);
-    args[0] = strdup(script_name.c_str());
+	args[0] = strdup(script_name.c_str());
 	args[1] = NULL;
 	dup2(output_pipe[1], STDOUT_FILENO);
 	if (output_pipe[1] > 0)
@@ -218,8 +209,8 @@ void	CGI::exec_script(int *input_pipe, int *output_pipe, std::string path)
 	dup2(input_pipe[0], STDIN_FILENO);
 	if (input_pipe[0] > 0)
 		close(input_pipe[0]);
-    execve(args[0], args, this->_exec_env);
-    perror("execve");
+	execve(args[0], args, this->_exec_env);
+	perror("execve");
 	exit(1);
 }
 
@@ -258,11 +249,8 @@ std::string CGI::get_query()
 // Open pipe used for reading data from CGI output.
 int	CGI::initOutputPipe()
 {
-    if (pipe(this->_output_pipe) < 0)
-    {
-		this->_errno = 2;
-        return -1;
-    }
+	if (pipe(this->_output_pipe) < 0)
+		return -1;
 	if (fcntl(this->_output_pipe[0], F_SETFL, O_NONBLOCK) == -1)
 	{
 		perror("fcntl set_flags");
@@ -272,7 +260,6 @@ int	CGI::initOutputPipe()
 		if (this->_output_pipe[1] > 0)
 			close(this->_output_pipe[1]);
 		this->_output_pipe[1] = -1;
-		this->_errno = 2;
 		return -1;
 	}
 	return this->_output_pipe[0];
@@ -289,7 +276,6 @@ int	CGI::initInputPipe()
 		if (this->_output_pipe[1] > 0)
 			close(this->_output_pipe[1]);
 		this->_output_pipe[1] = -1;
-		this->_errno = 2;
 		return -1;
 	}
 	if (fcntl(this->_input_pipe[1], F_SETFL, O_NONBLOCK) == -1)
@@ -307,7 +293,6 @@ int	CGI::initInputPipe()
 		if (this->_input_pipe[1] > 0)
 			close(this->_input_pipe[1]);
 		this->_input_pipe[1] = -1;
-		this->_errno = 2;
 		return -1;
 	}
 	return this->_input_pipe[1];
@@ -316,33 +301,31 @@ int	CGI::initInputPipe()
 bool	CGI::sendResponse()
 {
 	ssize_t	sent;
-	std::ostringstream response_stream;
-	std::string content;
-	if (this->_errno == 1)
-	{
-		_response_string = this->getResponse().createError(404);
-		_content_length = _response_string.size();
-		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
-		this->_response.getRequest().setStatusCode(404);
-		this->_response.getRequest().setSentSize(sent);
-	}
-	else if (this->_errno == 2)
-	{
-		_response_string = this->getResponse().createError(503);
-		_content_length = _response_string.size();
-		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
-		this->_response.getRequest().setStatusCode(503);
-		this->_response.getRequest().setSentSize(sent);
-	}
-	else if (access(_response.getRequest().getUri().c_str(), R_OK) == -1 || access(_response.getRequest().getUri().c_str(), X_OK) == -1)
-	{
-		_response_string = this->getResponse().createError(403);
-		_content_length = _response_string.size();
-		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
-		this->_response.getRequest().setStatusCode(403);
-		this->_response.getRequest().setSentSize(sent);
-	}
-	else if (exit_status.find(this->_pid)->second != 0 || this->_errno != 0)
+	// if (this->_errno == 1)
+	// {
+	// 	_response_string = this->getResponse().createError(404);
+	// 	_content_length = _response_string.size();
+	// 	sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
+	// 	this->_response.getRequest().setStatusCode(404);
+	// 	this->_response.getRequest().setSentSize(sent);
+	// }
+	// else if (this->_errno == 2)
+	// {
+	// 	_response_string = this->getResponse().createError(503);
+	// 	_content_length = _response_string.size();
+	// 	sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
+	// 	this->_response.getRequest().setStatusCode(503);
+	// 	this->_response.getRequest().setSentSize(sent);
+	// }
+	// if (access(_response.getRequest().getUri().c_str(), R_OK) == -1 || access(_response.getRequest().getUri().c_str(), X_OK) == -1)
+	// {
+	// 	_response_string = this->getResponse().createError(403);
+	// 	_content_length = _response_string.size();
+	// 	sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
+	// 	this->_response.getRequest().setStatusCode(403);
+	// 	this->_response.getRequest().setSentSize(sent);
+	// }
+	if (exit_status.find(this->_pid)->second != 0)
 	{
 		_response_string = this->getResponse().createError(500);
 		_content_length = _response_string.size();
@@ -350,14 +333,14 @@ bool	CGI::sendResponse()
 		this->_response.getRequest().setStatusCode(500);
 		this->_response.getRequest().setSentSize(sent);
 	}
-	else if (_content_length == 0)
-	{
-		_response_string = "HTTP/1.1 204 OK\r\nConnection: Keep-Alive\r\n\r\n";
-		_content_length = _response_string.size();
-		sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
-		this->_response.getRequest().setStatusCode(204);
-		this->_response.getRequest().setSentSize(sent);
-	}
+	// else if (_content_length == 0)
+	// {
+	// 	_response_string = "HTTP/1.1 204 OK\r\nConnection: Keep-Alive\r\n\r\n";
+	// 	_content_length = _response_string.size();
+	// 	sent = send(this->_response.getConnFd(), &_response_string[0], _response_string.size(), MSG_DONTWAIT);
+	// 	this->_response.getRequest().setStatusCode(204);
+	// 	this->_response.getRequest().setSentSize(sent);
+	// }
 	else if (this->_response.getExt() == ".php")
 	{
 		if (this->_bytes_sent == 0)
@@ -519,13 +502,16 @@ void	CGI::closePipes()
 void CGI::mergeChunk(char *buffer, size_t received)
 {
 	size_t	pos = 0;
+	std::cout << "buffer length: " << strlen(buffer) << std::endl;
+	std::cout << "buffer: " << buffer << std::endl;
+	std::cout << "end of buffer: " << std::endl;
+	std::cout << "remaining: " << this->_chunk_remaining << std::endl;
 	while (pos < received)
 	{
+		std::cout << "buffer at: " << pos << ": " << buffer << std::endl;
 		if (this->_chunk_remaining == 0)
 		{
 			convertHex(buffer, pos, received);
-			if (buffer[0] == 0)
-				exit(0);
 			if (this->_chunk_remaining == 0)
 			{
 				addHeaderChunked();
@@ -534,6 +520,9 @@ void CGI::mergeChunk(char *buffer, size_t received)
 				return;
 			}
 		}
+		std::cout << "received: " << received << std::endl;
+		std::cout << "pos: " << pos << std::endl;
+		std::cout << "chunk remaining: " << this->_chunk_remaining << std::endl;
 		if (this->_chunk_remaining >= received - pos)
 		{
 			storeBuffer(&buffer[pos], received - pos);
@@ -553,12 +542,19 @@ void CGI::mergeChunk(char *buffer, size_t received)
 void CGI::convertHex(char *buffer, size_t &pos, size_t received)
 {
 	char *stopstr;
+	while (buffer[pos] == '\r' || buffer[pos] == '\n' || buffer[pos] == ' ' || buffer[pos] == '\t')
+		pos++;
 	size_t i = pos;
 	while (pos < received && buffer[pos] != '\r' && buffer[pos] != '\n')
 		pos++;
+	std::cout << "current buffer pos" << std::endl;
+	std::cout << &buffer[i] << std::endl;
 	this->_chunk_remaining = std::strtoul(&buffer[i], &stopstr, 16);
 	this->_content_length += this->_chunk_remaining;
-	pos += 2;
+	if (pos + 1 < received)
+		pos += 2;
+	else if (pos < received)
+		pos++;
 }
 
 // Adds a header to a completely unchunked request.
@@ -606,9 +602,4 @@ void	CGI::removeHeader(char *buffer, ssize_t received)
 			}
 		}
 	}
-}
-
-void CGI::setErrNo(int err)
-{
-	this->_errno = err;
 }

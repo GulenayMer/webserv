@@ -46,7 +46,7 @@ class ServerManager {
 		void 	closeFds();
 		std::vector<Server>	get_servers();
 		Server				get_server_at(int i);
-		bool	initCGI(Response &response, char *buffer, ssize_t received, int i, httpHeader &request);
+		void	initCGI(Response &response, char *buffer, ssize_t received, httpHeader &request);
 
 		void	server_create_error(std::logic_error &e, int i);
 		int		get_cgi_response(std::string header);
@@ -54,6 +54,7 @@ class ServerManager {
 		void compress_array();
 		void stopListening();
 		void startListening();
+		void cgiError(Response &response, int error);
 };
 
 #endif

@@ -136,15 +136,9 @@ void Response::getPath()
 	}
 }
 
-int 	Response::handle_response()
+void 	Response::handle_response()
 {
 	std::ostringstream response_stream;
-	_respond_path.clear();
-	_response_body.clear();
-	_response.clear();
-	setChunked();
-	_request.setUserIP(_addr);
-	_is_cgi = false;
 	if (_is_redirect)
 	{
 		response_stream << redirect(_request.getUri());
@@ -186,6 +180,11 @@ int 	Response::handle_response()
 				response_stream << createError(404);
 				this->_is_cgi = false;
 			}
+			else if (access(this->_request.getUri().c_str(), F_OK) == -1)
+			{
+				response_stream << createError(404);
+				this->_is_cgi = false;
+			}
 			else if (!this->_location.allow_cgi())
 			{
 				response_stream << createError(403);
@@ -194,7 +193,7 @@ int 	Response::handle_response()
 			else
 			{
 				this->_is_complete = true;
-				return 0;
+				return;
 			}
 		}
 		else
@@ -221,7 +220,7 @@ int 	Response::handle_response()
 		}
 	}
 	this->_response = response_stream.str();
-	return (send_response());
+	return;
 }
 
 int 	Response::handle_response_error(std::ostringstream& response_stream)
@@ -310,7 +309,13 @@ bool	Response::new_request(httpHeader &request)
 	this->_is_dir = false;
 	this->_is_redirect = false;
 	this->_list_dir = false;
+	this->_is_cgi = false;
 	this->_received_bytes = 0;
+	_respond_path.clear();
+	_response_body.clear();
+	_response.clear();
+	setChunked();
+	_request.setUserIP(_addr);
 	std::map<std::string, Location>::iterator loc_it;
 	std::string uri = request.getUri();
 	size_t pos = uri.find_last_of("/");
@@ -709,7 +714,23 @@ std::string Response::redirect(std::string uri)
 	return (message.str());
 }
 
-std::string	Response::get_response()
+std::string	Response::getResponseBuff()
 {
 	return (_response);
+}
+
+void Response::setResponseBuff(std::string response)
+{
+	_response = response;
+}
+
+void Response::setToClose()
+{
+	this->_to_close = true;
+}
+
+void Response::revertCGI()
+{
+	this->_is_cgi = false;
+	this->_is_complete = false;
 }

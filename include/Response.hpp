@@ -53,7 +53,7 @@ class Response
         ~Response();
 
         void	newConfig(Config &config);
-		int 	handle_response();
+		void 	handle_response();
 		int		handle_response_error(std::ostringstream& response_stream);
 		int		send_response();
         void 	send_404(std::string root, std::ostringstream &response_stream);
@@ -90,7 +90,10 @@ class Response
 		void finishChunk();
 		std::string redirect(std::string uri);
 
-		std::string	get_response();
+		std::string	getResponseBuff();
+		void setResponseBuff(std::string response);
+		void setToClose();
+		void revertCGI();
 };
 
 #endif

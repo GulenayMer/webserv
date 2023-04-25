@@ -181,24 +181,15 @@ void	ServerManager::close_connection(Response &response, int i)
 }
 
 // Opens pipes and then calls handleCGI() to create a new CGI process.
-bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, int i, httpHeader &request)
+void	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, httpHeader &request)
 {
 	CGI cgi(response, request);
 	int out_fd = cgi.initOutputPipe();
 	int in_fd = cgi.initInputPipe();
 	if (out_fd < 0 || in_fd < 0)
-	{
-		cgi.sendResponse();
-		close_connection(cgi.getResponse(), i);
-		return false;
-	}
+		cgiError(response, 500);
 	else if (this->_nfds >= FD_SETSIZE - 10)
-	{
-		cgi.setErrNo(2);
-		cgi.sendResponse();
-		close_connection(cgi.getResponse(), i);
-		return false;
-	}
+		cgiError(response, 503);
 	else
 	{
 		std::pair<std::map<int, CGI>::iterator, bool> ret_pair = this->_cgis.insert(std::map<int, CGI>::value_type(out_fd, cgi));
@@ -212,19 +203,19 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 		this->_fds[_nfds].events = POLLOUT;
 		this->_fds[_nfds].revents = 0;
 		_nfds++;
-		if (!cgi_it->second.handle_cgi())
+		int retval = cgi_it->second.handle_cgi();
+		if (retval)
 		{
+			cgiError(response, retval);
 			_nfds--;
 			this->_fds[_nfds].fd = -1;
 			_nfds--;
 			this->_fds[_nfds].fd = -1;
 			cgi_it->second.closePipes();
-			cgi_it->second.sendResponse();
 			//cgi_it->second.getResponse().getRequest().printHeader();
-			close_connection(cgi_it->second.getResponse(), i);
 			this->_cgis.erase(ret_pair.first);
 			this->_cgi_fds.erase(cgi_ret_pair.first);
-			return false;			
+			return;			
 		}
 		response.setCGIFd(out_fd);
 		if (response.isChunked())
@@ -235,7 +226,6 @@ bool	ServerManager::initCGI(Response &response, char *buffer, ssize_t received, 
 			cgi_it->second.writeToCGI();
 		}
 	}
-	return true;
 }
 
 void	ServerManager::server_create_error(std::logic_error &e, int i)
@@ -379,18 +369,14 @@ bool	ServerManager::readRequest(Response &response, int i)
 			}
 			response.new_request(request);
 			response.handle_response();
-			response.getRequest().setStatusCode(get_cgi_response(response.get_response()));
+			this->_fds[i].events = POLLIN | POLLOUT;
+			// response.getRequest().setStatusCode(get_cgi_response(response.getResponseBuff()));
 			// if (response.is_cgi() == false)
 			// {
 			// 	response.getRequest().printHeader();
 			// }
-			if (response.shouldClose())
-				close_connection(response, i);
-			else if (response.is_cgi()) // initialise cgi process
-			{
-				if (this->initCGI(response, buffer, received, i, request))
-					this->_fds[i].events = POLLIN | POLLOUT;
-			}
+			if (response.is_cgi()) // initialise cgi process
+				this->initCGI(response, buffer, received, request);
 		}
 	}
 	return true;
@@ -438,7 +424,9 @@ void	ServerManager::writeResponse(Response &response, int i)
 	if (!response.isComplete())
 	{
 		response.send_response();
-		if (response.isComplete())
+		if (response.shouldClose())
+			close_connection(response, i);
+		else if (response.isComplete())
 			this->_fds[i].events = POLLIN;
 	}
 	else
@@ -489,4 +477,11 @@ void ServerManager::closeFds()
 			this->_fds[i].fd = -1;
 		}
 	}
+}
+
+void ServerManager::cgiError(Response &response, int error)
+{
+	response.setResponseBuff(response.createError(error));
+	response.setToClose();
+	response.revertCGI();
 }

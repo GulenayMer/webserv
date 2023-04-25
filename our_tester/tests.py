@@ -168,8 +168,8 @@ def test_chunked_text() -> str:
 
 def test_chunked_img() -> str:
 	headers = {"Transfer-Encoding":"chunked", "content-type":"image/png"}
-	http_response = requests.post(get_base_url() + "cgi-bin/chunked.py", headers=headers, data=chunk_gen("/workspaces/webserv/our_tester/resources/chunked.png", 1024))
 	try:
+		http_response = requests.post(get_base_url() + "cgi-bin/chunked.py", headers=headers, data=chunk_gen("/workspaces/webserv/our_tester/resources/chunked.png", 1024))
 		if http_response.status_code != 200 and http_response.status_code != 204:
 			return f"Bad status code: {str(http_response.status_code)}, expected 200 or 204"
 		result = subprocess.run(["diff", "/workspaces/webserv/our_tester/resources/chunked.png", "/workspaces/webserv/docs/www/website/cgi-bin/uploaded.png"])
