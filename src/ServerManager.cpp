@@ -140,28 +140,6 @@ int ServerManager::run_servers()
 					acceptConnection(i);
 					continue;
 				}
-<<<<<<< HEAD
-				if (fcntl(connection_fd, F_SETFL, O_NONBLOCK) == -1)
-				{
-					perror("fcntl set_flags");
-					close(connection_fd);
-					continue;
-				}
-				std::string address(inet_ntoa(addr.sin_addr));
-				// std::cout << "New connection from " << address << " on socket " << connection_fd << "\n";
-				// std::cout << "nfds: " << this->_nfds << "\n";
-				this->_fds[this->_nfds].fd = connection_fd;
-				this->_fds[this->_nfds].events = POLLIN;
-				// std::cout << "inserted into fd array" << std::endl;
-				this->_responses.insert(std::map<int, Response>::value_type(this->_fds[this->_nfds].fd, Response(this->_fds[this->_nfds].fd, this->_fds[i].fd, this->_fds, this->_nfds, address)));
-				// std::cout << "inserted into response map: " << inserted.second << std::endl;
-				this->_nfds++;
-				// std::cout << "connection accept complete" << std::endl;
-			}
-			else if (this->_fds[i].revents & POLLIN)
-			{
-=======
->>>>>>> ad52d4f7679e3c22dce6752771f82b5f4326bf1c
 				std::map<int, Response>::iterator response_it = this->_responses.find(this->_fds[i].fd);
 				if (response_it != this->_responses.end())
 				{
