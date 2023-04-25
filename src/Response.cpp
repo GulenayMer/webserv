@@ -81,7 +81,6 @@ void Response::getPath()
 	}
     else
 	{
-		// TODO Find where the extra '/' is being added to the end of uri and fix it
 		std::string	tmp_path(_request.getUri());
 		_respond_path = tmp_path;
 		while (tmp_path.length() > 1 && tmp_path[tmp_path.length() - 1] == '/')
@@ -91,9 +90,6 @@ void Response::getPath()
 			pos = 0;
 		if (tmp_path.find_first_of(".", pos) == std::string::npos)
 		{
-			//TODO: check if the path is a directory || is this finished?
-			// I'm assuming that we won't allow directory listing for directories that are not specified in the config file
-			// Right now it only accept index.html or <dir_name>.html
 			std::string dir_name(tmp_path.substr(pos, tmp_path.size() - pos));
 			std::map<std::string, Location>::iterator location_it = _config.get_location().find(dir_name);
 			if (location_it == _config.get_location().end())
@@ -218,15 +214,8 @@ int 	Response::handle_response()
 			{
 				if (_request.getMethod() == GET)
 					responseToGET(file, ext_pos, response_stream);
-				else if (_request.getMethod() == POST)
-				{
-					//TODO: do we need to check for POST here?
-					// responseToPOST(_request, response_stream);
-				}
 				else if (_request.getMethod() == DELETE)
-				{
 					responseToDELETE(response_stream);
-				}
 			}
 			file.close();
 		}
@@ -240,13 +229,9 @@ int 	Response::handle_response_error(std::ostringstream& response_stream)
 	if (_request.isError()) {
 		uint8_t myByte = _request.isError();
 		if (static_cast<int>(myByte) == 2)
-		{
 			response_stream << createError(400);
-		}
 		else if (static_cast<int>(myByte) == 1)
-		{
 			response_stream << createError(414);
-		}
 		_to_close = true;
 		return 1;
 	}
@@ -297,7 +282,6 @@ int 	Response::send_response()
 		_bytes_sent += sent;
 		if (_bytes_sent == _response.length())
 		{
-			// std::cout << "Response completely sent" << std::endl;
 			this->_is_complete = true;
 			_bytes_sent = 0;
 		}

@@ -23,7 +23,7 @@ class ServerManager {
 		struct pollfd*		_fds;
 		int					_nbr_fd_ready;
 		std::map<int, int>	_map_server_fd;
-		bool				_compress_array;
+		bool				_listening;
         // 	ServerManager(ServerManager const &copy);
         //  ServerManager &operator=(ServerManager const &rhs);
     
@@ -37,7 +37,13 @@ class ServerManager {
 		//int		check_connection();
 		//int		check_request_respond();
 		void	close_connection(Response &response, int i);
-
+		void	acceptConnection(int i);
+		bool	readRequest(Response &response, int i);
+		void	readCGI(int i);
+		void	readRemainingCGI(CGI &cgi, int i);
+		void	writeResponse(Response &response, int i);
+		void	writeCGI(int i);
+		void 	closeFds();
 		std::vector<Server>	get_servers();
 		Server				get_server_at(int i);
 		bool	initCGI(Response &response, char *buffer, ssize_t received, int i, httpHeader &request);
@@ -46,6 +52,8 @@ class ServerManager {
 		int		get_cgi_response(std::string header);
 		std::string	getDefPort(std::string &host);
 		void compress_array();
+		void stopListening();
+		void startListening();
 };
 
 #endif
