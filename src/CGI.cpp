@@ -121,7 +121,6 @@ void	CGI::env_init()
 		_env["HTTP_COOKIE"] = _response.getRequest().get_single_header("cookie");
 	_env["UPLOAD_PATH"] = _response.getConfig().get_upload_store();
 	_env["DOCUMENT_ROOT"] = _response.getConfig().get_root();
-	// std::cout << "env_init done" << std::endl;
 }
 
 /**
